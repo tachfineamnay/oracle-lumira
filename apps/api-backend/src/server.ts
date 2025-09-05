@@ -11,6 +11,7 @@ import { stripeRoutes } from './routes/stripe';
 import { orderRoutes } from './routes/orders';
 import { userRoutes } from './routes/users';
 import { healthRoutes } from './routes/health';
+import { expertRoutes } from './routes/expert';
 
 dotenv.config();
 
@@ -89,6 +90,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/expert', expertRoutes);
 
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

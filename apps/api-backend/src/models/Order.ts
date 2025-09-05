@@ -27,6 +27,28 @@ export interface IOrder extends Document {
     };
   };
   
+  // Client uploaded files
+  files?: [{
+    filename: string;
+    originalName: string;
+    path: string;
+    mimetype: string;
+    size: number;
+    uploadedAt: Date;
+  }];
+  
+  // Client additional inputs
+  clientInputs?: {
+    birthTime?: string;
+    birthPlace?: string;
+    specificContext?: string;
+    lifeQuestion?: string;
+  };
+  
+  // Expert processing
+  expertPrompt?: string;
+  expertInstructions?: string;
+  
   // Generated content
   generatedContent?: {
     archetype?: string;
@@ -111,6 +133,25 @@ const orderSchema = new Schema<IOrder>({
       deliveryFormat: { type: String, enum: ['email', 'whatsapp'] }
     }
   },
+  
+  files: [{
+    filename: { type: String, required: true },
+    originalName: { type: String, required: true },
+    path: String,
+    mimetype: String,
+    size: Number,
+    uploadedAt: { type: Date, default: Date.now }
+  }],
+  
+  clientInputs: {
+    birthTime: String,
+    birthPlace: String,
+    specificContext: String,
+    lifeQuestion: String
+  },
+  
+  expertPrompt: String,
+  expertInstructions: String,
   
   generatedContent: {
     archetype: String,
