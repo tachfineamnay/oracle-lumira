@@ -231,7 +231,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
     }
 
     // Update order with expert data
-    order.status = 'ai_processing';
+    order.status = 'processing';
     order.expertPrompt = expertPrompt;
     order.expertInstructions = expertInstructions;
     order.expertReview = {
@@ -316,7 +316,7 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
     const stats = await Promise.all([
       Order.countDocuments({ status: 'pending' }),
       Order.countDocuments({ status: 'paid' }),
-      Order.countDocuments({ status: 'ai_processing' }),
+      Order.countDocuments({ status: 'processing' }),
       Order.countDocuments({ status: 'completed' }),
       Order.countDocuments({
         'expertReview.expertId': req.expert._id.toString(),
