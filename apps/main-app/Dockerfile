@@ -21,6 +21,9 @@ COPY --from=builder /app/apps/main-app/dist /usr/share/nginx/html
 # Copy nginx configuration from repository root (build context root)
 COPY nginx.conf /etc/nginx/nginx.conf
 
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
 # Create non-root user
 RUN addgroup -g 1001 -S nginx && \
     adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
