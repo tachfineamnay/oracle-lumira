@@ -5,6 +5,7 @@ import { Order } from '../models/Order';
 import rateLimit from 'express-rate-limit';
 import Joi from 'joi';
 import axios from 'axios';
+import bcrypt from 'bcrypt';
 
 const router = express.Router();
 
@@ -117,6 +118,140 @@ router.get('/verify', authenticateExpert, async (req: any, res: any) => {
       email: req.expert.email
     }
   });
+});
+
+// ROUTE DE DEBUG TEMPORAIRE - À SUPPRIMER APRÈS RÉSOLUTION
+router.post('/debug-login', async (req: any, res: any) => {
+  try {
+    console.log('🔍 DEBUG LOGIN - Début diagnostic');
+    console.log('Body reçu:', req.body);
+    
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      console.log('❌ Email ou mot de passe manquant');
+      return res.status(400).json({ 
+        error: 'Email et mot de passe requis',
+        debug: { email: !!email, password: !!password }
+      });
+    }
+    
+    // Recherche de l'expert
+    console.log('🔍 Recherche expert avec email:', email);
+    const expert = await Expert.findOne({ email: email.toLowerCase() });
+    
+    if (!expert) {
+      console.log('❌ Expert non trouvé');
+      console.log('🔍 Experts disponibles:');
+      const allExperts = await Expert.find({}, 'email name isActive');
+      console.log(allExperts);
+      return res.status(401).json({ 
+        error: 'Expert non trouvé',
+        debug: { 
+          emailSearched: email.toLowerCase(),
+          availableExperts: allExperts.map(e => ({ email: e.email, isActive: e.isActive }))
+        }
+      });
+    }
+    
+    console.log('✅ Expert trouvé:', {
+      id: expert._id,
+      email: expert.email,
+      name: expert.name,
+      role: expert.role,
+      isActive: expert.isActive,
+      createdAt: expert.createdAt
+    });
+    
+    // Test du mot de passe avec bcrypt direct
+    console.log('🔐 Test mot de passe...');
+    console.log('Mot de passe fourni:', password);
+    console.log('Hash stocké (premiers 20 chars):', expert.password.substring(0, 20) + '...');
+    
+    const isValidMethod = await expert.comparePassword(password);
+    const isValidDirect = await bcrypt.compare(password, expert.password);
+    
+    console.log('Résultat méthode comparePassword:', isValidMethod);
+    console.log('Résultat bcrypt.compare direct:', isValidDirect);
+    
+    if (!isValidMethod && !isValidDirect) {
+      console.log('❌ Mot de passe incorrect');
+      
+      // Test avec différentes variantes
+      const variants = [
+        password,
+        password.trim(),
+        'Lumira2025L',
+        'lumira2025l'
+      ];
+      
+      console.log('🔍 Test de variantes:');
+      for (const variant of variants) {
+        const testResult = await bcrypt.compare(variant, expert.password);
+        console.log(`"${variant}":`, testResult);
+      }
+      
+      return res.status(401).json({
+        error: 'Mot de passe incorrect',
+        debug: {
+          methodResult: isValidMethod,
+          directResult: isValidDirect,
+          expertFound: true,
+          isActive: expert.isActive,
+          testedVariants: variants.length
+        }
+      });
+    }
+    
+    if (!expert.isActive) {
+      console.log('❌ Compte expert désactivé');
+      return res.status(401).json({
+        error: 'Compte désactivé',
+        debug: { isActive: expert.isActive }
+      });
+    }
+    
+    console.log('✅ Authentification réussie!');
+    
+    // Génération du token comme dans la vraie route
+    const token = jwt.sign(
+      { 
+        expertId: expert._id, 
+        email: expert.email,
+        name: expert.name 
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: '8h' }
+    );
+    
+    return res.json({
+      success: true,
+      token,
+      expert: {
+        id: expert._id,
+        email: expert.email,
+        name: expert.name,
+        role: expert.role
+      },
+      debug: {
+        methodResult: isValidMethod,
+        directResult: isValidDirect,
+        isActive: expert.isActive,
+        message: 'Authentification complètement réussie!',
+        tokenGenerated: true
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur dans debug-login:', error);
+    return res.status(500).json({
+      error: 'Erreur serveur',
+      debug: {
+        message: error.message,
+        stack: error.stack
+      }
+    });
+  }
 });
 
 // Get pending orders for expert
