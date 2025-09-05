@@ -6,6 +6,7 @@ export interface IExpert extends Document {
   email: string;
   password: string;
   name: string;
+  role: string;
   isActive: boolean;
   lastLogin: Date;
   createdAt: Date;
@@ -32,6 +33,11 @@ const expertSchema = new Schema<IExpert>({
     required: true,
     trim: true,
     maxlength: 100
+  },
+  role: {
+    type: String,
+    enum: ['expert', 'admin'],
+    default: 'expert'
   },
   isActive: {
     type: Boolean,

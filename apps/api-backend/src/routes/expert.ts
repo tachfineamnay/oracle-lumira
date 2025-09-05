@@ -5,7 +5,7 @@ import { Order } from '../models/Order';
 import rateLimit from 'express-rate-limit';
 import Joi from 'joi';
 import axios from 'axios';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
@@ -242,13 +242,13 @@ router.post('/debug-login', async (req: any, res: any) => {
       }
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erreur dans debug-login:', error);
     return res.status(500).json({
       error: 'Erreur serveur',
       debug: {
-        message: error.message,
-        stack: error.stack
+        message: error?.message || 'Unknown error',
+        stack: error?.stack
       }
     });
   }
