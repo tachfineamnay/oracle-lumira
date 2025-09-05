@@ -1,12 +1,13 @@
 FROM node:18-alpine AS builder
 
-# Install dependencies
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
+# Install dependencies for the main app
+WORKDIR /app/apps/main-app
+COPY apps/main-app/package*.json ./
+# Install all deps (incl. dev) for building in builder stage
+RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy application source
+COPY apps/main-app ./
 
 # Build application
 RUN npm run build
@@ -15,10 +16,10 @@ RUN npm run build
 FROM nginx:alpine
 
 # Copy built application
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/apps/main-app/dist /usr/share/nginx/html
 
-# Copy nginx configuration from root
-COPY ../../nginx.conf /etc/nginx/nginx.conf
+# Copy nginx configuration from repository root (build context root)
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create non-root user
 RUN addgroup -g 1001 -S nginx && \
