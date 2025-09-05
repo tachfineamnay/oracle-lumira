@@ -1,0 +1,40 @@
+﻿version: '3.8'
+
+services:
+  main-app:
+    build: ../apps/main-app
+    container_name: oracle_main
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.main.rule=Host(`oraclelumira.com`)"
+      - "traefik.http.services.main.loadbalancer.server.port=80"
+
+  expert-desk:
+    build: ../apps/expert-desk
+    container_name: oracle_desk
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.desk.rule=Host(`desk.oraclelumira.com`)"
+      - "traefik.http.services.desk.loadbalancer.server.port=80"
+
+  dolibarr:
+    image: dolibarr/dolibarr:17
+    container_name: oracle_crm
+    restart: unless-stopped
+    environment:
+      DOLI_DB_TYPE: mysqli
+      DOLI_DB_HOST: mysql
+      DOLI_DB_NAME: dolibarr
+      DOLI_DB_USER: dolibarr
+      DOLI_DB_PASSWORD: ${MYSQL_PASSWORD}
+      DOLI_URL_ROOT: https://crm.oraclelumira.com
+    volumes:
+      - dolibarr_data:/var/www/html
+    depends_on:
+      - mysql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crm.rule=Host(`crm.oraclelumira.com`)"
+      - "traefik.http.services.crm.loadbalancer.server.port
