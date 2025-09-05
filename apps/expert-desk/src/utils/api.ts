@@ -2,9 +2,7 @@ import axios from 'axios';
 
 // API base URL - adjust based on environment
 // API Configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.oraclelumira.com/api' 
-  : 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Create axios instance
 export const api = axios.create({
