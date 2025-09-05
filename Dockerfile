@@ -11,9 +11,18 @@ RUN cd apps/main-app && npm run build
 # Stage 2: Build Backend API
 FROM node:20-alpine AS backend-builder
 WORKDIR /app
+
+# Install TypeScript globally
+RUN npm install -g typescript
+
+# Copy backend package files
 COPY apps/api-backend/package*.json ./apps/api-backend/
-RUN cd apps/api-backend && npm ci --only=production
+RUN cd apps/api-backend && npm ci
+
+# Copy backend source code
 COPY apps/api-backend ./apps/api-backend/
+
+# Build TypeScript to JavaScript
 RUN cd apps/api-backend && npm run build
 
 # Stage 3: Production with nginx + Node.js
@@ -26,19 +35,19 @@ RUN npm install -g pm2
 # Copy built frontend
 COPY --from=frontend-builder /app/apps/main-app/dist /usr/share/nginx/html
 
-# Copy built backend
-COPY --from=backend-builder /app/apps/api-backend/dist /app/api
-COPY --from=backend-builder /app/apps/api-backend/node_modules /app/node_modules
-COPY --from=backend-builder /app/apps/api-backend/package.json /app/
+# Copy built backend API
+COPY --from=backend-builder /app/apps/api-backend/dist /app/apps/api-backend/dist
+COPY --from=backend-builder /app/apps/api-backend/node_modules /app/apps/api-backend/node_modules
+COPY --from=backend-builder /app/apps/api-backend/package.json /app/apps/api-backend/
+
+# Copy PM2 ecosystem configuration
+COPY ecosystem.config.json /app/ecosystem.config.json
 
 # Copy nginx configuration for fullstack (frontend + API proxy)
 COPY nginx-fullstack.conf /etc/nginx/nginx.conf
 
 # Install curl for container HEALTHCHECK
 RUN apk add --no-cache curl
-
-# Create PM2 ecosystem file for API
-RUN echo '{ "apps": [{ "name": "lumira-api", "script": "/app/api/server.js", "env": { "NODE_ENV": "production", "PORT": "3001" } }] }' > /app/ecosystem.config.json
 
 # Create startup script
 COPY start-fullstack.sh /start.sh
