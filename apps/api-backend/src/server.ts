@@ -1,3 +1,5 @@
+console.log('✅ [API] server.ts - Script started');
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -12,6 +14,8 @@ import { orderRoutes } from './routes/orders';
 import { userRoutes } from './routes/users';
 import { healthRoutes } from './routes/health';
 import { expertRoutes } from './routes/expert';
+
+console.log('✅ [API] server.ts - Imports loaded');
 
 dotenv.config();
 
@@ -34,6 +38,8 @@ const logger = createLogger({
     })
   ]
 });
+
+console.log('✅ [API] server.ts - Logger configured');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -59,16 +65,36 @@ app.use(helmet({
   },
 }));
 
-app.use(cors({
-  origin: [
-    'https://oraclelumira.com',
-    'https://desk.oraclelumira.com',
-    'http://localhost:3000',
-    'http://localhost:5173'
-  ],
+console.log('✅ [API] server.ts - Helmet configured');
+
+const allowedOrigins = [
+  'https://oraclelumira.com',
+  'https://desk.oraclelumira.com',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+      logger.error(msg);
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
-  optionsSuccessStatus: 200
-}));
+  optionsSuccessStatus: 200, // For legacy browser support
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
+
+console.log('✅ [API] server.ts - CORS configured');
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -83,6 +109,8 @@ app.use((req, res, next) => {
   next();
 });
 
+console.log('✅ [API] server.ts - Middleware configured');
+
 // Health check route (before other routes)
 app.use('/api/health', healthRoutes);
 
@@ -95,89 +123,40 @@ app.use('/api/expert', expertRoutes);
 // Add n8n callback route at API level
 app.use('/api/n8n', expertRoutes);
 
+console.log('✅ [API] server.ts - Routes configured');
+
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error('Unhandled error:', err);
-  
-  if (err.type === 'StripeCardError') {
-    return res.status(400).json({
-      error: 'Payment failed',
-      message: err.message
-    });
+  logger.error('Unhandled error:', { message: err.message, stack: err.stack });
+  if (res.headersSent) {
+    return next(err);
   }
-  
-  res.status(500).json({
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
-  });
+  res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Not found',
-    message: `Route ${req.originalUrl} not found`
-  });
-});
+// Database connection
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// MongoDB connection
-const connectDB = async () => {
-  try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://root:Lumira2025L@c4kcoss04wgo80c4wow8k4w4:27017/lumira?authSource=admin&directConnection=true';
-    
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      bufferCommands: false, // Disable mongoose buffering
-      bufferMaxEntries: 0, // Disable mongoose buffering
+if (!MONGODB_URI) {
+  logger.error('❌ MONGODB_URI is not defined in .env file');
+  console.error('❌ [API] MONGODB_URI is not defined in .env file. The application will now exit.');
+  process.exit(1);
+}
+
+console.log('✅ [API] server.ts - Connecting to MongoDB...');
+logger.info('Connecting to MongoDB...');
+
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('✅ [API] server.ts - MongoDB connected successfully');
+    logger.info('MongoDB connected successfully');
+    app.listen(PORT, () => {
+      console.log(`✅ [API] Server is running on port ${PORT}`);
+      logger.info(`Server is running on port ${PORT}`);
     });
-    
-    logger.info('✅ MongoDB connected successfully');
-    
-    // Test the connection
-    await mongoose.connection.db.admin().ping();
-    logger.info('✅ MongoDB ping successful');
-    
-  } catch (error) {
-    logger.error('❌ MongoDB connection error:', error);
+  })
+  .catch(err => {
+    console.error('❌ [API] server.ts - MongoDB connection error:', err.message);
+    logger.error('MongoDB connection error:', { error: err.message, stack: err.stack });
     process.exit(1);
-  }
-};
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  logger.info('🔄 Shutting down gracefully...');
-  await mongoose.connection.close();
-  logger.info('✅ MongoDB connection closed');
-  process.exit(0);
-});
-
-// Start server
-const startServer = async () => {
-  await connectDB();
-  
-  app.listen(PORT, () => {
-    logger.info(`🚀 Oracle Lumira API server running on port ${PORT}`);
-    logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    logger.info(`🔗 MongoDB URI: ${process.env.MONGODB_URI ? 'Set from ENV' : 'Using default internal URI'}`);
   });
-};
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err: any) => {
-  logger.error('Unhandled Promise Rejection:', err);
-  process.exit(1);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception:', err);
-  process.exit(1);
-});
-
-startServer().catch((error) => {
-  logger.error('Failed to start server:', error);
-  process.exit(1);
-});
-
-export default app;
