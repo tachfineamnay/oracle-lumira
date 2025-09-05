@@ -17,24 +17,34 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔍 Login attempt started with:', { email: formData.email, hasPassword: !!formData.password });
+    
     if (!formData.email || !formData.password) {
+      console.log('❌ Missing credentials');
       toast.error('Veuillez remplir tous les champs');
       return;
     }
 
     setLoading(true);
+    console.log('🔄 Setting loading to true');
     
     try {
+      console.log('📡 Calling login function...');
       const result = await login(formData.email, formData.password);
+      console.log('📥 Login result:', result);
       
       if (result.success) {
+        console.log('✅ Login successful, showing toast...');
         toast.success('Connexion réussie ! Redirection...');
       } else {
+        console.log('❌ Login failed:', result.error);
         toast.error(result.error || 'Échec de la connexion');
       }
     } catch (error) {
+      console.error('💥 Login error:', error);
       toast.error('Erreur de connexion');
     } finally {
+      console.log('🔄 Setting loading to false');
       setLoading(false);
     }
   };

@@ -8,13 +8,18 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 const App: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
 
+  console.log('🔍 App render - Auth state:', { isAuthenticated, loading });
+
   if (loading) {
+    console.log('⏳ Showing loading spinner');
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
         <LoadingSpinner size="large" />
       </div>
     );
   }
+
+  console.log('🛣️ Rendering routes with isAuthenticated:', isAuthenticated);
 
   return (
     <div className="min-h-screen gradient-bg">

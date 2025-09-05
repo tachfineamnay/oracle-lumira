@@ -52,30 +52,45 @@ export const useAuth = () => {
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log('🔐 useAuth.login called with:', { email, hasPassword: !!password });
       setAuthState(prev => ({ ...prev, loading: true }));
+      console.log('🔄 Auth loading set to true');
       
+      console.log('📡 Making API call to /expert/login...');
       const response = await api.post('/expert/login', { email, password });
+      console.log('📥 API response:', response.data);
       
       if (response.data.success) {
+        console.log('✅ API call successful, processing...');
         const { token, expert } = response.data;
         
         // Store token
+        console.log('💾 Storing token in localStorage');
         localStorage.setItem('expert_token', token);
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
+        console.log('✨ Setting auth state to authenticated');
         setAuthState({ 
           isAuthenticated: true, 
           loading: false, 
           expert 
         });
         
+        console.log('🎉 Login process completed successfully');
         return { success: true };
       } else {
+        console.log('❌ API call failed - success: false');
         setAuthState(prev => ({ ...prev, loading: false }));
         return { success: false, error: 'Échec de la connexion' };
       }
       
     } catch (error: any) {
+      console.error('💥 Login error caught:', error);
+      console.log('📝 Error details:', { 
+        message: error.message, 
+        status: error.response?.status, 
+        data: error.response?.data 
+      });
       setAuthState(prev => ({ ...prev, loading: false }));
       
       const errorMessage = error.response?.data?.error || 'Erreur de connexion';
