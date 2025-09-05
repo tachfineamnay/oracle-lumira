@@ -24,6 +24,22 @@ cat ecosystem.config.json
 
 # Start API backend with PM2
 echo "📡 Starting API backend..."
+echo "🔍 Directory contents:"
+ls -la /app/apps/api-backend/
+
+echo "🔍 Checking if server.js exists:"
+ls -la /app/apps/api-backend/dist/
+
+# Test if Node.js can require the built server
+echo "🔍 Testing built server file:"
+if [ -f "/app/apps/api-backend/dist/server.js" ]; then
+    echo "✅ server.js exists"
+    node -e "console.log('Node.js can run')"
+else
+    echo "❌ server.js missing!"
+    exit 1
+fi
+
 pm2 start ecosystem.config.json --no-daemon --silent
 
 # Wait longer for API to start

@@ -12,9 +12,6 @@ RUN cd apps/main-app && npm run build
 FROM node:20-alpine AS backend-builder
 WORKDIR /app
 
-# Install TypeScript globally
-RUN npm install -g typescript
-
 # Copy backend package files
 COPY apps/api-backend/package*.json ./apps/api-backend/
 RUN cd apps/api-backend && npm ci
@@ -24,6 +21,9 @@ COPY apps/api-backend ./apps/api-backend/
 
 # Build TypeScript to JavaScript
 RUN cd apps/api-backend && npm run build
+
+# Install only production dependencies for final image
+RUN cd apps/api-backend && npm ci --only=production
 
 # Stage 3: Production with nginx + Node.js
 FROM nginx:alpine
