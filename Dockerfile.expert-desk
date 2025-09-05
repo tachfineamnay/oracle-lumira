@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy expert-desk package files
 COPY apps/expert-desk/package*.json ./
 
-# Install dependencies
-RUN npm ci --verbose
+# Install dependencies (use npm install since package-lock.json might not be available)
+RUN npm install --verbose
 
 # Copy expert-desk source code
 COPY apps/expert-desk ./
