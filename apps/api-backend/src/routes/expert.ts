@@ -132,8 +132,7 @@ router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => 
     .populate('userId', 'firstName lastName email phone')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit)
-    .select('orderNumber level levelName amount status formData createdAt files clientInputs');
+    .limit(limit);
 
     const total = await Order.countDocuments({
       status: { $in: ['pending', 'paid'] }
@@ -152,6 +151,45 @@ router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => 
   } catch (error) {
     console.error('Get pending orders error:', error);
     res.status(500).json({ error: 'Erreur lors du chargement des commandes' });
+  }
+});
+
+// Add callback route for n8n
+router.post('/n8n-callback', async (req: any, res: any) => {
+  try {
+    const { orderId, success, generatedContent, files, error } = req.body;
+    
+    console.log('📨 Callback n8n reçu:', { orderId, success });
+    
+    const updateData: any = {
+      status: success ? 'ready' : 'failed',
+      updatedAt: new Date()
+    };
+    
+    if (success && generatedContent) {
+      updateData.generatedContent = {
+        rawText: generatedContent.text || generatedContent,
+        files: files || [],
+        levelContent: generatedContent.levelData || {}
+      };
+      updateData.deliveredAt = new Date();
+    } else if (error) {
+      updateData.error = error;
+    }
+    
+    const updatedOrder = await Order.findByIdAndUpdate(orderId, updateData, { new: true });
+    
+    if (updatedOrder) {
+      console.log(`✅ Order ${orderId} mis à jour → ${updateData.status}`);
+      res.json({ success: true, orderId, status: updateData.status });
+    } else {
+      console.error('❌ Order introuvable:', orderId);
+      res.status(404).json({ error: 'Commande introuvable' });
+    }
+    
+  } catch (error) {
+    console.error('❌ Erreur callback n8n:', error);
+    res.status(500).json({ error: 'Erreur traitement callback' });
   }
 });
 
@@ -180,7 +218,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    const { orderId, expertPrompt, expertInstructions, n8nWebhookUrl } = req.body;
+    const { orderId, expertPrompt, expertInstructions } = req.body;
 
     // Find order
     const order = await Order.findById(orderId).populate('userId');
@@ -230,10 +268,11 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
       timestamp: new Date().toISOString()
     };
 
-    // Send to n8n webhook
-    const webhookUrl = n8nWebhookUrl || process.env.N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/oracle-lumira-process';
+    // Send to n8n webhook - WEBHOOK FIXE
+    const webhookUrl = 'https://n8automate.ialexia.fr/webhook/10e13491-51ac-46f6-a734-89c1068cc7ec';
     
     try {
+      console.log('🚀 Envoi vers n8n:', webhookUrl);
       const n8nResponse = await axios.post(webhookUrl, n8nPayload, {
         timeout: 10000,
         headers: {
@@ -242,7 +281,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
         }
       });
 
-      console.log('n8n webhook response:', n8nResponse.status);
+      console.log('✅ n8n webhook response:', n8nResponse.status);
 
       res.json({
         success: true,
@@ -253,7 +292,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
       });
 
     } catch (webhookError: any) {
-      console.error('n8n webhook error:', webhookError.message);
+      console.error('❌ n8n webhook error:', webhookError.message);
       
       // Revert order status if webhook fails
       order.status = 'pending';

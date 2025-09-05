@@ -92,6 +92,9 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/expert', expertRoutes);
 
+// Add n8n callback route at API level
+app.use('/api/n8n', expertRoutes);
+
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error('Unhandled error:', err);
