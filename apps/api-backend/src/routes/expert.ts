@@ -127,7 +127,25 @@ router.post('/login', authLimiter, async (req: any, res: any) => {
     const { email, password } = req.body;
     
     // Find expert
-    const expert = await Expert.findOne({ email: email.toLowerCase(), isActive: true });
+    let expert = await Expert.findOne({ email: email.toLowerCase(), isActive: true });
+    
+    // AUTO-CREATE EXPERT IF NOT EXISTS (for expert@oraclelumira.com only)
+    if (!expert && email.toLowerCase() === 'expert@oraclelumira.com') {
+      console.log('🆕 Auto-creating expert for first login');
+      const hashedPassword = await bcrypt.hash('Lumira2025L', 12);
+      
+      expert = new Expert({
+        email: 'expert@oraclelumira.com',
+        password: hashedPassword,
+        name: 'Oracle Expert',
+        expertise: ['tarot', 'oracle', 'spiritualité'],
+        isActive: true
+      });
+      
+      await expert.save();
+      console.log('✅ Expert auto-created successfully');
+    }
+    
     if (!expert) {
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
