@@ -47,25 +47,36 @@ pm2 start ecosystem.config.json
 echo "🌐 Starting nginx..."
 echo "📡 API will start in background, nginx serving frontend immediately"
 
+# Wait for API to be ready before starting nginx
+echo "⏳ Waiting for API backend to be ready..."
+for i in $(seq 1 30); do
+    sleep 2
+    if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
+        echo "✅ API backend is ready! (after ${i}x2s)"
+        break
+    else
+        echo "⏳ Attempt $i/30: API not ready yet..."
+        if [ $i -eq 30 ]; then
+            echo "❌ API failed to start after 60s! PM2 status:"
+            pm2 status
+            pm2 logs --lines 30
+            echo "⚠️ Starting nginx anyway to serve frontend..."
+        fi
+    fi
+done
+
 # Test API health in background while nginx runs
 (
-    echo "🔍 Testing API health in background..."
+    echo "🔍 API monitoring in background..."
     for i in $(seq 1 60); do
-        sleep 5
+        sleep 10
         if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
-            echo "✅ API backend is ready! (after ${i}x5s)"
-            break
+            echo "✅ API backend running normally (check ${i})"
         else
-            echo "⏳ Attempt $i/60: API not ready yet..."
+            echo "⚠️ API health check failed (check ${i})"
+            pm2 status
         fi
     done
-    
-    # Final API status check
-    if ! curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
-        echo "❌ API failed to start after 5 minutes! PM2 status:"
-        pm2 status
-        pm2 logs --lines 20
-    fi
 ) &
 
 # Start nginx in foreground (main process)
