@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "cd apps/main-app && npm run dev",
     "dev:main": "cd apps/main-app && npm run dev",
-    "dev:desk": "cd apps/expert-desk && npm run dev", 
+    "dev:desk": "cd apps/expert-desk && npm run dev",
     "build": "cd apps/main-app && npm run build",
     "build:main": "cd apps/main-app && npm run build",
     "build:desk": "cd apps/expert-desk && npm run build",
@@ -24,5 +24,9 @@
   ],
   "devDependencies": {
     "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "mongoose": "^8.18.0"
   }
 }

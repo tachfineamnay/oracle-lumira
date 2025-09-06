@@ -36,6 +36,41 @@ router.get('/check', async (req, res) => {
   }
 });
 
+// DEBUG: Create expert if not exists
+router.post('/create-debug', async (req, res) => {
+  try {
+    // Vérifier si expert existe déjà
+    const existingExpert = await Expert.findOne({ email: 'expert@oraclelumira.com' });
+    
+    if (existingExpert) {
+      console.log('🔍 Expert already exists, updating password');
+      const hashedPassword = await bcrypt.hash('Lumira2025L', 12);
+      existingExpert.password = hashedPassword;
+      await existingExpert.save();
+      res.json({ message: 'Expert password updated', exists: true });
+    } else {
+      console.log('🆕 Creating new expert');
+      const hashedPassword = await bcrypt.hash('Lumira2025L', 12);
+      
+      const expert = new Expert({
+        email: 'expert@oraclelumira.com',
+        password: hashedPassword,
+        name: 'Oracle Expert',
+        expertise: ['tarot', 'oracle', 'spiritualité'],
+        isActive: true
+      });
+
+      await expert.save();
+      console.log('✅ Expert created successfully');
+      res.json({ message: 'Expert created successfully', exists: true });
+    }
+
+  } catch (error) {
+    console.error('❌ Error creating expert:', error);
+    res.status(500).json({ error: 'Database error', details: error.message });
+  }
+});
+
 // Rate limiting for auth
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
