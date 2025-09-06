@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: lumira-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lumira
+      MONGO_INITDB_ROOT_PASSWORD: lumira123
+      MONGO_INITDB_DATABASE: lumira-mvp
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - lumira-network
+
+volumes:
+  mongo_data:
+
+networks:
+  lumira-network:
+    driver: bridge

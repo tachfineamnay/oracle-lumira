@@ -13,7 +13,7 @@ import { stripeRoutes } from './routes/stripe';
 import { orderRoutes } from './routes/orders';
 import { userRoutes } from './routes/users';
 import { healthRoutes } from './routes/health';
-import { expertRoutes } from './routes/expert';
+import expertTestRoutes from './routes/expert-test';
 
 console.log('✅ [API] server.ts - Imports loaded');
 
@@ -118,10 +118,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/expert', expertRoutes);
-
-// Add n8n callback route at API level
-app.use('/api/n8n', expertRoutes);
+app.use('/api/expert', expertTestRoutes);
 
 console.log('✅ [API] server.ts - Routes configured');
 

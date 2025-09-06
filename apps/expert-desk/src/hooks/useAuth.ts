@@ -60,7 +60,8 @@ export const useAuth = () => {
       const response = await api.post('/expert/login', { email, password });
       console.log('📥 API response:', response.data);
       
-      if (response.data.success) {
+      // L'API retourne { message, expert, token } au lieu de { success, expert, token }
+      if (response.data.token && response.data.expert) {
         console.log('✅ API call successful, processing...');
         const { token, expert } = response.data;
         
@@ -73,15 +74,19 @@ export const useAuth = () => {
         setAuthState({ 
           isAuthenticated: true, 
           loading: false, 
-          expert 
+          expert: {
+            id: expert._id,
+            name: expert.name,
+            email: expert.email
+          }
         });
         
         console.log('🎉 Login process completed successfully');
         return { success: true };
       } else {
-        console.log('❌ API call failed - success: false');
+        console.log('❌ API call failed - missing token or expert data');
         setAuthState(prev => ({ ...prev, loading: false }));
-        return { success: false, error: 'Échec de la connexion' };
+        return { success: false, error: 'Réponse invalide du serveur' };
       }
       
     } catch (error: any) {

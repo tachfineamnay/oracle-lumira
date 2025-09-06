@@ -8,7 +8,8 @@ import {
   RefreshCw, 
   FileText,
   Mail,
-  Phone 
+  Phone,
+  CheckCircle
 } from 'lucide-react';
 
 interface Order {
@@ -51,16 +52,20 @@ interface OrdersQueueProps {
   orders: Order[];
   selectedOrder: Order | null;
   onSelectOrder: (order: Order) => void;
+  onTakeOrder: (order: Order) => void;
   onRefresh: () => void;
   refreshing: boolean;
+  takingOrder?: string; // ID of the order being taken
 }
 
 const OrdersQueue: React.FC<OrdersQueueProps> = ({
   orders,
   selectedOrder,
   onSelectOrder,
+  onTakeOrder,
   onRefresh,
-  refreshing
+  refreshing,
+  takingOrder
 }) => {
   const levelColors: Record<string, string> = {
     'Simple': 'text-gray-400 bg-gray-500/10 border-gray-500/20',
@@ -181,6 +186,21 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
                     <p className="line-clamp-2">{order.formData.specificQuestion}</p>
                   </div>
                 )}
+
+                {/* Take Order Button */}
+                <div className="mt-3 pt-3 border-t border-slate-700/50">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTakeOrder(order);
+                    }}
+                    disabled={takingOrder === order._id}
+                    className="w-full btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CheckCircle className={`w-4 h-4 mr-2 ${takingOrder === order._id ? 'animate-spin' : ''}`} />
+                    {takingOrder === order._id ? 'Prise en cours...' : 'Prendre cette commande'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))

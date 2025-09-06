@@ -10,7 +10,7 @@ import {
   TrendingUp 
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import LoadingSpinner from '../components/LoadingSpinner';
 import OrdersQueue from '../components/OrdersQueue';
 import ContentGenerator from '../components/ContentGenerator';
 import { api } from '../utils/api';
@@ -95,15 +95,45 @@ const DeskPage: React.FC = () => {
     }
   };
 
+  const handleTakeOrder = async (order: Order) => {
+    try {
+      console.log('🎯 Taking order:', order._id);
+      const response = await api.post(`/expert/orders/${order._id}/assign`);
+      console.log('✅ Order assigned successfully:', response.data);
+      
+      toast.success('Commande prise en charge avec succès !');
+      
+      // Actualiser la liste des commandes
+      await fetchOrders();
+      
+      // Fermer les détails si c'était la commande sélectionnée
+      if (selectedOrder?._id === order._id) {
+        setSelectedOrder(null);
+      }
+    } catch (error: any) {
+      console.error('❌ Error taking order:', error);
+      const errorMessage = error.response?.data?.error || 'Erreur lors de la prise en charge';
+      toast.error(errorMessage);
+    }
+  };
+
   const fetchOrders = async () => {
     try {
       const response = await api.get('/expert/orders/pending');
-      setOrders(response.data.orders || []);
-    } catch (error: any) {
-      console.error('Error fetching orders:', error);
-      if (error.response?.status !== 401) {
-        toast.error('Erreur lors du chargement des commandes');
+      console.log('📋 Fetched pending orders:', response.data);
+      
+      if (response.data && response.data.orders) {
+        setOrders(response.data.orders);
+        console.log(`✅ Loaded ${response.data.orders.length} pending orders`);
+      } else {
+        setOrders([]);
+        console.log('⚠️ No orders in response');
       }
+    } catch (error: any) {
+      console.error('❌ Error fetching orders:', error);
+      const errorMessage = error.response?.data?.error || 'Erreur lors du chargement des commandes';
+      toast.error(errorMessage);
+      setOrders([]);
     }
   };
 
@@ -253,6 +283,7 @@ const DeskPage: React.FC = () => {
               onSelectOrder={setSelectedOrder}
               onRefresh={refreshOrders}
               refreshing={refreshing}
+              onTakeOrder={handleTakeOrder}
             />
           </motion.div>
           

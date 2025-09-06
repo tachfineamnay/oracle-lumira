@@ -627,4 +627,140 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
   }
 });
 
+// Get pending orders for expert
+router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const orders = await Order.find({
+      status: { $in: ['paid', 'pending'] },
+      // Only orders that haven't been assigned to an expert yet, or assigned to this expert
+      $or: [
+        { 'expertReview.expertId': { $exists: false } },
+        { 'expertReview.expertId': null },
+        { 'expertReview.expertId': req.expert._id.toString() }
+      ]
+    })
+    .populate('userId', 'firstName lastName email phone')
+    .sort({ createdAt: 1 }) // Oldest first
+    .limit(20); // Limit for performance
+
+    console.log(`📋 Found ${orders.length} pending orders for expert ${req.expert.email}`);
+    
+    res.json({ orders });
+    
+  } catch (error) {
+    console.error('❌ Get pending orders error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ 
+      error: 'Erreur lors du chargement des commandes',
+      details: errorMessage 
+    });
+  }
+});
+
+// Get all orders assigned to this expert
+router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const orders = await Order.find({
+      'expertReview.expertId': req.expert._id.toString()
+    })
+    .populate('userId', 'firstName lastName email phone')
+    .sort({ 'expertReview.assignedAt': -1 }) // Most recent first
+    .skip(skip)
+    .limit(limit);
+
+    const total = await Order.countDocuments({
+      'expertReview.expertId': req.expert._id.toString()
+    });
+
+    res.json({ 
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Get assigned orders error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ 
+      error: 'Erreur lors du chargement des commandes assignées',
+      details: errorMessage 
+    });
+  }
+});
+
+// Assign order to expert (take order)
+router.post('/orders/:orderId/assign', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const { orderId } = req.params;
+    
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée' });
+    }
+
+    // Check if order is already assigned
+    if (order.expertReview?.expertId) {
+      return res.status(409).json({ error: 'Cette commande est déjà assignée à un expert' });
+    }
+
+    // Assign order to current expert
+    order.expertReview = {
+      ...order.expertReview,
+      expertId: req.expert._id.toString(),
+      expertName: req.expert.name,
+      assignedAt: new Date(),
+      status: 'assigned'
+    };
+    
+    // Update order status
+    if (order.status === 'paid') {
+      order.status = 'processing';
+    }
+
+    await order.save();
+
+    console.log(`✅ Order ${orderId} assigned to expert ${req.expert.email}`);
+    
+    res.json({ 
+      message: 'Commande assignée avec succès',
+      order 
+    });
+    
+  } catch (error) {
+    console.error('❌ Assign order error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ 
+      error: 'Erreur lors de l\'assignation de la commande',
+      details: errorMessage 
+    });
+  }
+});
+
+// Get expert profile
+router.get('/profile', authenticateExpert, async (req: any, res: any) => {
+  try {
+    res.json({
+      expert: {
+        id: req.expert._id,
+        email: req.expert.email,
+        name: req.expert.name,
+        role: req.expert.role,
+        isActive: req.expert.isActive,
+        joinedAt: req.expert.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('❌ Get profile error:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement du profil' });
+  }
+});
+
 export { router as expertRoutes };

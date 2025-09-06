@@ -26,6 +26,8 @@
     "@types/node": "^20.0.0"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^4.0.0",
+    "@stripe/stripe-js": "^7.9.0",
     "bcryptjs": "^3.0.2",
     "mongoose": "^8.18.0"
   }

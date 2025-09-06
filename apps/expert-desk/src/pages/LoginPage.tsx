@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Sparkles, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -14,6 +14,7 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +37,12 @@ const LoginPage: React.FC = () => {
       
       if (result.success) {
         console.log('✅ Login successful, showing toast...');
-        toast.success('Connexion réussie ! Redirection...');
+        toast.success('Connexion réussie !');
+        
+        // Redirection immédiate vers le desk
+        console.log('🔄 Redirecting to desk immediately...');
+        navigate('/desk', { replace: true });
+        
       } else {
         console.log('❌ Login failed:', result.error);
         toast.error(result.error || 'Échec de la connexion');
