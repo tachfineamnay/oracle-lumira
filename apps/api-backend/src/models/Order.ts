@@ -64,6 +64,8 @@ export interface IOrder extends Document {
   // Expert validation
   expertReview?: {
     expertId?: string;
+    expertName?: string;
+    assignedAt?: Date;
     status: 'pending' | 'approved' | 'rejected' | 'revision_needed';
     notes?: string;
     reviewedAt?: Date;
@@ -166,6 +168,8 @@ const orderSchema = new Schema<IOrder>({
   
   expertReview: {
     expertId: String,
+    expertName: String,
+    assignedAt: Date,
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'revision_needed'],
