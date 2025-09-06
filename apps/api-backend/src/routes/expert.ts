@@ -67,7 +67,8 @@ router.post('/create-debug', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error creating expert:', error);
-    res.status(500).json({ error: 'Database error', details: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: 'Database error', details: errorMessage });
   }
 });
 
@@ -144,11 +145,12 @@ router.post('/register', async (req: any, res: any) => {
       }
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Registration error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({ 
       error: 'Erreur serveur lors de l\'enregistrement',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     });
   }
 });
@@ -573,8 +575,9 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
         n8nStatus: n8nResponse.status
       });
 
-    } catch (webhookError: any) {
-      console.error('❌ n8n webhook error:', webhookError.message);
+    } catch (webhookError) {
+      console.error('❌ n8n webhook error:', webhookError);
+      const errorMessage = webhookError instanceof Error ? webhookError.message : 'Unknown webhook error';
       
       // Revert order status if webhook fails
       order.status = 'pending';
@@ -582,7 +585,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
 
       res.status(500).json({
         error: 'Échec de l\'envoi vers l\'assistant IA',
-        details: webhookError.message
+        details: errorMessage
       });
     }
 
