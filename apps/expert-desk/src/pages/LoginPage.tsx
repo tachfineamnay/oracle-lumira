@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Sparkles, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -148,8 +149,14 @@ const LoginPage: React.FC = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-slate-400">
-          <p>Identifiants oubliés ?</p>
-          <p className="text-xs mt-2">Contactez l'administrateur Oracle Lumira</p>
+          <p>Pas encore de compte ?</p>
+          <Link 
+            to="/register" 
+            className="text-purple-400 hover:text-purple-300 transition-colors duration-200 font-medium"
+          >
+            S'inscrire comme expert
+          </Link>
+          <p className="text-xs mt-4 text-slate-500">Identifiants oubliés ? Contactez l'administrateur Oracle Lumira</p>
         </div>
       </motion.div>
     </div>

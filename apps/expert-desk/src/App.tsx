@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import DeskPage from './pages/DeskPage';
 import { useAuth } from './hooks/useAuth';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -27,6 +28,10 @@ const App: React.FC = () => {
         <Route 
           path="/login" 
           element={!isAuthenticated ? <LoginPage /> : <Navigate to="/desk" replace />} 
+        />
+        <Route 
+          path="/register" 
+          element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/desk" replace />} 
         />
         <Route 
           path="/desk" 

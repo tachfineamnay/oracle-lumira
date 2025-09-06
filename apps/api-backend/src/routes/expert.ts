@@ -86,6 +86,73 @@ const loginSchema = Joi.object({
   password: Joi.string().min(6).required()
 });
 
+const registerSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+  name: Joi.string().min(2).required()
+});
+
+// REGISTER ENDPOINT
+router.post('/register', async (req: any, res: any) => {
+  try {
+    const { error } = registerSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    const { email, password, name } = req.body;
+    
+    // Check if expert already exists
+    const existingExpert = await Expert.findOne({ email: email.toLowerCase() });
+    if (existingExpert) {
+      return res.status(409).json({ error: 'Un expert avec cet email existe déjà' });
+    }
+
+    // Create new expert
+    const expert = new Expert({
+      email: email.toLowerCase(),
+      password, // Will be hashed by pre-save middleware
+      name,
+      role: 'expert',
+      isActive: true
+    });
+
+    await expert.save();
+    console.log('✅ New expert registered:', expert.email);
+
+    // Generate JWT
+    const token = jwt.sign(
+      { 
+        expertId: expert._id, 
+        email: expert.email,
+        name: expert.name,
+        role: expert.role 
+      },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({
+      message: 'Expert créé avec succès',
+      token,
+      expert: {
+        id: expert._id,
+        email: expert.email,
+        name: expert.name,
+        role: expert.role,
+        isActive: expert.isActive
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Registration error:', error);
+    res.status(500).json({ 
+      error: 'Erreur serveur lors de l\'enregistrement',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 const promptSchema = Joi.object({
   orderId: Joi.string().required(),
   expertPrompt: Joi.string().min(10).required(),
