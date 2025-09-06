@@ -91,10 +91,10 @@ const CommandeTemple: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const levelInfo = {
-    '1': { name: 'Simple', price: 'Gratuit' },
-    '2': { name: 'Intuitive', price: '77€' },
-    '3': { name: 'Alchimique', price: '197€' },
-    '4': { name: 'Intégrale', price: '444€' },
+    '1': { name: 'Simple', price: 0 },
+    '2': { name: 'Intuitive', price: 77 },
+    '3': { name: 'Alchimique', price: 197 },
+    '4': { name: 'Intégrale', price: 444 },
   };
 
   const currentLevel = levelInfo[level as keyof typeof levelInfo] || levelInfo['3'];
@@ -221,7 +221,7 @@ const CommandeTemple: React.FC = () => {
                 Consultation {currentLevel.name}
               </span>
               <span className="font-inter text-2xl font-semibold text-mystical-gold">
-                {currentLevel.price}
+                {currentLevel.price === 0 ? 'Gratuit' : `${currentLevel.price}€`}
               </span>
             </div>
             
