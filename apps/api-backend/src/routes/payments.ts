@@ -35,14 +35,14 @@ interface CreatePaymentIntentRequest {
   service: 'basic' | 'premium' | 'vip';
   expertId: string;
   userId?: string;
-  customerEmail?: string;
-  customerName?: string;
+  userEmail?: string;
+  userName?: string;
 }
 
 // Create payment intent
 router.post('/create-payment-intent', async (req: express.Request, res: express.Response) => {
   try {
-    const { level, service, expertId, userId, customerEmail, customerName }: CreatePaymentIntentRequest = req.body;
+    const { level, service, expertId, userId, userEmail, userName }: CreatePaymentIntentRequest = req.body;
 
     // Validate service type
     if (!SERVICE_PRICING[service]) {
@@ -63,15 +63,14 @@ router.post('/create-payment-intent', async (req: express.Request, res: express.
     // Create order in database
     const order = new Order({
       userId: userId || null,
+      userEmail,
+      userName,
       expertId,
       level,
       service,
       amount: serviceConfig.price / 100, // Store in euros
       duration: serviceConfig.duration,
       status: 'pending',
-      paymentStatus: 'pending',
-      customerEmail,
-      customerName,
       createdAt: new Date(),
     });
 
@@ -91,12 +90,12 @@ router.post('/create-payment-intent', async (req: express.Request, res: express.
         level,
         userId: userId || 'guest',
       },
-      receipt_email: customerEmail,
+      receipt_email: userEmail,
       description: `${serviceConfig.name} - Expert: ${expert.name} - Level: ${level}`,
     });
 
     // Update order with payment intent ID
-    order.stripePaymentIntentId = paymentIntent.id;
+    order.paymentIntentId = paymentIntent.id;
     await order.save();
 
     res.json({
@@ -106,11 +105,12 @@ router.post('/create-payment-intent', async (req: express.Request, res: express.
       serviceName: serviceConfig.name,
     });
 
-  } catch (error) {
-    console.error('Error creating payment intent:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error creating payment intent:', message);
     res.status(500).json({ 
       error: 'Failed to create payment intent',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? message : undefined
     });
   }
 });
@@ -132,7 +132,7 @@ router.post('/confirm-payment', async (req: express.Request, res: express.Respon
     }
 
     // Find order by payment intent ID
-    const order = await Order.findOne({ stripePaymentIntentId: paymentIntentId });
+    const order = await Order.findOne({ paymentIntentId: paymentIntentId });
 
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
@@ -140,14 +140,12 @@ router.post('/confirm-payment', async (req: express.Request, res: express.Respon
 
     // Update order status based on payment status
     if (paymentIntent.status === 'succeeded') {
-      order.paymentStatus = 'completed';
-      order.status = 'confirmed';
+      order.status = 'completed';
       order.paidAt = new Date();
-    } else if (paymentIntent.status === 'payment_failed') {
-      order.paymentStatus = 'failed';
-      order.status = 'cancelled';
+    } else if (paymentIntent.status === 'canceled' || paymentIntent.status.includes('failed')) {
+      order.status = 'failed';
     } else {
-      order.paymentStatus = 'pending';
+      order.status = 'processing';
     }
 
     await order.save();
@@ -157,17 +155,17 @@ router.post('/confirm-payment', async (req: express.Request, res: express.Respon
       order: {
         id: order._id,
         status: order.status,
-        paymentStatus: order.paymentStatus,
         amount: order.amount,
         service: order.service,
       },
     });
 
-  } catch (error) {
-    console.error('Error confirming payment:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error confirming payment:', message);
     res.status(500).json({ 
       error: 'Failed to confirm payment',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? message : undefined
     });
   }
 });
@@ -189,24 +187,24 @@ router.get('/order/:orderId', async (req: express.Request, res: express.Response
       order: {
         id: order._id,
         status: order.status,
-        paymentStatus: order.paymentStatus,
         amount: order.amount,
         service: order.service,
         level: order.level,
         duration: order.duration,
         expert: order.expertId,
-        customerEmail: order.customerEmail,
-        customerName: order.customerName,
+        userEmail: order.userEmail,
+        userName: order.userName,
         createdAt: order.createdAt,
         paidAt: order.paidAt,
       }
     });
 
-  } catch (error) {
-    console.error('Error fetching order:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error fetching order:', message);
     res.status(500).json({ 
       error: 'Failed to fetch order',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? message : undefined
     });
   }
 });
@@ -225,7 +223,6 @@ router.get('/orders', authenticateToken, async (req: express.Request, res: expre
       orders: orders.map(order => ({
         id: order._id,
         status: order.status,
-        paymentStatus: order.paymentStatus,
         amount: order.amount,
         service: order.service,
         level: order.level,
@@ -235,11 +232,12 @@ router.get('/orders', authenticateToken, async (req: express.Request, res: expre
       }))
     });
 
-  } catch (error) {
-    console.error('Error fetching user orders:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error fetching user orders:', message);
     res.status(500).json({ 
       error: 'Failed to fetch orders',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? message : undefined
     });
   }
 });
@@ -257,8 +255,9 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req: exp
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Webhook signature verification failed:', message);
     return res.status(400).json({ error: 'Invalid webhook signature' });
   }
 
@@ -268,12 +267,11 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req: exp
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         
         const order = await Order.findOne({ 
-          stripePaymentIntentId: paymentIntent.id 
+          paymentIntentId: paymentIntent.id 
         });
 
         if (order) {
-          order.paymentStatus = 'completed';
-          order.status = 'confirmed';
+          order.status = 'completed';
           order.paidAt = new Date();
           await order.save();
 
@@ -282,16 +280,16 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req: exp
         break;
       }
 
-      case 'payment_intent.payment_failed': {
+      case 'payment_intent.payment_failed':
+      case 'payment_intent.canceled': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         
         const order = await Order.findOne({ 
-          stripePaymentIntentId: paymentIntent.id 
+          paymentIntentId: paymentIntent.id 
         });
 
         if (order) {
-          order.paymentStatus = 'failed';
-          order.status = 'cancelled';
+          order.status = 'failed';
           await order.save();
 
           console.log(`Payment failed for order ${order._id}`);
@@ -305,8 +303,9 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req: exp
 
     res.json({ received: true });
 
-  } catch (error) {
-    console.error('Error processing webhook:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error processing webhook:', message);
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 });

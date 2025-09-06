@@ -38,7 +38,9 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
     };
 
     next();
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ 
         error: 'Token expired',
@@ -53,7 +55,7 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
       });
     }
 
-    console.error('Authentication error:', error);
+    console.error('Authentication error:', message);
     return res.status(500).json({ 
       error: 'Authentication failed',
       code: 'AUTH_ERROR'
@@ -85,9 +87,10 @@ export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: Nex
     };
 
     next();
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     // Invalid token, continue without user info
-    console.warn('Optional auth failed:', error.message);
+    console.warn('Optional auth failed:', message);
     next();
   }
 };

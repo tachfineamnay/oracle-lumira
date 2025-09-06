@@ -5,6 +5,7 @@ export interface IOrder extends Document {
   orderNumber: string;
   userId: mongoose.Types.ObjectId;
   userEmail: string;
+  userName?: string; // Added for user name
   level: 1 | 2 | 3 | 4;
   levelName: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale';
   amount: number; // in cents
@@ -12,6 +13,12 @@ export interface IOrder extends Document {
   status: 'pending' | 'paid' | 'processing' | 'completed' | 'failed' | 'refunded';
   paymentIntentId?: string;
   stripeSessionId?: string;
+  
+  // Additional payment fields for Stripe integration
+  service?: string;
+  duration?: number; // in minutes
+  expertId?: string;
+  paidAt?: Date;
   
   // User form data
   formData: {
@@ -95,6 +102,10 @@ const orderSchema = new Schema<IOrder>({
     required: true,
     lowercase: true
   },
+  userName: {
+    type: String,
+    required: false
+  },
   level: {
     type: Number,
     required: true,
@@ -122,6 +133,12 @@ const orderSchema = new Schema<IOrder>({
   },
   paymentIntentId: String,
   stripeSessionId: String,
+  
+  // Additional fields for payment integration
+  service: String,
+  duration: Number,
+  expertId: String,
+  paidAt: Date,
   
   formData: {
     firstName: { type: String, required: true },

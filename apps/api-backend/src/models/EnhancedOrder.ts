@@ -1,5 +1,15 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Utility function for safe date conversion
+function toDateSafe(v: unknown): Date | null {
+  if (v instanceof Date) return v;
+  if (typeof v === 'string') {
+    const d = new Date(v);
+    return Number.isFinite(d.getTime()) ? d : null;
+  }
+  return null;
+}
+
 export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
   orderNumber: string;
@@ -277,30 +287,37 @@ OrderSchema.index({ 'formData.email': 1 });
 
 // Virtual for full customer name
 OrderSchema.virtual('customerFullName').get(function() {
-  return `${this.formData.firstName} ${this.formData.lastName}`;
+  const formData = this.formData as { firstName?: string; lastName?: string };
+  return `${formData.firstName || ''} ${formData.lastName || ''}`.trim();
 });
 
 // Virtual for service display name
 OrderSchema.virtual('serviceDisplayName').get(function() {
-  const serviceNames = {
+  const serviceNames: { [key: string]: string } = {
     basic: 'Consultation Basique',
     premium: 'Consultation Premium',
     vip: 'Consultation VIP'
   };
-  return serviceNames[this.service] || this.service;
+  const serviceKey = this.service as string;
+  return serviceNames[serviceKey] || serviceKey;
 });
 
 // Pre-save middleware to validate session times
 OrderSchema.pre('save', function(next) {
   if (this.sessionStartTime && this.sessionEndTime) {
-    if (this.sessionEndTime <= this.sessionStartTime) {
-      return next(new Error('Session end time must be after start time'));
-    }
+    const startTime = toDateSafe(this.sessionStartTime);
+    const endTime = toDateSafe(this.sessionEndTime);
     
-    // Calculate actual duration
-    this.actualDuration = Math.floor(
-      (this.sessionEndTime.getTime() - this.sessionStartTime.getTime()) / (1000 * 60)
-    );
+    if (startTime && endTime) {
+      if (endTime <= startTime) {
+        return next(new Error('Session end time must be after start time'));
+      }
+      
+      // Calculate actual duration
+      this.actualDuration = Math.floor(
+        (endTime.getTime() - startTime.getTime()) / (1000 * 60)
+      );
+    }
   }
   
   // Update completion timestamp
