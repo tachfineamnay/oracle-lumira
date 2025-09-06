@@ -9,6 +9,33 @@ import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
+// DEBUG: Check if expert exists in database
+router.get('/check', async (req, res) => {
+  try {
+    const expert = await Expert.findOne({ email: 'expert@oraclelumira.com' });
+    if (expert) {
+      console.log('🔍 Expert found:', {
+        email: expert.email,
+        hasPassword: !!expert.password,
+        passwordLength: expert.password ? expert.password.length : 0,
+        passwordPreview: expert.password ? expert.password.substring(0, 10) + '...' : 'none'
+      });
+      res.json({
+        exists: true,
+        email: expert.email,
+        hasPassword: !!expert.password,
+        passwordLength: expert.password ? expert.password.length : 0
+      });
+    } else {
+      console.log('❌ Expert not found in database');
+      res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('❌ Error checking expert:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // Rate limiting for auth
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
