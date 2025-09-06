@@ -717,7 +717,7 @@ router.post('/orders/:orderId/assign', authenticateExpert, async (req: any, res:
       expertId: req.expert._id.toString(),
       expertName: req.expert.name,
       assignedAt: new Date(),
-      status: 'assigned'
+      status: 'pending'
     };
     
     // Update order status
