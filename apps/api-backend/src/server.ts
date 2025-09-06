@@ -14,6 +14,7 @@ import { orderRoutes } from './routes/orders';
 import { userRoutes } from './routes/users';
 import { healthRoutes } from './routes/health';
 import expertTestRoutes from './routes/expert-test';
+import paymentRoutes from './routes/payments';
 
 console.log('✅ [API] server.ts - Imports loaded');
 
@@ -119,6 +120,7 @@ app.use('/api/stripe', stripeRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/expert', expertTestRoutes);
+app.use('/api/payments', paymentRoutes);
 
 console.log('✅ [API] server.ts - Routes configured');
 

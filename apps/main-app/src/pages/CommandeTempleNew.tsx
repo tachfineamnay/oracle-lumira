@@ -30,11 +30,10 @@ const CheckoutForm: React.FC<{ orderId: string; amount: number; onSuccess: () =>
     setErrorMessage(null);
 
     try {
-      const returnUrl = `${window.location.origin}/confirmation?order_id=${orderId}`;
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: returnUrl,
+          return_url: `${window.location.origin}/confirmation?order_id=${orderId}`,
         },
         redirect: 'if_required'
       });
@@ -44,8 +43,7 @@ const CheckoutForm: React.FC<{ orderId: string; amount: number; onSuccess: () =>
       } else {
         onSuccess();
       }
-    } catch (error) {
-      console.error('Payment error:', error);
+    } catch (err) {
       setErrorMessage('Une erreur inattendue est survenue');
     } finally {
       setIsLoading(false);
