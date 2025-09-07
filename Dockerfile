@@ -54,6 +54,9 @@ COPY --from=backend-builder --chown=lumira:lumira /app/apps/api-backend/package.
 COPY --chown=lumira:lumira ecosystem.config.json /app/ecosystem.config.json
 COPY nginx-fullstack.conf /etc/nginx/nginx.conf
 
+# Set working directory
+WORKDIR /app
+
 # Create logs directory
 RUN mkdir -p /app/logs && chown -R lumira:lumira /app/logs && chmod 755 /app/logs
 
@@ -64,12 +67,12 @@ RUN chmod +x /start.sh && chown lumira:lumira /start.sh
 # Switch to non-root user
 USER lumira
 
-# Expose port
-EXPOSE 80
+# Expose port 8080 (non-privileged)
+EXPOSE 8080
 
-# Health check with proper start-period for PM2 + API startup
+# Health check adjusted for port 8080 with /api/ready endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost/health.json && curl -f http://localhost/api/ready || exit 1
+    CMD curl -f http://localhost:8080/health.json && curl -f http://localhost:8080/api/ready || exit 1
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
