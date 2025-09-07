@@ -35,8 +35,8 @@ RUN addgroup -g 1001 -S lumira && \
     adduser -S lumira -u 1001 -G lumira
 
 # Setup nginx directories
-RUN mkdir -p /run/nginx /var/log/nginx && \
-    chown -R lumira:lumira /var/log/nginx /var/cache/nginx
+RUN mkdir -p /run/nginx /var/log/nginx /var/cache/nginx /var/lib/nginx && \
+    chown -R lumira:lumira /var/log/nginx /var/cache/nginx /run/nginx
 
 # Copy built frontend
 COPY --from=frontend-builder --chown=lumira:lumira /app/apps/main-app/dist /usr/share/nginx/html
