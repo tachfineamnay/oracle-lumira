@@ -141,6 +141,12 @@ if (!MONGODB_URI) {
 console.log('✅ [API] server.ts - Connecting to MongoDB...');
 logger.info('Connecting to MongoDB...');
 
+// Disable autoIndex in production for performance
+if (process.env.NODE_ENV === 'production') {
+  mongoose.set('autoIndex', false);
+  logger.info('MongoDB autoIndex disabled in production');
+}
+
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ [API] server.ts - MongoDB connected successfully');

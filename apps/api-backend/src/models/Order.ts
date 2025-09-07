@@ -232,8 +232,7 @@ orderSchema.pre('save', async function(next) {
   next();
 });
 
-// Indexes
-orderSchema.index({ orderNumber: 1 });
+// Indexes - avoid duplicating unique constraints  
 orderSchema.index({ userId: 1 });
 orderSchema.index({ userEmail: 1 });
 orderSchema.index({ status: 1 });

@@ -77,10 +77,7 @@ const userSchema = new Schema<IUser>({
   }
 });
 
-// Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ stripeCustomerId: 1 });
-userSchema.index({ dolibarrCustomerId: 1 });
+// Indexes - avoid duplicating unique constraints
 userSchema.index({ createdAt: -1 });
 
 export const User = mongoose.model<IUser>('User', userSchema);

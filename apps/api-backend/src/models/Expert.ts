@@ -75,8 +75,7 @@ expertSchema.methods.comparePassword = async function(candidatePassword: string)
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Indexes
-expertSchema.index({ email: 1 });
+// Indexes - avoid duplicating unique constraints
 expertSchema.index({ isActive: 1 });
 expertSchema.index({ createdAt: -1 });
 
