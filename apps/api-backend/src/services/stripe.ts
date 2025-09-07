@@ -3,12 +3,15 @@ import Stripe from 'stripe';
 import { getProductById } from '../catalog';
 import { CreatePaymentIntentRequest, Order } from '../types/payments';
 
-if (!process.env.STRIPE_SECRET_KEY) {
+// Environment validation
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
   throw new Error('STRIPE_SECRET_KEY environment variable is required');
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
+// Initialize Stripe with latest API version compatible with v16+
+export const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2024-06-20', // Latest version for production compatibility
   typescript: true,
 });
 

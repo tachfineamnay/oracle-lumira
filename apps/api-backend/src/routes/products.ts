@@ -1,19 +1,47 @@
 // Oracle Lumira - Product Purchase Routes (SPA Checkout)
 import { Router, Request, Response } from 'express';
-import { body, param, validationResult } from 'express-validator';
+import { body, param } from 'express-validator';
 import { StripeService } from '../services/stripe';
-import { getProductById, validateProductId } from '../catalog';
+import { getProductById, validateProductId, PRODUCT_CATALOG } from '../catalog';
 import { 
   CreatePaymentIntentRequest,
   CreatePaymentIntentResponse,
   OrderStatusResponse,
   Order
 } from '../types/payments';
+import { validateRequest, createValidationChain, sanitizeError } from '../middleware/validation';
+import Stripe from 'stripe';
 
 const router = Router();
 
 // Temporary in-memory storage for orders (replace with database)
 const productOrders: Map<string, Order> = new Map();
+
+// Validation chains with proper typing
+const createPaymentIntentValidators = createValidationChain([
+  body('productId')
+    .isString()
+    .trim()
+    .isIn(Object.keys(PRODUCT_CATALOG))
+    .withMessage('Invalid product ID. Must be one of: ' + Object.keys(PRODUCT_CATALOG).join(', ')),
+  body('customerEmail')
+    .optional()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Invalid email format'),
+  body('metadata')
+    .optional()
+    .isObject()
+    .withMessage('Metadata must be an object'),
+]);
+
+const getOrderValidators = createValidationChain([
+  param('orderId')
+    .isString()
+    .isLength({ min: 1 })
+    .trim()
+    .withMessage('Order ID is required'),
+]);
 
 /**
  * POST /api/products/create-payment-intent
@@ -21,39 +49,21 @@ const productOrders: Map<string, Order> = new Map();
  */
 router.post(
   '/create-payment-intent',
-  [
-    body('productId')
-      .isString()
-      .custom((value) => {
-        if (!validateProductId(value)) {
-          throw new Error('Invalid product ID');
-        }
-        return true;
-      }),
-    body('customerEmail')
-      .optional()
-      .isEmail()
-      .withMessage('Invalid email format'),
-  ],
-  async (req: Request, res: Response) => {
+  ...createPaymentIntentValidators,
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      // Validate request
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'Validation failed',
-          details: errors.array(),
-        });
-      }
-
-      const { productId, customerEmail, metadata } = req.body as CreatePaymentIntentRequest;
-      const product = getProductById(productId)!;
+      const { productId, customerEmail, metadata = {} } = req.body as CreatePaymentIntentRequest;
+      const product = getProductById(productId)!; // Safe after validation
 
       // Create PaymentIntent via Stripe
       const paymentData = await StripeService.createPaymentIntent({
         productId,
         customerEmail,
-        metadata,
+        metadata: {
+          ...metadata,
+          source: 'spa-checkout',
+          timestamp: new Date().toISOString(),
+        },
       });
 
       // Create pending order
@@ -88,14 +98,17 @@ router.post(
         orderId: response.orderId,
         productId,
         amount: response.amount,
+        timestamp: new Date().toISOString(),
       });
 
       res.json(response);
     } catch (error) {
       console.error('Create Product PaymentIntent error:', error);
+      const sanitized = sanitizeError(error);
       res.status(500).json({
         error: 'Failed to create payment intent',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        ...sanitized,
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -107,35 +120,31 @@ router.post(
  */
 router.get(
   '/order/:orderId',
-  [
-    param('orderId').isString().isLength({ min: 1 }),
-  ],
-  async (req: Request, res: Response) => {
+  ...getOrderValidators,
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          error: 'Invalid order ID',
-          details: errors.array(),
-        });
-      }
-
       const { orderId } = req.params;
 
       // Get order from storage (replace with DB query)
       const order = productOrders.get(orderId);
       if (!order) {
-        return res.status(404).json({
+        res.status(404).json({
           error: 'Order not found',
+          orderId,
+          timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       // Get product details
       const product = getProductById(order.productId);
       if (!product) {
-        return res.status(500).json({
+        console.error('Product configuration error for order:', orderId, 'productId:', order.productId);
+        res.status(500).json({
           error: 'Product configuration error',
+          timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       // Check if payment is completed and access should be granted
@@ -156,30 +165,44 @@ router.get(
       res.json(response);
     } catch (error) {
       console.error('Get product order error:', error);
+      const sanitized = sanitizeError(error);
       res.status(500).json({
         error: 'Failed to retrieve order',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        ...sanitized,
+        timestamp: new Date().toISOString(),
       });
     }
   }
 );
 
+// Processed webhook events (simple idempotence - replace with DB)
+const processedWebhookEvents = new Set<string>();
+
 /**
  * POST /api/products/webhook
  * Handle Stripe webhooks for product purchases
+ * Uses raw body parser and signature verification
  */
-router.post('/webhook', async (req: Request, res: Response) => {
+router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
   try {
     const signature = req.headers['stripe-signature'] as string;
     const endpointSecret = process.env.STRIPE_PRODUCT_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!endpointSecret) {
       console.error('STRIPE_WEBHOOK_SECRET not configured');
-      return res.status(500).json({ error: 'Webhook configuration error' });
+      res.status(500).json({ 
+        error: 'Webhook configuration error',
+        timestamp: new Date().toISOString(),
+      });
+      return;
     }
 
     if (!signature) {
-      return res.status(400).json({ error: 'Missing stripe signature' });
+      res.status(400).json({ 
+        error: 'Missing stripe signature',
+        timestamp: new Date().toISOString(),
+      });
+      return;
     }
 
     // Construct and verify webhook event
@@ -189,7 +212,16 @@ router.post('/webhook', async (req: Request, res: Response) => {
       endpointSecret
     );
 
-    console.log('Product webhook event received:', event.type, event.id);
+    // Idempotence check - prevent processing same event twice
+    if (processedWebhookEvents.has(event.id)) {
+      console.log('Webhook event already processed:', event.id);
+      res.json({ received: true, already_processed: true });
+      return;
+    }
+
+    console.log('Product webhook event received:', event.type, event.id, {
+      timestamp: new Date().toISOString(),
+    });
 
     // Handle specific event types
     switch (event.type) {
@@ -209,66 +241,121 @@ router.post('/webhook', async (req: Request, res: Response) => {
         console.log('Unhandled product webhook event type:', event.type);
     }
 
-    res.json({ received: true });
+    // Mark event as processed
+    processedWebhookEvents.add(event.id);
+
+    res.json({ received: true, event_type: event.type });
   } catch (error) {
     console.error('Product webhook error:', error);
+    const sanitized = sanitizeError(error);
     res.status(400).json({
       error: 'Webhook processing failed',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      ...sanitized,
+      timestamp: new Date().toISOString(),
     });
   }
 });
 
 /**
  * Handle successful product payment webhook
+ * @param paymentIntent - Stripe PaymentIntent object from webhook
  */
-async function handleProductPaymentSuccess(paymentIntent: any) {
-  console.log('Processing product payment success:', paymentIntent.id);
+async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  console.log('✅ Processing product payment success:', {
+    id: paymentIntent.id,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    metadata: paymentIntent.metadata,
+    timestamp: new Date().toISOString(),
+  });
 
   try {
-    // Update order status
+    // Update order status in memory store
     const order = productOrders.get(paymentIntent.id);
     if (order) {
       order.status = 'completed';
       order.completedAt = new Date();
       order.updatedAt = new Date();
       productOrders.set(order.id, order);
+      
+      console.log('Order updated to completed:', order.id);
+    } else {
+      console.warn('Order not found in memory store:', paymentIntent.id);
     }
 
     // Grant access via Stripe service
     const completedOrder = await StripeService.handlePaymentSuccess(paymentIntent);
     
-    console.log('Product payment success processed:', completedOrder.id);
+    console.log('Product payment success fully processed:', {
+      orderId: completedOrder.id,
+      productId: paymentIntent.metadata?.product_id,
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
-    console.error('Error processing product payment success:', error);
+    console.error('❌ Error processing product payment success:', error);
+    throw error; // Re-throw to ensure webhook returns error status
   }
 }
 
 /**
  * Handle failed product payment webhook
+ * @param paymentIntent - Stripe PaymentIntent object from webhook
  */
-async function handleProductPaymentFailure(paymentIntent: any) {
-  console.log('Processing product payment failure:', paymentIntent.id);
+async function handleProductPaymentFailure(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  console.log('❌ Processing product payment failure:', {
+    id: paymentIntent.id,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    last_payment_error: paymentIntent.last_payment_error,
+    metadata: paymentIntent.metadata,
+    timestamp: new Date().toISOString(),
+  });
 
-  const order = productOrders.get(paymentIntent.id);
-  if (order) {
-    order.status = 'failed';
-    order.updatedAt = new Date();
-    productOrders.set(order.id, order);
+  try {
+    const order = productOrders.get(paymentIntent.id);
+    if (order) {
+      order.status = 'failed';
+      order.updatedAt = new Date();
+      productOrders.set(order.id, order);
+      
+      console.log('Order updated to failed:', order.id);
+    }
+
+    // TODO: Send customer notification about payment failure
+    // await notificationService.sendPaymentFailedEmail(paymentIntent);
+  } catch (error) {
+    console.error('Error processing product payment failure:', error);
   }
 }
 
 /**
  * Handle cancelled product payment webhook
+ * @param paymentIntent - Stripe PaymentIntent object from webhook
  */
-async function handleProductPaymentCancellation(paymentIntent: any) {
-  console.log('Processing product payment cancellation:', paymentIntent.id);
+async function handleProductPaymentCancellation(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  console.log('🚫 Processing product payment cancellation:', {
+    id: paymentIntent.id,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    cancellation_reason: paymentIntent.cancellation_reason,
+    metadata: paymentIntent.metadata,
+    timestamp: new Date().toISOString(),
+  });
 
-  const order = productOrders.get(paymentIntent.id);
-  if (order) {
-    order.status = 'cancelled';
-    order.updatedAt = new Date();
-    productOrders.set(order.id, order);
+  try {
+    const order = productOrders.get(paymentIntent.id);
+    if (order) {
+      order.status = 'cancelled';
+      order.updatedAt = new Date();
+      productOrders.set(order.id, order);
+      
+      console.log('Order updated to cancelled:', order.id);
+    }
+
+    // TODO: Clean up any reserved inventory or resources
+    // await inventoryService.releaseReservation(paymentIntent);
+  } catch (error) {
+    console.error('Error processing product payment cancellation:', error);
   }
 }
 
