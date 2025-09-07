@@ -39,7 +39,7 @@ const logger = createLogger({
 console.log('✅ [API] server.ts - Logger configured');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Rate limiting
 const limiter = rateLimit({
