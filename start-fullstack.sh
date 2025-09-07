@@ -13,10 +13,25 @@ trap graceful_shutdown TERM INT
 
 log "Booting Oracle Lumira fullstack..."
 
+# Environment debug (production ready)
+log "Environment check:"
+log "- NODE_ENV=${NODE_ENV:-unset}"
+log "- PORT=${PORT:-unset}" 
+log "- STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:+set (${#STRIPE_SECRET_KEY} chars)}"
+log "- MONGODB_URI=${MONGODB_URI:+set (${#MONGODB_URI} chars)}"
+
 # Preflight
 command -v nginx >/dev/null || { log "nginx not found"; exit 1; }
 command -v pm2   >/dev/null || { log "pm2 not found"; exit 1; }
 test -f /app/ecosystem.config.json || { log "missing /app/ecosystem.config.json"; exit 1; }
+
+# Export critical environment variables for PM2
+export NODE_ENV=${NODE_ENV:-production}
+export PORT=${PORT:-3000}
+export STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY}"
+export MONGODB_URI="${MONGODB_URI}"
+export STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET:-}"
+export JWT_SECRET="${JWT_SECRET:-default_jwt_secret}"
 
 # Start API
 log "Starting API via PM2..."

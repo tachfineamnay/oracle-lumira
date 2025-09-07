@@ -46,14 +46,104 @@ const getOrderValidators = createValidationChain([
 /**
  * POST /api/products/create-payment-intent
  * Create a PaymentIntent for a specific product purchase
+ * Requirements: Robust validation, detailed error logging, proper status codes
  */
 router.post(
   '/create-payment-intent',
   ...createPaymentIntentValidators,
   async (req: Request, res: Response): Promise<void> => {
+    const startTime = Date.now();
+    const requestId = `req_${startTime}_${Math.random().toString(36).substring(2, 9)}`;
+    
     try {
+      console.log(`[${requestId}] POST /api/products/create-payment-intent started`, {
+        body: req.body,
+        timestamp: new Date().toISOString(),
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      // Validate request body structure
+      if (!req.body || typeof req.body !== 'object') {
+        console.error(`[${requestId}] Invalid request body:`, { body: req.body });
+        res.status(400).json({
+          error: 'Invalid request body',
+          code: 'INVALID_REQUEST_BODY',
+          message: 'Request body must be a valid JSON object',
+          timestamp: new Date().toISOString(),
+          requestId,
+        });
+        return;
+      }
+
       const { productId, customerEmail, metadata = {} } = req.body as CreatePaymentIntentRequest;
-      const product = getProductById(productId)!; // Safe after validation
+      
+      // Detailed input validation
+      if (!productId) {
+        console.error(`[${requestId}] Missing productId:`, { body: req.body });
+        res.status(400).json({
+          error: 'Product ID is required',
+          code: 'MISSING_PRODUCT_ID',
+          message: 'The productId field is required and must be a non-empty string',
+          validProductIds: Object.keys(PRODUCT_CATALOG),
+          timestamp: new Date().toISOString(),
+          requestId,
+        });
+        return;
+      }
+
+      // Validate product exists
+      const product = getProductById(productId);
+      if (!product) {
+        console.error(`[${requestId}] Product not found:`, { 
+          productId, 
+          availableProducts: Object.keys(PRODUCT_CATALOG) 
+        });
+        res.status(404).json({
+          error: 'Product not found',
+          code: 'PRODUCT_NOT_FOUND',
+          message: `Product '${productId}' does not exist`,
+          validProductIds: Object.keys(PRODUCT_CATALOG),
+          timestamp: new Date().toISOString(),
+          requestId,
+        });
+        return;
+      }
+
+      console.log(`[${requestId}] Product validated:`, {
+        productId: product.id,
+        name: product.name,
+        amountCents: product.amountCents,
+        currency: product.currency,
+      });
+
+      // Validate email if provided
+      if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+        console.error(`[${requestId}] Invalid email format:`, { customerEmail });
+        res.status(400).json({
+          error: 'Invalid email format',
+          code: 'INVALID_EMAIL',
+          message: 'Customer email must be a valid email address',
+          timestamp: new Date().toISOString(),
+          requestId,
+        });
+        return;
+      }
+
+      // Validate Stripe environment
+      if (!process.env.STRIPE_SECRET_KEY) {
+        console.error(`[${requestId}] Missing STRIPE_SECRET_KEY environment variable`);
+        res.status(502).json({
+          error: 'Payment service configuration error',
+          code: 'STRIPE_CONFIG_ERROR',
+          message: 'Payment processing is temporarily unavailable',
+          timestamp: new Date().toISOString(),
+          requestId,
+        });
+        return;
+      }
+
+      console.log(`[${requestId}] Creating PaymentIntent with Stripe...`);
 
       // Create PaymentIntent via Stripe
       const paymentData = await StripeService.createPaymentIntent({
@@ -63,7 +153,14 @@ router.post(
           ...metadata,
           source: 'spa-checkout',
           timestamp: new Date().toISOString(),
+          requestId,
         },
+      });
+
+      console.log(`[${requestId}] PaymentIntent created successfully:`, {
+        paymentIntentId: paymentData.paymentIntentId,
+        amount: paymentData.amount,
+        currency: paymentData.currency,
       });
 
       // Create pending order
@@ -80,6 +177,7 @@ router.post(
         metadata: {
           productName: product.name,
           level: product.level,
+          requestId,
         },
       };
 
@@ -94,21 +192,96 @@ router.post(
         productName: paymentData.productName,
       };
 
-      console.log('Product PaymentIntent created:', {
+      const processingTime = Date.now() - startTime;
+      console.log(`[${requestId}] SUCCESS - PaymentIntent created:`, {
         orderId: response.orderId,
         productId,
         amount: response.amount,
+        processingTimeMs: processingTime,
         timestamp: new Date().toISOString(),
       });
 
-      res.json(response);
+      res.status(200).json(response);
     } catch (error) {
-      console.error('Create Product PaymentIntent error:', error);
+      const processingTime = Date.now() - startTime;
+      
+      // Detailed error logging with context
+      console.error(`[${requestId}] ERROR - PaymentIntent creation failed:`, {
+        error: {
+          name: error instanceof Error ? error.name : 'Unknown',
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+        request: {
+          body: req.body,
+          ip: req.ip,
+          userAgent: req.get('User-Agent'),
+        },
+        processingTimeMs: processingTime,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Categorize error types and return appropriate status codes
+      if (error instanceof Error) {
+        // Stripe-specific errors
+        if (error.message.includes('Invalid product ID')) {
+          res.status(404).json({
+            error: 'Product not found',
+            code: 'PRODUCT_NOT_FOUND',
+            message: error.message,
+            timestamp: new Date().toISOString(),
+            requestId,
+          });
+          return;
+        }
+
+        // Stripe API errors (payment service down, invalid keys, etc.)
+        if (error.message.includes('Stripe') || error.message.includes('payment intent')) {
+          res.status(502).json({
+            error: 'Payment service error',
+            code: 'STRIPE_SERVICE_ERROR',
+            message: 'Payment processing is temporarily unavailable. Please try again later.',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+            timestamp: new Date().toISOString(),
+            requestId,
+          });
+          return;
+        }
+
+        // Network or timeout errors
+        if (error.message.includes('timeout') || error.message.includes('network')) {
+          res.status(502).json({
+            error: 'Service timeout',
+            code: 'SERVICE_TIMEOUT',
+            message: 'Request timeout. Please try again.',
+            timestamp: new Date().toISOString(),
+            requestId,
+          });
+          return;
+        }
+
+        // Validation errors (should be caught earlier, but fallback)
+        if (error.message.includes('validation') || error.message.includes('invalid')) {
+          res.status(400).json({
+            error: 'Invalid request data',
+            code: 'VALIDATION_ERROR',
+            message: error.message,
+            timestamp: new Date().toISOString(),
+            requestId,
+          });
+          return;
+        }
+      }
+
+      // Generic 500 for unhandled errors
       const sanitized = sanitizeError(error);
       res.status(500).json({
-        error: 'Failed to create payment intent',
-        ...sanitized,
+        error: 'Internal server error',
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unexpected error occurred while processing your request',
+        details: process.env.NODE_ENV === 'development' ? sanitized : undefined,
         timestamp: new Date().toISOString(),
+        requestId,
       });
     }
   }

@@ -17,6 +17,7 @@ import readyRoutes from './routes/ready';
 import expertTestRoutes from './routes/expert-test';
 import paymentRoutes from './routes/payments';
 import productRoutes from './routes/products';
+import envDebugRoutes from './routes/env-debug';
 
 console.log('✅ [API] server.ts - Imports loaded');
 
@@ -128,6 +129,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/debug', envDebugRoutes);
 
 // Test/debug routes only in non-production environments
 if (process.env.NODE_ENV !== 'production') {

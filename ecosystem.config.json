@@ -10,9 +10,20 @@
         "NODE_ENV": "production",
         "PORT": "3000"
       },
+      "env_production": {
+        "NODE_ENV": "production",
+        "PORT": "3000"
+      },
       "out_file": "/dev/stdout",
       "error_file": "/dev/stderr",
-      "merge_logs": true
+      "merge_logs": true,
+      "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+      "restart_delay": 1000,
+      "max_restarts": 10,
+      "min_uptime": "10s",
+      "source_map_support": false,
+      "instance_var": "INSTANCE_ID",
+      "combine_logs": true
     }
   ]
 }
