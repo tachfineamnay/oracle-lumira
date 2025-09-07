@@ -1,10 +1,22 @@
 # Multi-stage build: Frontend + Backend API
 
-# Stage 1: Build Frontend
+# Stage 1: Build Frontend with Vite environment variables
 FROM node:20.18.1-alpine AS frontend-builder
 WORKDIR /app
+
+# Build-time arguments for Vite environment variables
+ARG VITE_STRIPE_PUBLISHABLE_KEY
+ARG VITE_API_BASE_URL
+
+# Set environment variables for Vite build
+ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+# Copy and install frontend dependencies
 COPY apps/main-app/package*.json ./apps/main-app/
 RUN cd apps/main-app && npm ci --frozen-lockfile
+
+# Copy frontend source and build with environment variables
 COPY apps/main-app ./apps/main-app/
 RUN cd apps/main-app && npm run build
 

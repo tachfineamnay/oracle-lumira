@@ -13,9 +13,19 @@ import {
 } from '@stripe/react-stripe-js';
 import { PRODUCT_CATALOG } from '../types/products';
 import ProductOrderService from '../services/productOrder';
+import { validateStripeKey } from '../utils/api';
 
-// Stripe public key from environment
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
+// Stripe initialization with validation
+let stripePromise: Promise<any> | null = null;
+
+try {
+  const stripeKey = validateStripeKey();
+  stripePromise = loadStripe(stripeKey);
+  console.log('Stripe initialized successfully');
+} catch (error) {
+  console.error('Stripe initialization failed:', error);
+  stripePromise = null;
+}
 
 // Stripe appearance customization (mystical theme)
 const stripeAppearance = {
@@ -94,18 +104,28 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
     });
 
     pr.on('paymentmethod', async (event) => {
-      const { error } = await stripe.confirmPayment({
-        clientSecret,
-        payment_method: event.paymentMethod.id,
-        return_url: `${window.location.origin}/confirmation?order_id=${orderId}`,
-      });
+      try {
+        // Create PaymentIntent for Payment Request
+        const { error: confirmError } = await stripe.confirmPayment({
+          clientSecret,
+          confirmParams: {
+            payment_method: event.paymentMethod.id,
+            return_url: `${window.location.origin}/confirmation?order_id=${orderId}`,
+          },
+          redirect: 'if_required'
+        });
 
-      if (error) {
+        if (confirmError) {
+          event.complete('fail');
+          setErrorMessage(confirmError.message || 'Erreur lors du paiement express');
+        } else {
+          event.complete('success');
+          onSuccess();
+        }
+      } catch (error) {
         event.complete('fail');
-        setErrorMessage(error.message || 'Erreur lors du paiement express');
-      } else {
-        event.complete('success');
-        onSuccess();
+        setErrorMessage('Erreur lors du paiement express');
+        console.error('Payment Request error:', error);
       }
     });
   }, [stripe, amount, productName, clientSecret, orderId, onSuccess]);

@@ -13,6 +13,7 @@ echo "  NPM: $(npm --version)"
 echo "  PM2: $(pm2 --version)"
 echo "  User: $(whoami)"
 echo "  Working Dir: $(pwd)"
+echo "  PORT: ${PORT:-3000}"
 
 # Verify critical files exist
 if [ ! -f "ecosystem.config.json" ]; then
@@ -25,9 +26,21 @@ if [ ! -f "apps/api-backend/dist/server.js" ]; then
     exit 1
 fi
 
-# Start API backend with PM2
-echo "📡 Starting API backend on port 3000..."
-pm2-runtime start ecosystem.config.json --env production &
+if [ ! -f "/usr/share/nginx/html/index.html" ]; then
+    echo "❌ Frontend build not found!"
+    exit 1
+fi
+
+# Start nginx daemon
+echo "🌐 Starting nginx on port 8080..."
+nginx -t && nginx -g "daemon off;" &
+
+# Wait for nginx to start
+sleep 2
+
+# Start API backend with PM2 (no-daemon mode keeps container running)
+echo "📡 Starting API backend with PM2..."
+exec pm2-runtime start ecosystem.config.json --env production
 PM2_PID=$!
 
 # Wait for API to be ready with proper timeout

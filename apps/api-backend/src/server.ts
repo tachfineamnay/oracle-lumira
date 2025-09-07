@@ -71,34 +71,34 @@ const allowedOrigins = [
   'http://localhost:5173'
 ];
 
+// Production-ready CORS configuration
 const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-      logger.error(msg);
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  optionsSuccessStatus: 200, // For legacy browser support
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
+  credentials: false, // No cookies needed for API
+  optionsSuccessStatus: 204, // Proper preflight response
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
 
-console.log('✅ [API] server.ts - CORS configured');
+// Explicit OPTIONS handler for preflight requests
+app.options('*', (req, res) => {
+  res.sendStatus(204);
+});
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+console.log('✅ [API] server.ts - CORS configured for production');
 
 // Apply rate limiting
 app.use(limiter);
+
+// Webhook routes MUST come before body parsing middleware
+// Stripe webhooks need raw body for signature verification
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
+// Body parsing middleware (after webhook routes)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -107,6 +107,16 @@ app.use((req, res, next) => {
 });
 
 console.log('✅ [API] server.ts - Middleware configured');
+
+// Simple healthcheck endpoint for Coolify
+app.get('/api/healthz', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // Health check routes (before other routes)
 app.use('/api/health', healthRoutes);
@@ -160,9 +170,11 @@ mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ [API] server.ts - MongoDB connected successfully');
     logger.info('MongoDB connected successfully');
-    app.listen(PORT, () => {
-      console.log(`✅ [API] Server is running on port ${PORT}`);
-      logger.info(`Server is running on port ${PORT}`);
+    
+    // Listen on all interfaces for Docker compatibility
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ [API] Server is running on port ${PORT} (all interfaces)`);
+      logger.info(`Server is running on port ${PORT} (all interfaces)`);
     });
   })
   .catch(err => {
