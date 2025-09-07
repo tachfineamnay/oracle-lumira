@@ -1,19 +1,16 @@
 // Oracle Lumira - API Configuration
 // Production-ready API base URL management
 
+import { getApiBaseUrl as getApiBaseUrlFromLib } from '../lib/apiBase';
+
 /**
  * Get API base URL for different environments
- * Production: relative paths (proxy nginx)
+ * Production: relative paths (proxy nginx)  
  * Development: localhost with port
  */
 export function getApiBaseUrl(): string {
-  // En production, utiliser des chemins relatifs (nginx proxy)
-  if (import.meta.env.PROD) {
-    return '/api';
-  }
-  
-  // En développement, utiliser l'URL complète
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+  // Use the robust fallback function
+  return getApiBaseUrlFromLib();
 }
 
 /**

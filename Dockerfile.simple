@@ -37,8 +37,8 @@ RUN cd apps/api-backend && npm run build && npm prune --omit=dev
 # Stage 3: Production with nginx + Node.js 20.18.1 UNIFIED
 FROM node:20.18.1-alpine
 
-# Install nginx, PM2, netcat for health checks, bash for startup script
-RUN apk add --no-cache nginx curl netcat-openbsd dumb-init bash && \
+# Install nginx, PM2, netcat for health checks
+RUN apk add --no-cache nginx curl netcat-openbsd dumb-init && \
     npm install -g pm2@latest && \
     npm cache clean --force
 
@@ -71,9 +71,9 @@ RUN chmod +x /start.sh
 # Expose port 8080 for nginx
 EXPOSE 8080
 
-# Health check for Coolify with increased start period
-HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=3 \
-    CMD curl -fsS http://localhost:8080/health.json || exit 1
+# Health check for Coolify
+HEALTHCHECK --interval=15s --timeout=5s --start-period=45s --retries=3 \
+    CMD curl -f http://localhost:8080/health.json || exit 1
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]

@@ -1,45 +1,41 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -Eeuo pipefail
 
-echo "🔧 Oracle Lumira - Debug Startup"
-echo "================================="
-echo "Time: $(date)"
-echo "Node: $(node --version)"
-echo "PM2: $(pm2 --version)"
-echo "PWD: $(pwd)"
+log() { echo "[$(date -Iseconds)] [start] $*"; }
 
-cd /app
-
-# File verification
-echo ""
-echo "📁 File Check:"
-echo "Backend: $(ls -la apps/api-backend/dist/server.js 2>/dev/null || echo 'MISSING')"
-echo "Frontend: $(ls -la /usr/share/nginx/html/index.html 2>/dev/null || echo 'MISSING')" 
-echo "Ecosystem: $(ls -la ecosystem.config.json 2>/dev/null || echo 'MISSING')"
-
-# nginx test
-echo ""
-echo "🌐 nginx Test:"
-nginx -t 2>&1 || {
-    echo "❌ nginx test failed"
-    exit 1
+graceful_shutdown() {
+  log "SIGTERM received → stopping services..."
+  pm2 delete all || true
+  nginx -s quit || true
+  exit 0
 }
+trap graceful_shutdown TERM INT
 
-# Start backend
-echo ""
-echo "🚀 Starting Backend:"
-pm2 start ecosystem.config.json --env production
-sleep 10
+log "Booting Oracle Lumira fullstack..."
 
-echo "📊 PM2 Status:"
-pm2 list
+# Preflight
+command -v nginx >/dev/null || { log "nginx not found"; exit 1; }
+command -v pm2   >/dev/null || { log "pm2 not found"; exit 1; }
+test -f /app/ecosystem.config.json || { log "missing /app/ecosystem.config.json"; exit 1; }
 
-# Check if port 3000 is listening
-echo ""
-echo "🔌 Port Check:"
-netstat -tlnp 2>/dev/null | grep :3000 || echo "Port 3000 not listening"
+# Start API
+log "Starting API via PM2..."
+pm2 start /app/ecosystem.config.json --env production
+pm2 save || true
+sleep 1
+pm2 list || true
 
-# Start nginx
-echo ""
-echo "🌐 Starting nginx:"
-exec nginx -g 'daemon off;'
+# Optional: wait for API socket
+for i in {1..30}; do
+  if nc -z 127.0.0.1 3000 2>/dev/null; then
+    log "API is listening on 3000."
+    break
+  fi
+  sleep 1
+done
+
+# Validate and start nginx (FOREGROUND)
+log "Validating nginx config..."
+nginx -t
+log "Starting nginx (foreground)..."
+exec nginx -g "daemon off;"
