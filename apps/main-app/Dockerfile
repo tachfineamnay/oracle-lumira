@@ -1,39 +1,66 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
-# Install dependencies for the main app
-WORKDIR /app/apps/main-app
-COPY apps/main-app/package*.json ./
-# Install all deps (incl. dev) for building in builder stage
-RUN npm ci
+WORKDIR /app
 
-# Copy application source
-COPY apps/main-app ./
+# Install dependencies
+COPY package*.json ./
+RUN npm ci && npm cache clean --force
 
 # Build application
+COPY . .
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
-
-# Copy built application
-COPY --from=builder /app/apps/main-app/dist /usr/share/nginx/html
-
-# Copy nginx configuration from repository root (build context root)
-COPY nginx.conf /etc/nginx/nginx.conf
+# Production stage with Nginx
+FROM nginx:alpine AS production
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
-# Set permissions (nginx user already exists in nginx:alpine)
-RUN chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /var/cache/nginx
+# Copy built application
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port
+# Create health endpoint
+RUN echo '{"status":"healthy","service":"main-app","timestamp":"'$(date -Iseconds)'"}' > /usr/share/nginx/html/health.json
+
+# Nginx configuration optimized for SPA
+RUN echo 'server { \
+    listen 80; \
+    server_name _; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    \
+    # Security headers \
+    add_header X-Frame-Options "DENY" always; \
+    add_header X-Content-Type-Options "nosniff" always; \
+    add_header X-XSS-Protection "1; mode=block" always; \
+    \
+    # Compression \
+    gzip on; \
+    gzip_vary on; \
+    gzip_min_length 1024; \
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript; \
+    \
+    # Cache static assets \
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ { \
+        expires 1y; \
+        add_header Cache-Control "public, immutable"; \
+    } \
+    \
+    # Health check \
+    location /health.json { \
+        access_log off; \
+    } \
+    \
+    # SPA routing \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost/health.json || exit 1
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

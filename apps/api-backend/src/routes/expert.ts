@@ -269,10 +269,11 @@ router.get('/verify', authenticateExpert, async (req: any, res: any) => {
   });
 });
 
-// ROUTE DE DEBUG TEMPORAIRE - À SUPPRIMER APRÈS RÉSOLUTION
-router.post('/debug-login', async (req: any, res: any) => {
-  try {
-    console.log('🔍 DEBUG LOGIN - Début diagnostic');
+// ROUTE DE DEBUG CONDITIONNELLE - DÉSACTIVÉE EN PRODUCTION
+if (process.env.ENABLE_DEBUG_ROUTES === 'true') {
+  router.post('/debug-login', async (req: any, res: any) => {
+    try {
+      console.log('🔍 DEBUG LOGIN - Début diagnostic');
     console.log('Body reçu:', req.body);
     
     const { email, password } = req.body;
@@ -401,7 +402,8 @@ router.post('/debug-login', async (req: any, res: any) => {
       }
     });
   }
-});
+  });
+}
 
 // Get pending orders for expert
 router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => {

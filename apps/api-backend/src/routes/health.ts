@@ -1,35 +1,74 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { User } from '../models/User';
 import { Order } from '../models/Order';
 
 const router = express.Router();
 
+interface HealthResponse {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  timestamp: string;
+  uptime: number;
+  version: string;
+  commitSha?: string;
+  environment: string;
+  services: {
+    database: 'connected' | 'disconnected';
+    stripe: 'configured' | 'missing';
+  };
+  memory: {
+    used: number;
+    total: number;
+    percentage: number;
+  };
+}
+
 // Health check endpoint
 router.get('/', async (req, res) => {
   try {
-    // Check database connection
-    const dbStatus = await checkDatabaseHealth();
+    // Vérification base de données
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
     
-    const healthData = {
-      status: 'healthy',
+    // Vérification Stripe
+    const stripeStatus = process.env.STRIPE_SECRET_KEY ? 'configured' : 'missing';
+    
+    // Métriques mémoire
+    const memUsage = process.memoryUsage();
+    const memoryInfo = {
+      used: Math.round(memUsage.heapUsed / 1024 / 1024),
+      total: Math.round(memUsage.heapTotal / 1024 / 1024),
+      percentage: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100)
+    };
+
+    // Déterminer status global
+    let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    if (dbStatus === 'disconnected') status = 'unhealthy';
+    if (stripeStatus === 'missing' && process.env.NODE_ENV === 'production') status = 'degraded';
+
+    const health: HealthResponse = {
+      status,
       timestamp: new Date().toISOString(),
-      version: '1.0.0',
+      uptime: Math.floor(process.uptime()),
+      version: process.env.npm_package_version || '1.0.0',
+      commitSha: process.env.COMMIT_SHA,
       environment: process.env.NODE_ENV || 'development',
       services: {
         database: dbStatus,
-        api: 'healthy'
+        stripe: stripeStatus
       },
-      uptime: process.uptime(),
-      memory: process.memoryUsage()
+      memory: memoryInfo
     };
-    
-    res.status(200).json(healthData);
-  } catch (error) {
+
+    const statusCode = status === 'healthy' ? 200 : status === 'degraded' ? 200 : 503;
+    res.status(statusCode).json(health);
+
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     res.status(503).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
-      error: 'Service unavailable',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      error: 'Health check failed',
+      details: process.env.NODE_ENV === 'development' ? message : undefined
     });
   }
 });
