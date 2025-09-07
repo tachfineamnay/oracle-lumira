@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Lockfiles (keep only root package-lock.json for npm workspaces)
+apps/*/package-lock.json
+apps/*/yarn.lock
+apps/*/pnpm-lock.yaml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
