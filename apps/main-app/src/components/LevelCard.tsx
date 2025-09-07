@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { PRODUCT_CATALOG } from '../types/products';
 
 interface Level {
   id: number;
@@ -13,6 +14,7 @@ interface Level {
   includes: string[];
   gradient: string;
   recommended: boolean;
+  productId?: string; // Map to product catalog
 }
 
 interface LevelCardProps {
@@ -23,7 +25,22 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
   const navigate = useNavigate();
 
   const handleChooseLevel = () => {
-    navigate(`/commande?level=${level.id}`);
+    // Map level ID to product ID for the new SPA checkout
+    const productIdMap: Record<number, string> = {
+      1: 'initie',
+      2: 'mystique',
+      3: 'profond'
+    };
+    
+    const productId = productIdMap[level.id] || level.productId;
+    
+    if (productId) {
+      // Navigate to the new SPA product checkout
+      navigate(`/commande?product=${productId}`);
+    } else {
+      // Fallback to old system
+      navigate(`/commande?level=${level.id}`);
+    }
   };
 
   return (

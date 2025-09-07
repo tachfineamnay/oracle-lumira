@@ -4,7 +4,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Import pages
 import LandingTemple from './pages/LandingTemple';
 import CommandeTemple from './pages/CommandeTemple';
+import CommandeTempleSPA from './pages/CommandeTempleSPA';
 import ConfirmationTemple from './pages/ConfirmationTemple';
+import ConfirmationTempleSPA from './pages/ConfirmationTempleSPA';
 import DashboardSanctuaire from './pages/DashboardSanctuaire';
 import MentionsLegales from './pages/MentionsLegales';
 import ExpertDeskPage from './expert/ExpertDesk';
@@ -25,8 +27,12 @@ const App: React.FC = () => {
         <Router>
           <Routes>
             <Route path="/" element={<LandingTemple />} />
-            <Route path="/commande" element={<CommandeTemple />} />
-            <Route path="/confirmation" element={<ConfirmationTemple />} />
+            {/* Product SPA Routes (new system) */}
+            <Route path="/commande" element={<CommandeTempleSPA />} />
+            <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
+            {/* Legacy routes (fallback) */}
+            <Route path="/commande-legacy" element={<CommandeTemple />} />
+            <Route path="/confirmation-legacy" element={<ConfirmationTemple />} />
             <Route path="/sanctuaire" element={<DashboardSanctuaire />} />
             <Route path="/mentions-legales" element={<MentionsLegales />} />
             <Route path="/expert" element={<ExpertDeskPage />} />

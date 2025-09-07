@@ -16,6 +16,7 @@ import { healthRoutes } from './routes/health';
 import readyRoutes from './routes/ready';
 import expertTestRoutes from './routes/expert-test';
 import paymentRoutes from './routes/payments';
+import productRoutes from './routes/products';
 
 console.log('✅ [API] server.ts - Imports loaded');
 
@@ -116,6 +117,7 @@ app.use('/api/stripe', stripeRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/products', productRoutes);
 
 // Test/debug routes only in non-production environments
 if (process.env.NODE_ENV !== 'production') {
