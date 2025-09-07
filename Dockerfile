@@ -4,7 +4,7 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 COPY apps/main-app/package*.json ./apps/main-app/
-RUN cd apps/main-app && npm ci
+RUN cd apps/main-app && npm ci --frozen-lockfile
 COPY apps/main-app ./apps/main-app/
 RUN cd apps/main-app && npm run build
 
@@ -14,7 +14,7 @@ WORKDIR /app
 
 # Copy backend package files
 COPY apps/api-backend/package*.json ./apps/api-backend/
-RUN cd apps/api-backend && npm ci
+RUN cd apps/api-backend && npm ci --only=production --frozen-lockfile
 
 # Copy backend source code
 COPY apps/api-backend ./apps/api-backend/
@@ -22,47 +22,51 @@ COPY apps/api-backend ./apps/api-backend/
 # Build TypeScript to JavaScript
 RUN cd apps/api-backend && npm run build
 
-# Install only production dependencies for final image
-RUN cd apps/api-backend && npm ci --only=production
+# Stage 3: Production with nginx + Node.js 20 UNIFIED
+FROM node:20-alpine
 
-# Stage 3: Production with nginx + Node.js
-FROM nginx:alpine
+# Install nginx and PM2 - all from same Node 20 base
+RUN apk add --no-cache nginx curl dumb-init && \
+    npm install -g pm2@latest && \
+    npm cache clean --force
 
-# Install Node.js and PM2 for running API
-RUN apk add --no-cache nodejs npm
-RUN npm install -g pm2
+# Create application user for security
+RUN addgroup -g 1001 -S lumira && \
+    adduser -S lumira -u 1001 -G lumira
+
+# Setup nginx directories
+RUN mkdir -p /run/nginx /var/log/nginx && \
+    chown -R lumira:lumira /var/log/nginx /var/cache/nginx
 
 # Copy built frontend
-COPY --from=frontend-builder /app/apps/main-app/dist /usr/share/nginx/html
+COPY --from=frontend-builder --chown=lumira:lumira /app/apps/main-app/dist /usr/share/nginx/html
 
 # Copy built backend API
-COPY --from=backend-builder /app/apps/api-backend/dist /app/apps/api-backend/dist
-COPY --from=backend-builder /app/apps/api-backend/node_modules /app/apps/api-backend/node_modules
-COPY --from=backend-builder /app/apps/api-backend/package.json /app/apps/api-backend/
+COPY --from=backend-builder --chown=lumira:lumira /app/apps/api-backend/dist /app/apps/api-backend/dist
+COPY --from=backend-builder --chown=lumira:lumira /app/apps/api-backend/node_modules /app/apps/api-backend/node_modules
+COPY --from=backend-builder --chown=lumira:lumira /app/apps/api-backend/package.json /app/apps/api-backend/
 
-# Copy PM2 ecosystem configuration
-COPY ecosystem.config.json /app/ecosystem.config.json
-
-# Copy nginx configuration for fullstack (frontend + API proxy)
+# Copy configurations
+COPY --chown=lumira:lumira ecosystem.config.json /app/ecosystem.config.json
 COPY nginx-fullstack.conf /etc/nginx/nginx.conf
 
-# Install curl for container HEALTHCHECK
-RUN apk add --no-cache curl
+# Create logs directory
+RUN mkdir -p /app/logs && chown -R lumira:lumira /app/logs
 
 # Create startup script
 COPY start-fullstack.sh /start.sh
-RUN chmod +x /start.sh
+RUN chmod +x /start.sh && chown lumira:lumira /start.sh
 
-# Set permissions (nginx user already exists in nginx:alpine)
-RUN chown -R nginx:nginx /usr/share/nginx/html \
-	&& chown -R nginx:nginx /var/cache/nginx
+# Switch to non-root user
+USER lumira
 
 # Expose port
 EXPOSE 80
 
-# Health check for both frontend and API
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost/ && curl -f http://localhost/api/health || exit 1
+# Health check with proper start-period for PM2 + API startup
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost/health.json && curl -f http://localhost/api/ready || exit 1
 
-# Start with our custom script
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["/start.sh"]

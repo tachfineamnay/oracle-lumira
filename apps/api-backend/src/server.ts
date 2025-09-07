@@ -13,6 +13,7 @@ import { stripeRoutes } from './routes/stripe';
 import { orderRoutes } from './routes/orders';
 import { userRoutes } from './routes/users';
 import { healthRoutes } from './routes/health';
+import readyRoutes from './routes/ready';
 import expertTestRoutes from './routes/expert-test';
 import paymentRoutes from './routes/payments';
 
@@ -112,8 +113,9 @@ app.use((req, res, next) => {
 
 console.log('✅ [API] server.ts - Middleware configured');
 
-// Health check route (before other routes)
+// Health check routes (before other routes)
 app.use('/api/health', healthRoutes);
+app.use('/api', readyRoutes);
 
 // API Routes
 app.use('/api/stripe', stripeRoutes);
