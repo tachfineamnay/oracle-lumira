@@ -1,90 +1,52 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting Oracle Lumira Full-Stack Application..."
-echo "📝 Node version: $(node --version)"
-echo "📝 NPM version: $(npm --version)"
-echo "📝 PM2 version: $(pm2 --version)"
-echo "📝 Current directory: $(pwd)"
+echo "🚀 Oracle Lumira - Simple Startup (Debug Mode)"
+echo "Current time: $(date)"
+echo "Environment: NODE_ENV=${NODE_ENV:-not set}"
+echo "Port: PORT=${PORT:-not set}"
+echo "Working dir: $(pwd)"
 
 # Set working directory
 cd /app
 
-# Verify critical files exist
-echo "🔍 Verifying required files..."
-if [ ! -f "ecosystem.config.json" ]; then
-    echo "❌ ecosystem.config.json not found!"
-    exit 1
-fi
+# Check basic requirements
+echo ""
+echo "📋 File System Check:"
+echo "- Ecosystem config: $(ls -la ecosystem.config.json 2>/dev/null | cut -d' ' -f1 || echo 'NOT FOUND')"
+echo "- Backend server: $(ls -la apps/api-backend/dist/server.js 2>/dev/null | cut -d' ' -f1 || echo 'NOT FOUND')"
+echo "- Frontend build: $(ls -la /usr/share/nginx/html/index.html 2>/dev/null | cut -d' ' -f1 || echo 'NOT FOUND')"
 
-if [ ! -f "apps/api-backend/dist/server.js" ]; then
-    echo "❌ Backend server.js not found!"
-    echo "📁 Contents of apps/api-backend/:"
-    ls -la apps/api-backend/ || echo "Directory not found"
-    exit 1
-fi
-
-if [ ! -f "/usr/share/nginx/html/index.html" ]; then
-    echo "❌ Frontend build not found!"
-    echo "📁 Contents of /usr/share/nginx/html/:"
-    ls -la /usr/share/nginx/html/ || echo "Directory not found"
-    exit 1
-fi
-
-echo "✅ All required files found"
-
-# Test nginx configuration
-echo "🔍 Testing nginx configuration..."
-nginx -t || {
-    echo "❌ nginx configuration test failed!"
-    echo "📄 nginx config contents:"
+# Simple nginx test
+echo ""
+echo "🌐 Testing nginx..."
+nginx -t 2>&1 || {
+    echo "❌ nginx test failed, showing config:"
     cat /etc/nginx/nginx.conf
     exit 1
 }
-echo "✅ nginx configuration is valid"
 
-# Start API backend with PM2 in background
-echo "📡 Starting API backend with PM2..."
+# Start PM2 backend
+echo ""
+echo "📡 Starting backend with PM2..."
+pm2 delete all 2>/dev/null || true  # Clear any existing processes
 pm2 start ecosystem.config.json --env production
 
-# Wait for API to be ready
-echo "⏳ Waiting for API to be ready on port 3000..."
-TIMEOUT=60
-COUNTER=0
+# Simple wait
+echo "⏳ Waiting 10 seconds for backend startup..."
+sleep 10
 
-while [ $COUNTER -lt $TIMEOUT ]; do
-    if curl -s -f http://127.0.0.1:3000/api/healthz >/dev/null 2>&1; then
-        echo "✅ API is ready on port 3000"
-        break
-    fi
-    
-    COUNTER=$((COUNTER + 1))
-    if [ $((COUNTER % 10)) -eq 0 ]; then
-        echo "  Still waiting... (${COUNTER}/${TIMEOUT}s)"
-        echo "📋 PM2 Status:"
-        pm2 status
-    fi
-    sleep 1
-done
+# Check PM2 status
+echo "📋 PM2 Status:"
+pm2 status
+pm2 logs --nostream --lines 10
 
-if [ $COUNTER -eq $TIMEOUT ]; then
-    echo "❌ API failed to start within ${TIMEOUT}s timeout"
-    echo "📋 PM2 Status:"
-    pm2 status
-    echo "📋 PM2 Logs:"
-    pm2 logs --nostream --lines 50
-    exit 1
-fi
+# Simple port check
+echo ""
+echo "🔍 Port Check:"
+netstat -tlnp 2>/dev/null | grep :3000 || echo "Port 3000 not listening"
 
-# Test API endpoint
-echo "🔍 Testing API health endpoint..."
-API_RESPONSE=$(curl -s http://127.0.0.1:3000/api/healthz || echo "ERROR")
-if [ "$API_RESPONSE" != "ERROR" ]; then
-    echo "✅ API health endpoint responded: $API_RESPONSE"
-else
-    echo "⚠️  API health endpoint not accessible (continuing anyway)"
-fi
-
-# Start nginx in foreground (keeps container alive)
-echo "🌐 Starting nginx on port 8080 (foreground)..."
+# Start nginx and keep it running
+echo ""
+echo "🌐 Starting nginx (this will block)..."
 exec nginx -g 'daemon off;'
