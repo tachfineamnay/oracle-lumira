@@ -14,13 +14,13 @@ WORKDIR /app
 
 # Copy backend package files
 COPY apps/api-backend/package*.json ./apps/api-backend/
-RUN cd apps/api-backend && npm ci --only=production --frozen-lockfile
+RUN cd apps/api-backend && npm ci --frozen-lockfile
 
 # Copy backend source code
 COPY apps/api-backend ./apps/api-backend/
 
-# Build TypeScript to JavaScript
-RUN cd apps/api-backend && npm run build
+# Build TypeScript to JavaScript and remove devDependencies
+RUN cd apps/api-backend && npm run build && npm prune --omit=dev
 
 # Stage 3: Production with nginx + Node.js 20 UNIFIED
 FROM node:20-alpine
@@ -40,6 +40,10 @@ RUN mkdir -p /run/nginx /var/log/nginx && \
 
 # Copy built frontend
 COPY --from=frontend-builder --chown=lumira:lumira /app/apps/main-app/dist /usr/share/nginx/html
+
+# Create health.json for healthcheck
+RUN echo '{"status":"healthy","service":"oracle-lumira","timestamp":"'$(date -Iseconds)'"}' > /usr/share/nginx/html/health.json && \
+    chown lumira:lumira /usr/share/nginx/html/health.json
 
 # Copy built backend API
 COPY --from=backend-builder --chown=lumira:lumira /app/apps/api-backend/dist /app/apps/api-backend/dist
