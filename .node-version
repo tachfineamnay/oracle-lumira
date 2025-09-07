@@ -1,0 +1,13 @@
+# Oracle Lumira Node.js Version Lock
+# Ensures consistent Node.js 20 LTS across all environments
+
+FROM node:20.18.1-alpine
+
+# Verify Node version during build
+RUN node --version | grep "v20" || (echo "ERROR: Wrong Node.js version!" && exit 1)
+
+# Pin npm version for consistency  
+RUN npm install -g npm@10.9.2
+
+# Development note: Use nvm or volta locally to match:
+# nvm use 20.18.1 or volta pin node@20.18.1

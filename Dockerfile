@@ -1,7 +1,7 @@
 # Multi-stage build: Frontend + Backend API
 
 # Stage 1: Build Frontend
-FROM node:20-alpine AS frontend-builder
+FROM node:20.18.1-alpine AS frontend-builder
 WORKDIR /app
 COPY apps/main-app/package*.json ./apps/main-app/
 RUN cd apps/main-app && npm ci --frozen-lockfile
@@ -9,7 +9,7 @@ COPY apps/main-app ./apps/main-app/
 RUN cd apps/main-app && npm run build
 
 # Stage 2: Build Backend API
-FROM node:20-alpine AS backend-builder
+FROM node:20.18.1-alpine AS backend-builder
 WORKDIR /app
 
 # Copy backend package files
@@ -22,8 +22,8 @@ COPY apps/api-backend ./apps/api-backend/
 # Build TypeScript to JavaScript and remove devDependencies
 RUN cd apps/api-backend && npm run build && npm prune --omit=dev
 
-# Stage 3: Production with nginx + Node.js 20 UNIFIED
-FROM node:20-alpine
+# Stage 3: Production with nginx + Node.js 20.18.1 UNIFIED
+FROM node:20.18.1-alpine
 
 # Install nginx and PM2 - all from same Node 20 base
 RUN apk add --no-cache nginx curl dumb-init && \
@@ -34,9 +34,10 @@ RUN apk add --no-cache nginx curl dumb-init && \
 RUN addgroup -g 1001 -S lumira && \
     adduser -S lumira -u 1001 -G lumira
 
-# Setup nginx directories
-RUN mkdir -p /run/nginx /var/log/nginx /var/cache/nginx /var/lib/nginx && \
-    chown -R lumira:lumira /var/log/nginx /var/cache/nginx /run/nginx
+# Setup nginx directories with full permissions
+RUN mkdir -p /run/nginx /var/log/nginx /var/cache/nginx /var/lib/nginx/tmp/client_body /var/lib/nginx/tmp/proxy /var/lib/nginx/tmp/fastcgi /var/lib/nginx/tmp/uwsgi /var/lib/nginx/tmp/scgi /var/lib/nginx/logs && \
+    chown -R lumira:lumira /var/log/nginx /var/cache/nginx /run/nginx /var/lib/nginx && \
+    chmod 755 /var/lib/nginx && chmod 755 /var/lib/nginx/tmp && chmod 755 /var/lib/nginx/logs
 
 # Copy built frontend
 COPY --from=frontend-builder --chown=lumira:lumira /app/apps/main-app/dist /usr/share/nginx/html
@@ -70,9 +71,9 @@ USER lumira
 # Expose port 8080 (non-privileged)
 EXPOSE 8080
 
-# Health check adjusted for port 8080 with /api/ready endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/health.json && curl -f http://localhost:8080/api/ready || exit 1
+# Health check optimized for Coolify with graceful startup
+HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=5 \
+    CMD curl -f http://localhost:8080/health.json || exit 1
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]

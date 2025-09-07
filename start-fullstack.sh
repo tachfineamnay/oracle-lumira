@@ -1,33 +1,37 @@
 #!/bin/sh
 
-# Oracle Lumira Fullstack Startup Script
+# Oracle Lumira Fullstack Startup Script - Production Optimized
 echo "🚀 Starting Oracle Lumira Fullstack..."
 
 # Set working directory
 cd /app
 
-# Create required directories
-mkdir -p /app/logs
-mkdir -p /app/uploads
-mkdir -p /app/generated
+# Create required directories with proper permissions
+mkdir -p /app/logs /app/uploads /app/generated
+chmod 755 /app/logs /app/uploads /app/generated
 
-# Verify ecosystem.config.json exists
+# Ensure nginx directories exist and are writable
+mkdir -p /var/lib/nginx/tmp /var/lib/nginx/logs
+chmod 755 /var/lib/nginx/tmp /var/lib/nginx/logs
+
+# Verify critical files exist
 if [ ! -f "ecosystem.config.json" ]; then
     echo "❌ ecosystem.config.json not found!"
-    ls -la /app/
     exit 1
 fi
 
-# Show PM2 config for debugging
-echo "📋 Using PM2 config:"
-cat ecosystem.config.json
+if [ ! -f "apps/api-backend/dist/server.js" ]; then
+    echo "❌ Backend server.js not found!"
+    exit 1
+fi
 
-# Start API backend with PM2 in background
-echo "📡 Starting API backend..."
-echo "🔍 Directory contents:"
-ls -la /app/apps/api-backend/
-
-echo "🔍 Checking if server.js exists:"
+# Environment validation
+echo "� Environment Check:"
+echo "  Node: $(node --version)"
+echo "  NPM: $(npm --version)"
+echo "  PM2: $(pm2 --version)"
+echo "  User: $(whoami)"
+echo "  Working Dir: $(pwd)"
 ls -la /app/apps/api-backend/dist/
 
 # Test if Node.js can require the built server
