@@ -1,47 +1,72 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Oracle Lumira - Minimal Startup"
+echo "🚀 Oracle Lumira - Production Startup"
 echo "Time: $(date)"
 
 cd /app
 
-# Basic checks
-echo "✓ Working directory: $(pwd)"
-echo "✓ Files present:"
-ls -la
+# Environment validation
+echo "📋 Environment Check:"
+echo "  Node: $(node --version)"
+echo "  PM2: $(pm2 --version)"
+echo "  Working Dir: $(pwd)"
+echo "  PORT: ${PORT:-3000}"
 
-# Check backend
-if [ -f "apps/api-backend/dist/server.js" ]; then
-    echo "✓ Backend server.js found"
-else
-    echo "❌ Backend server.js NOT found"
+# Verify critical files exist
+echo "🔍 File System Check:"
+if [ ! -f "apps/api-backend/dist/server.js" ]; then
+    echo "❌ Backend server.js NOT found at apps/api-backend/dist/server.js"
+    ls -la apps/api-backend/dist/ || echo "dist/ directory not found"
     exit 1
 fi
+echo "✅ Backend server.js found"
 
-# Check frontend
-if [ -f "/usr/share/nginx/html/index.html" ]; then
-    echo "✓ Frontend build found"
-else
-    echo "❌ Frontend build NOT found"
+if [ ! -f "/usr/share/nginx/html/index.html" ]; then
+    echo "❌ Frontend build NOT found at /usr/share/nginx/html/index.html"
+    ls -la /usr/share/nginx/html/ || echo "nginx html directory not found"
     exit 1
 fi
+echo "✅ Frontend build found"
 
-# Start PM2 backend first
-echo "Starting PM2 backend..."
+# Test nginx configuration
+echo "🌐 Testing nginx configuration..."
+nginx -t || {
+    echo "❌ nginx configuration test failed"
+    exit 1
+}
+echo "✅ nginx configuration OK"
+
+# Start API backend with PM2 in background
+echo "🚀 Starting API backend with PM2..."
 pm2 start ecosystem.config.json --env production
 
-# Quick wait
-sleep 5
+# Wait for API to be ready
+echo "⏳ Waiting for API to be ready..."
+TIMEOUT=30
+COUNTER=0
 
-# Check if backend is running
-echo "PM2 status:"
+while [ $COUNTER -lt $TIMEOUT ]; do
+    if pm2 list | grep -q "online"; then
+        echo "✅ PM2 backend is online"
+        break
+    fi
+    COUNTER=$((COUNTER + 1))
+    echo "  Waiting... ($COUNTER/$TIMEOUT)"
+    sleep 1
+done
+
+if [ $COUNTER -eq $TIMEOUT ]; then
+    echo "❌ Backend failed to start within ${TIMEOUT}s"
+    pm2 list
+    pm2 logs --nostream --lines 20
+    exit 1
+fi
+
+# Show PM2 status
+echo "📊 PM2 Status:"
 pm2 list
 
-# Test nginx config
-echo "Testing nginx config..."
-nginx -t
-
-# Start nginx in foreground (this keeps container alive)
-echo "Starting nginx..."
-nginx -g 'daemon off;'
+# Start nginx in foreground (keeps container alive)
+echo "🌐 Starting nginx in foreground..."
+exec nginx -g 'daemon off;'
