@@ -115,8 +115,15 @@ app.use('/api', readyRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/expert', expertTestRoutes);
 app.use('/api/payments', paymentRoutes);
+
+// Test/debug routes only in non-production environments
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/expert', expertTestRoutes);
+  logger.info('Expert test routes mounted (non-production environment)');
+} else {
+  logger.info('Expert test routes disabled in production environment');
+}
 
 console.log('✅ [API] server.ts - Routes configured');
 
