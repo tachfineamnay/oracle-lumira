@@ -1,21 +1,17 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
-# Oracle Lumira Fullstack Startup Script - Production Optimized
-echo "🚀 Starting Oracle Lumira Fullstack..."
+echo "🚀 Starting Oracle Lumira Full-Stack Application..."
+echo "📝 Node version: $(node --version)"
+echo "📝 NPM version: $(npm --version)"
+echo "📝 PM2 version: $(pm2 --version)"
+echo "📝 Current directory: $(pwd)"
 
 # Set working directory
 cd /app
 
-# Environment validation
-echo "🔍 Environment Check:"
-echo "  Node: $(node --version)"
-echo "  NPM: $(npm --version)"
-echo "  PM2: $(pm2 --version)"
-echo "  User: $(whoami)"
-echo "  Working Dir: $(pwd)"
-echo "  PORT: ${PORT:-3000}"
-
 # Verify critical files exist
+echo "🔍 Verifying required files..."
 if [ ! -f "ecosystem.config.json" ]; then
     echo "❌ ecosystem.config.json not found!"
     exit 1
@@ -23,72 +19,72 @@ fi
 
 if [ ! -f "apps/api-backend/dist/server.js" ]; then
     echo "❌ Backend server.js not found!"
+    echo "📁 Contents of apps/api-backend/:"
+    ls -la apps/api-backend/ || echo "Directory not found"
     exit 1
 fi
 
 if [ ! -f "/usr/share/nginx/html/index.html" ]; then
     echo "❌ Frontend build not found!"
+    echo "📁 Contents of /usr/share/nginx/html/:"
+    ls -la /usr/share/nginx/html/ || echo "Directory not found"
     exit 1
 fi
 
-# Start nginx daemon
-echo "🌐 Starting nginx on port 8080..."
-nginx -t && nginx -g "daemon off;" &
+echo "✅ All required files found"
 
-# Wait for nginx to start
-sleep 2
+# Test nginx configuration
+echo "🔍 Testing nginx configuration..."
+nginx -t || {
+    echo "❌ nginx configuration test failed!"
+    echo "📄 nginx config contents:"
+    cat /etc/nginx/nginx.conf
+    exit 1
+}
+echo "✅ nginx configuration is valid"
 
-# Start API backend with PM2 (no-daemon mode keeps container running)
+# Start API backend with PM2 in background
 echo "📡 Starting API backend with PM2..."
-exec pm2-runtime start ecosystem.config.json --env production
-PM2_PID=$!
+pm2 start ecosystem.config.json --env production
 
-# Wait for API to be ready with proper timeout
+# Wait for API to be ready
 echo "⏳ Waiting for API to be ready on port 3000..."
-TIMEOUT=30
+TIMEOUT=60
 COUNTER=0
-API_READY=false
 
 while [ $COUNTER -lt $TIMEOUT ]; do
-    if nc -z 127.0.0.1 3000 2>/dev/null; then
+    if curl -s -f http://127.0.0.1:3000/api/healthz >/dev/null 2>&1; then
         echo "✅ API is ready on port 3000"
-        API_READY=true
         break
     fi
     
     COUNTER=$((COUNTER + 1))
-    echo "  Attempt $COUNTER/$TIMEOUT - API not ready yet..."
+    if [ $((COUNTER % 10)) -eq 0 ]; then
+        echo "  Still waiting... (${COUNTER}/${TIMEOUT}s)"
+        echo "📋 PM2 Status:"
+        pm2 status
+    fi
     sleep 1
 done
 
-if [ "$API_READY" = false ]; then
+if [ $COUNTER -eq $TIMEOUT ]; then
     echo "❌ API failed to start within ${TIMEOUT}s timeout"
     echo "📋 PM2 Status:"
     pm2 status
     echo "📋 PM2 Logs:"
-    pm2 logs --nostream
+    pm2 logs --nostream --lines 50
     exit 1
 fi
 
-# Test API endpoint before starting nginx
+# Test API endpoint
 echo "🔍 Testing API health endpoint..."
-API_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/api/health 2>/dev/null || echo "000")
-if [ "$API_HEALTH" != "200" ]; then
-    echo "⚠️  API health endpoint returned $API_HEALTH (continuing anyway)"
+API_RESPONSE=$(curl -s http://127.0.0.1:3000/api/healthz || echo "ERROR")
+if [ "$API_RESPONSE" != "ERROR" ]; then
+    echo "✅ API health endpoint responded: $API_RESPONSE"
 else
-    echo "✅ API health endpoint OK"
+    echo "⚠️  API health endpoint not accessible (continuing anyway)"
 fi
 
-# Start Nginx in foreground
-echo "🌐 Starting Nginx on port 8080..."
-echo "📋 Nginx configuration test:"
-nginx -t
-
-if [ $? -eq 0 ]; then
-    echo "✅ Nginx configuration is valid"
-    echo "🚀 Starting Nginx in foreground..."
-    exec nginx -g 'daemon off;'
-else
-    echo "❌ Nginx configuration is invalid"
-    exit 1
-fi
+# Start nginx in foreground (keeps container alive)
+echo "🌐 Starting nginx on port 8080 (foreground)..."
+exec nginx -g 'daemon off;'
