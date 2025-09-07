@@ -55,7 +55,7 @@ COPY --chown=lumira:lumira ecosystem.config.json /app/ecosystem.config.json
 COPY nginx-fullstack.conf /etc/nginx/nginx.conf
 
 # Create logs directory
-RUN mkdir -p /app/logs && chown -R lumira:lumira /app/logs
+RUN mkdir -p /app/logs && chown -R lumira:lumira /app/logs && chmod 755 /app/logs
 
 # Create startup script
 COPY start-fullstack.sh /start.sh
