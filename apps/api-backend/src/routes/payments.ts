@@ -1,312 +1,158 @@
 import express from 'express';
-import Stripe from 'stripe';
+import { v4 as uuidv4 } from 'uuid';
+import { stripe, buildStripeOptions } from '../services/stripe';
+import { ProcessedEvent } from '../models/ProcessedEvent';
 import { Order } from '../models/Order';
 import { Expert } from '../models/Expert';
 import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-// Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
+const processedEvents = new Set<string>();
 
-// Service pricing configuration
-const SERVICE_PRICING = {
-  basic: {
-    name: 'Consultation Basique',
-    price: 2900, // in cents
-    duration: 30,
-  },
-  premium: {
-    name: 'Consultation Premium', 
-    price: 7900, // in cents
-    duration: 60,
-  },
-  vip: {
-    name: 'Consultation VIP',
-    price: 14900, // in cents
-    duration: 120,
-  }
-};
-
-interface CreatePaymentIntentRequest {
-  level: string;
-  service: 'basic' | 'premium' | 'vip';
-  expertId: string;
-  userId?: string;
-  userEmail?: string;
-  userName?: string;
-}
-
-// Create payment intent
-router.post('/create-payment-intent', async (req: express.Request, res: express.Response) => {
+router.post('/create-payment-intent', async (req, res) => {
   try {
-    const { level, service, expertId, userId, userEmail, userName }: CreatePaymentIntentRequest = req.body;
+    const { expertId, amount, description, metadata = {} } = req.body;
 
-    // Validate service type
-    if (!SERVICE_PRICING[service]) {
-      return res.status(400).json({ 
-        error: 'Invalid service type',
-        validServices: Object.keys(SERVICE_PRICING)
-      });
+    if (!expertId || !amount) {
+      return res.status(400).json({ error: 'Expert ID and amount are required' });
     }
 
-    // Verify expert exists
     const expert = await Expert.findById(expertId);
     if (!expert) {
       return res.status(404).json({ error: 'Expert not found' });
     }
 
-    const serviceConfig = SERVICE_PRICING[service];
+    const orderId = uuidv4();
+    const { idempotencyKey } = buildStripeOptions(req);
 
-    // Create order in database
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100),
+      currency: 'eur',
+      metadata: {
+        orderId,
+        expertId: expert._id.toString(),
+        ...metadata
+      },
+      description: description || `Consultation with ${expert.name}`,
+    }, { idempotencyKey });
+
     const order = new Order({
-      userId: userId || null,
-      userEmail,
-      userName,
-      expertId,
-      level,
-      service,
-      amount: serviceConfig.price / 100, // Store in euros
-      duration: serviceConfig.duration,
+      _id: orderId,
+      paymentIntentId: paymentIntent.id,
+      expertId: expert._id,
+      amount,
       status: 'pending',
       createdAt: new Date(),
+      updatedAt: new Date()
     });
 
-    await order.save();
-
-    // Create Stripe payment intent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: serviceConfig.price,
-      currency: 'eur',
-      automatic_payment_methods: {
-        enabled: true,
-      },
-      metadata: {
-        orderId: order._id.toString(),
-        expertId,
-        service,
-        level,
-        userId: userId || 'guest',
-      },
-      receipt_email: userEmail,
-      description: `${serviceConfig.name} - Expert: ${expert.name} - Level: ${level}`,
-    });
-
-    // Update order with payment intent ID
-    order.paymentIntentId = paymentIntent.id;
     await order.save();
 
     res.json({
       clientSecret: paymentIntent.client_secret,
-      orderId: order._id.toString(),
-      amount: serviceConfig.price / 100,
-      serviceName: serviceConfig.name,
+      orderId,
+      amount,
+      expertName: expert.name
     });
-
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Error creating payment intent:', message);
-    res.status(500).json({ 
-      error: 'Failed to create payment intent',
-      details: process.env.NODE_ENV === 'development' ? message : undefined
-    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Confirm payment and update order status
-router.post('/confirm-payment', async (req: express.Request, res: express.Response) => {
-  try {
-    const { paymentIntentId } = req.body;
-
-    if (!paymentIntentId) {
-      return res.status(400).json({ error: 'Payment intent ID is required' });
-    }
-
-    // Retrieve payment intent from Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (!paymentIntent) {
-      return res.status(404).json({ error: 'Payment intent not found' });
-    }
-
-    // Find order by payment intent ID
-    const order = await Order.findOne({ paymentIntentId: paymentIntentId });
-
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    // Update order status based on payment status
-    if (paymentIntent.status === 'succeeded') {
-      order.status = 'completed';
-      order.paidAt = new Date();
-    } else if (paymentIntent.status === 'canceled' || paymentIntent.status.includes('failed')) {
-      order.status = 'failed';
-    } else {
-      order.status = 'processing';
-    }
-
-    await order.save();
-
-    res.json({
-      success: true,
-      order: {
-        id: order._id,
-        status: order.status,
-        amount: order.amount,
-        service: order.service,
-      },
-    });
-
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Error confirming payment:', message);
-    res.status(500).json({ 
-      error: 'Failed to confirm payment',
-      details: process.env.NODE_ENV === 'development' ? message : undefined
-    });
-  }
-});
-
-// Get order details
-router.get('/order/:orderId', async (req: express.Request, res: express.Response) => {
-  try {
-    const { orderId } = req.params;
-
-    const order = await Order.findById(orderId)
-      .populate('expertId', 'name specialties rating')
-      .exec();
-
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    res.json({
-      order: {
-        id: order._id,
-        status: order.status,
-        amount: order.amount,
-        service: order.service,
-        level: order.level,
-        duration: order.duration,
-        expert: order.expertId,
-        userEmail: order.userEmail,
-        userName: order.userName,
-        createdAt: order.createdAt,
-        paidAt: order.paidAt,
-      }
-    });
-
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Error fetching order:', message);
-    res.status(500).json({ 
-      error: 'Failed to fetch order',
-      details: process.env.NODE_ENV === 'development' ? message : undefined
-    });
-  }
-});
-
-// List user orders (authenticated route)
-router.get('/orders', authenticateToken, async (req: express.Request, res: express.Response) => {
-  try {
-    const userId = (req as any).user.id;
-
-    const orders = await Order.find({ userId })
-      .populate('expertId', 'name specialties rating')
-      .sort({ createdAt: -1 })
-      .exec();
-
-    res.json({
-      orders: orders.map(order => ({
-        id: order._id,
-        status: order.status,
-        amount: order.amount,
-        service: order.service,
-        level: order.level,
-        expert: order.expertId,
-        createdAt: order.createdAt,
-        paidAt: order.paidAt,
-      }))
-    });
-
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Error fetching user orders:', message);
-    res.status(500).json({ 
-      error: 'Failed to fetch orders',
-      details: process.env.NODE_ENV === 'development' ? message : undefined
-    });
-  }
-});
-
-// Webhook to handle Stripe events
-router.post('/webhook', express.raw({type: 'application/json'}), async (req: express.Request, res: express.Response) => {
-  const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!webhookSecret || !sig) {
-    return res.status(400).json({ error: 'Missing webhook signature or secret' });
-  }
-
-  let event: Stripe.Event;
+router.post('/webhook', async (req, res) => {
+  const sig = req.headers['stripe-signature'] as string;
+  let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('Webhook signature verification failed:', message);
-    return res.status(400).json({ error: 'Invalid webhook signature' });
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+  } catch (err) {
+    return res.status(400).send(`Webhook signature verification failed.`);
+  }
+
+  if (processedEvents.has(event.id)) {
+    return res.json({ received: true, duplicate: true });
+  }
+
+  processedEvents.add(event.id);
+
+  try {
+    await ProcessedEvent.create({
+      eventId: event.id,
+      eventType: event.type,
+      processed: true,
+      processedAt: new Date()
+    });
+  } catch (error) {
+    // Event already exists, ignore
   }
 
   try {
     switch (event.type) {
-      case 'payment_intent.succeeded': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        const orderId = paymentIntent.metadata?.orderId;
         
-        const order = await Order.findOne({ 
-          paymentIntentId: paymentIntent.id 
-        });
-
-        if (order) {
-          order.status = 'completed';
-          order.paidAt = new Date();
-          await order.save();
-
-          console.log(`Payment succeeded for order ${order._id}`);
+        if (orderId) {
+          const order = await Order.findById(orderId);
+          if (order) {
+            order.status = 'completed';
+            order.updatedAt = new Date();
+            await order.save();
+          }
         }
         break;
-      }
 
       case 'payment_intent.payment_failed':
-      case 'payment_intent.canceled': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const failedPaymentIntent = event.data.object;
+        const failedOrderId = failedPaymentIntent.metadata?.orderId;
         
-        const order = await Order.findOne({ 
-          paymentIntentId: paymentIntent.id 
-        });
-
-        if (order) {
-          order.status = 'failed';
-          await order.save();
-
-          console.log(`Payment failed for order ${order._id}`);
+        if (failedOrderId) {
+          const order = await Order.findById(failedOrderId);
+          if (order) {
+            order.status = 'failed';
+            order.updatedAt = new Date();
+            await order.save();
+          }
         }
         break;
-      }
+
+      case 'payment_intent.canceled':
+        const canceledPaymentIntent = event.data.object;
+        const canceledOrderId = canceledPaymentIntent.metadata?.orderId;
+        
+        if (canceledOrderId) {
+          const order = await Order.findById(canceledOrderId);
+          if (order) {
+            order.status = 'failed';
+            order.updatedAt = new Date();
+            await order.save();
+          }
+        }
+        break;
 
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        break;
+    }
+  } catch (error) {
+    return res.status(500).json({ error: 'Webhook processing failed' });
+  }
+
+  res.json({ received: true });
+});
+
+router.get('/orders/:orderId', authenticateToken, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).populate('expertId');
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
     }
 
-    res.json({ received: true });
-
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Error processing webhook:', message);
-    res.status(500).json({ error: 'Webhook processing failed' });
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
