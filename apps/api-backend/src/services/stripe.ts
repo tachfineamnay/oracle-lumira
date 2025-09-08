@@ -15,6 +15,17 @@ export const stripe = new Stripe(stripeSecretKey, {
   typescript: true,
 });
 
+/**
+ * Build Stripe options with idempotency key
+ */
+export function buildStripeOptions(req: any): { idempotencyKey: string } {
+  // Generate idempotency key based on request data
+  const requestId = req.headers['x-request-id'] || req.ip + Date.now();
+  return {
+    idempotencyKey: `oracle-lumira-${requestId}`
+  };
+}
+
 export class StripeService {
   /**
    * Create a PaymentIntent for a product

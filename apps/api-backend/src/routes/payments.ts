@@ -1,10 +1,10 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { stripe, buildStripeOptions } from '../services/stripe';
-import { ProcessedEvent } from '../models/ProcessedEvent';
-import { Order } from '../models/Order';
-import { Expert } from '../models/Expert';
-import { authenticateToken } from '../middleware/auth';
+import { stripe, buildStripeOptions } from '../services/stripe.js';
+import { ProcessedEvent } from '../models/ProcessedEvent.js';
+import { Order } from '../models/Order.js';
+import { Expert } from '../models/Expert.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
