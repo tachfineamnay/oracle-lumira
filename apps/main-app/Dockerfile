@@ -2,17 +2,22 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Upgrade npm + install the missing Linux native binding for Rollup
-RUN npm i -g npm@latest && \
-    npm i @rollup/rollup-linux-x64-musl --save-dev
+# Copier d'abord les fichiers de configuration du workspace depuis la racine
+COPY ../../package.json ../../package-lock.json ./
 
-# Remove Windows-generated lock & reinstall with Linux binaries
-RUN rm -f package-lock.json && \
-    npm install && \
-    npm cache clean --force
+# Installer toutes les dépendances du workspace (incluant vite)
+RUN npm ci --include=dev
 
-# Build application
-COPY . .
+# Installer le binding Linux pour Rollup
+RUN npm install @rollup/rollup-linux-x64-musl --save-dev
+
+# Copier le code source de main-app
+COPY . ./apps/main-app
+
+# Se placer dans le répertoire main-app pour le build
+WORKDIR /app/apps/main-app
+
+# Build (maintenant vite est disponible dans ../node_modules)
 RUN npm run build
 
 # Production stage with Nginx
@@ -22,7 +27,7 @@ FROM nginx:alpine AS production
 RUN apk add --no-cache curl
 
 # Copy built application
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/apps/main-app/dist /usr/share/nginx/html
 
 # Create health endpoint
 RUN echo '{"status":"healthy","service":"main-app","timestamp":"'$(date -Iseconds)'"}' > /usr/share/nginx/html/health.json
