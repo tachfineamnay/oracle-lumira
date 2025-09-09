@@ -7,7 +7,7 @@ export function getApiBaseUrl() {
     const host = window.location.hostname;
     // If running on oraclelumira.com (prod), target api subdomain
     if (host.endsWith('oraclelumira.com')) {
-      return 'https://api.oraclelumira.com';
+      return 'https://api.oraclelumira.com/api';
     }
   }
   // Local/dev fallback
