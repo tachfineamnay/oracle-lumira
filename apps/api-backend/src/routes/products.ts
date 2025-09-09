@@ -276,10 +276,8 @@ router.post(
  * GET /api/products/order/:orderId
  * Get product order status and details
  */
-router.get(
-  '/order/:orderId',
-  ...getOrderValidators,
-  async (req: Request, res: Response): Promise<void> => {
+// Internal handler to serve both /order/:orderId and /orders/:orderId
+async function getOrderHandler(req: Request, res: Response): Promise<void> {
     try {
       const { orderId } = req.params;
 
@@ -330,8 +328,11 @@ router.get(
         timestamp: new Date().toISOString(),
       });
     }
-  }
-);
+}
+
+router.get('/order/:orderId', ...getOrderValidators, getOrderHandler);
+// Alias for frontend compatibility
+router.get('/orders/:orderId', ...getOrderValidators, getOrderHandler);
 
 // Processed webhook events (simple idempotence - replace with DB)
 const processedWebhookEvents = new Set<string>();
