@@ -71,7 +71,8 @@ WORKDIR /app
 
 # Copy startup script
 COPY start-fullstack.sh /start.sh
-RUN chmod +x /start.sh
+COPY .coolify/entrypoint.sh /entrypoint.sh
+RUN chmod +x /start.sh /entrypoint.sh
 
 # Expose port 8080 for nginx
 EXPOSE 8080
@@ -82,4 +83,4 @@ HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=3 \
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["/start.sh"]
+CMD ["/entrypoint.sh"]
