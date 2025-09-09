@@ -2,6 +2,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Upgrade npm + install the missing Linux native binding for Rollup
+RUN npm i -g npm@latest && \
+    npm i @rollup/rollup-linux-x64-musl --save-dev --no-save
+
 # Install dependencies
 COPY package*.json ./
 RUN npm ci && npm cache clean --force
