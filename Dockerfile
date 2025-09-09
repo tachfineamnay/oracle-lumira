@@ -23,6 +23,9 @@ RUN cd apps/main-app && npm run build
 # Stage 2: Nginx static server
 FROM nginx:1.27-alpine
 
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
 # Copy built assets
 COPY --from=frontend-builder /app/apps/main-app/dist /usr/share/nginx/html
 
@@ -35,6 +38,6 @@ COPY nginx-frontend.conf /etc/nginx/nginx.conf
 EXPOSE 80
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=3 \
-  CMD wget -qO- http://localhost/health.json >/dev/null 2>&1 || exit 1
+  CMD curl -fsS http://localhost/health.json || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
