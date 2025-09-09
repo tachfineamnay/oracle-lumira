@@ -37,4 +37,4 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm.rule=Host(`crm.oraclelumira.com`)"
-      - "traefik.http.services.crm.loadbalancer.server.port
+      - "traefik.http.services.crm.loadbalancer.server.port=80"

@@ -17,23 +17,9 @@ const router = Router();
 // Temporary in-memory storage for orders (replace with database)
 const productOrders: Map<string, Order> = new Map();
 
-// Validation chains with proper typing
-const createPaymentIntentValidators = createValidationChain([
-  body('productId')
-    .isString()
-    .trim()
-    .isIn(Object.keys(PRODUCT_CATALOG))
-    .withMessage('Invalid product ID. Must be one of: ' + Object.keys(PRODUCT_CATALOG).join(', ')),
-  body('customerEmail')
-    .optional()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Invalid email format'),
-  body('metadata')
-    .optional()
-    .isObject()
-    .withMessage('Metadata must be an object'),
-]);
+// Note: Custom manual validation is implemented in handler to return
+// specific error payloads expected by tests/clients.
+// express-validator chains removed to avoid generic 'Validation failed' shape.
 
 const getOrderValidators = createValidationChain([
   param('orderId')
@@ -50,7 +36,6 @@ const getOrderValidators = createValidationChain([
  */
 router.post(
   '/create-payment-intent',
-  ...createPaymentIntentValidators,
   async (req: Request, res: Response): Promise<void> => {
     const startTime = Date.now();
     const requestId = `req_${startTime}_${Math.random().toString(36).substring(2, 9)}`;
@@ -64,7 +49,7 @@ router.post(
       });
 
       // Validate request body structure
-      if (!req.body || typeof req.body !== 'object') {
+      if (!req.body || typeof req.body !== 'object' || Object.keys(req.body).length === 0) {
         console.error(`[${requestId}] Invalid request body:`, { body: req.body });
         res.status(400).json({
           error: 'Invalid request body',

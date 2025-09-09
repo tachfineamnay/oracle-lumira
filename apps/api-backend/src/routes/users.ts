@@ -1,10 +1,11 @@
 import express from 'express';
 import { User } from '../models/User';
+import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // Get all users (with pagination)
-router.get('/', async (req: any, res: any) => {
+router.get('/', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -46,7 +47,7 @@ router.get('/', async (req: any, res: any) => {
 });
 
 // Get user by ID
-router.get('/:id', async (req: any, res: any) => {
+router.get('/:id', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
   try {
     const user = await User.findById(req.params.id).select('-__v');
     
@@ -62,7 +63,7 @@ router.get('/:id', async (req: any, res: any) => {
 });
 
 // Update user
-router.patch('/:id', async (req: any, res: any) => {
+router.patch('/:id', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
   try {
     const updates = req.body;
     
@@ -89,7 +90,7 @@ router.patch('/:id', async (req: any, res: any) => {
 });
 
 // Get user statistics
-router.get('/:id/stats', async (req: any, res: any) => {
+router.get('/:id/stats', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
   try {
     const userId = req.params.id;
     const { Order } = require('../models/Order');

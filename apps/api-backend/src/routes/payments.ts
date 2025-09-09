@@ -1,6 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { stripe, buildStripeOptions } from '../services/stripe.js';
+import { getStripe, buildStripeOptions } from '../services/stripe.js';
 import { ProcessedEvent } from '../models/ProcessedEvent.js';
 import { Order } from '../models/Order.js';
 import { Expert } from '../models/Expert.js';
@@ -23,23 +23,8 @@ router.post('/create-payment-intent', async (req, res) => {
       return res.status(404).json({ error: 'Expert not found' });
     }
 
-    const orderId = uuidv4();
-    const { idempotencyKey } = buildStripeOptions(req);
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
-      currency: 'eur',
-      metadata: {
-        orderId,
-        expertId: expert._id.toString(),
-        ...metadata
-      },
-      description: description || `Consultation with ${expert.name}`,
-    }, { idempotencyKey });
-
+    // Pre-create order to get a Mongo ObjectId (avoid using string UUID as _id)
     const order = new Order({
-      _id: orderId,
-      paymentIntentId: paymentIntent.id,
       expertId: expert._id,
       amount,
       status: 'pending',
@@ -47,11 +32,25 @@ router.post('/create-payment-intent', async (req, res) => {
       updatedAt: new Date()
     });
 
+    const { idempotencyKey } = buildStripeOptions(req);
+
+    const paymentIntent = await getStripe().paymentIntents.create({
+      amount: Math.round(amount * 100),
+      currency: 'eur',
+      metadata: {
+        orderId: order._id.toString(),
+        expertId: expert._id.toString(),
+        ...metadata
+      },
+      description: description || `Consultation with ${expert.name}`,
+    }, { idempotencyKey });
+
+    order.paymentIntentId = paymentIntent.id;
     await order.save();
 
     res.json({
       clientSecret: paymentIntent.client_secret,
-      orderId,
+      orderId: order._id.toString(),
       amount,
       expertName: expert.name
     });
@@ -65,7 +64,7 @@ router.post('/webhook', async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = getStripe().webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err) {
     return res.status(400).send(`Webhook signature verification failed.`);
   }

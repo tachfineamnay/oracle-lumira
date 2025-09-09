@@ -3,17 +3,20 @@ import Stripe from 'stripe';
 import { getProductById } from '../catalog';
 import { CreatePaymentIntentRequest, Order } from '../types/payments';
 
-// Environment validation
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecretKey) {
-  throw new Error('STRIPE_SECRET_KEY environment variable is required');
+// Lazy Stripe client to avoid throwing at import time
+let stripeClient: Stripe | null = null;
+export function getStripe(): Stripe {
+  if (stripeClient) return stripeClient;
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY environment variable is required');
+  }
+  stripeClient = new Stripe(key, {
+    apiVersion: '2024-06-20',
+    typescript: true,
+  });
+  return stripeClient;
 }
-
-// Initialize Stripe with latest API version compatible with v16+
-export const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2024-06-20', // Latest version for production compatibility
-  typescript: true,
-});
 
 /**
  * Build Stripe options with idempotency key
@@ -41,7 +44,7 @@ export class StripeService {
 
     try {
       // Create PaymentIntent with automatic payment methods
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await getStripe().paymentIntents.create({
         amount: product.amountCents,
         currency: product.currency,
         automatic_payment_methods: {
@@ -76,7 +79,7 @@ export class StripeService {
    */
   static async getPaymentIntent(paymentIntentId: string) {
     try {
-      return await stripe.paymentIntents.retrieve(paymentIntentId);
+      return await getStripe().paymentIntents.retrieve(paymentIntentId);
     } catch (error) {
       console.error('Failed to retrieve PaymentIntent:', error);
       throw new Error('Payment intent not found');
@@ -92,7 +95,7 @@ export class StripeService {
     endpointSecret: string
   ) {
     try {
-      return stripe.webhooks.constructEvent(body, signature, endpointSecret);
+      return getStripe().webhooks.constructEvent(body, signature, endpointSecret);
     } catch (error) {
       console.error('Webhook signature verification failed:', error);
       throw new Error('Invalid webhook signature');

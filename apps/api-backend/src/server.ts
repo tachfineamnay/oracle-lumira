@@ -65,7 +65,9 @@ app.use(helmet({
 
 console.log('✅ [API] server.ts - Helmet configured');
 
-const allowedOrigins = [
+// CORS config from env or defaults
+const envCors = process.env.CORS_ORIGIN?.split(',').map(s => s.trim()).filter(Boolean) || [];
+const allowedOrigins = envCors.length > 0 ? envCors : [
   'https://oraclelumira.com',
   'https://desk.oraclelumira.com',
   'http://localhost:3000',
@@ -96,6 +98,7 @@ app.use(limiter);
 // Webhook routes MUST come before body parsing middleware
 // Stripe webhooks need raw body for signature verification
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/products/webhook', express.raw({ type: 'application/json' }));
 
 // Body parsing middleware (after webhook routes)
 app.use(express.json({ limit: '10mb' }));
