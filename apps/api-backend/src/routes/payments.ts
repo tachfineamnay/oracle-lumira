@@ -59,6 +59,47 @@ router.post('/create-payment-intent', async (req, res) => {
   }
 });
 
+// Fallback confirmation when Stripe webhooks are not available
+router.post('/confirm-payment', async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body || {};
+    if (!paymentIntentId || typeof paymentIntentId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'paymentIntentId is required'
+      });
+    }
+
+    const pi = await getStripe().paymentIntents.retrieve(paymentIntentId);
+    const paymentStatus = pi.status;
+    const isSuccess = paymentStatus === 'succeeded';
+
+    // Update order if exists
+    const order = await Order.findOne({ paymentIntentId });
+    if (order) {
+      if (isSuccess && order.status !== 'completed') {
+        order.status = 'completed';
+        order.paidAt = new Date();
+        order.updatedAt = new Date();
+        await order.save();
+      }
+    }
+
+    return res.json({
+      success: isSuccess,
+      order: order ? {
+        id: order._id.toString(),
+        status: order.status,
+        paymentStatus,
+        amount: order.amount,
+        service: (order as any).service,
+      } : undefined,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Confirmation failed' });
+  }
+});
+
 router.post('/webhook', async (req, res) => {
   const sig = req.headers['stripe-signature'] as string;
   let event;
@@ -138,6 +179,40 @@ router.post('/webhook', async (req, res) => {
   }
 
   res.json({ received: true });
+});
+
+// Public order lookup for client after confirmation
+router.get('/order/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).populate('expertId');
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    return res.json({
+      order: {
+        id: order._id.toString(),
+        status: order.status,
+        paymentStatus: order.status === 'completed' ? 'succeeded' : 'pending',
+        amount: order.amount,
+        service: (order as any).service,
+        level: (order as any).level,
+        duration: (order as any).duration,
+        expert: order.expertId ? {
+          name: (order.expertId as any).name,
+          specialties: (order.expertId as any).specialties || [],
+          rating: (order.expertId as any).rating || 0
+        } : undefined,
+        customerEmail: order.userEmail,
+        createdAt: order.createdAt,
+        paidAt: order.paidAt,
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch order' });
+  }
 });
 
 router.get('/orders/:orderId', authenticateToken, async (req, res) => {
