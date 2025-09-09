@@ -292,6 +292,26 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
         return;
       }
 
+      // Fallback without webhooks: check live status from Stripe
+      try {
+        if (order.status === 'pending' && order.paymentIntentId) {
+          const pi = await StripeService.getPaymentIntent(order.paymentIntentId);
+          if (pi.status === 'succeeded') {
+            order.status = 'completed';
+            order.completedAt = new Date();
+            order.updatedAt = new Date();
+            productOrders.set(order.id, order);
+          } else if (pi.status === 'canceled' || pi.status === 'requires_payment_method') {
+            order.status = 'failed';
+            order.updatedAt = new Date();
+            productOrders.set(order.id, order);
+          }
+        }
+      } catch (stripeCheckError) {
+        // Do not fail the request if Stripe check errors; just return current cached state
+        console.warn('Stripe status check failed for order', orderId, stripeCheckError);
+      }
+
       // Get product details
       const product = getProductById(order.productId);
       if (!product) {
@@ -328,7 +348,7 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
         timestamp: new Date().toISOString(),
       });
     }
-}
+  }
 
 router.get('/order/:orderId', ...getOrderValidators, getOrderHandler);
 // Alias for frontend compatibility
