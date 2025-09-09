@@ -16,6 +16,9 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY apps/main-app/package*.json ./apps/main-app/
 RUN cd apps/main-app && npm ci --frozen-lockfile
 
+# Install Linux-specific rollup binding for Alpine
+RUN cd apps/main-app && npm install @rollup/rollup-linux-x64-musl --save-dev
+
 # Copy frontend source and build with environment variables
 COPY apps/main-app ./apps/main-app/
 RUN cd apps/main-app && npm run build
