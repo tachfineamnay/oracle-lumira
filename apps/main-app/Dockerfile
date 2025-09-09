@@ -4,11 +4,12 @@ WORKDIR /app
 
 # Upgrade npm + install the missing Linux native binding for Rollup
 RUN npm i -g npm@latest && \
-    npm i @rollup/rollup-linux-x64-musl --save-dev --no-save
+    npm i @rollup/rollup-linux-x64-musl --save-dev
 
-# Install dependencies
-COPY package*.json ./
-RUN npm ci && npm cache clean --force
+# Remove Windows-generated lock & reinstall with Linux binaries
+RUN rm -f package-lock.json && \
+    npm install && \
+    npm cache clean --force
 
 # Build application
 COPY . .
