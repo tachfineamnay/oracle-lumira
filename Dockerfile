@@ -16,7 +16,8 @@ ENV VITE_APP_DOMAIN=$VITE_APP_DOMAIN
 
 # Copy and install frontend dependencies
 COPY apps/main-app/package*.json ./apps/main-app/
-RUN cd apps/main-app && npm ci --frozen-lockfile
+# No per-workspace lockfile; use npm install instead of npm ci
+RUN cd apps/main-app && npm install
 
 # Install Linux-specific rollup binding for Alpine
 RUN cd apps/main-app && npm install @rollup/rollup-linux-x64-musl --save-dev
@@ -31,7 +32,8 @@ WORKDIR /app
 
 # Copy backend package files
 COPY apps/api-backend/package*.json ./apps/api-backend/
-RUN cd apps/api-backend && npm ci --frozen-lockfile
+# No per-workspace lockfile; use npm install instead of npm ci
+RUN cd apps/api-backend && npm install
 
 # Copy backend source code
 COPY apps/api-backend ./apps/api-backend/
