@@ -5,11 +5,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+        - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
+        - VITE_APP_DOMAIN=${VITE_APP_DOMAIN:-https://oraclelumira.com}
     container_name: lumira-fullstack
     restart: unless-stopped
     ports:
-      - "80:8080"
-      - "3000:3000"
+      - "8080:8080"
     environment:
       # Backend API Configuration
       - NODE_ENV=${NODE_ENV:-production}
@@ -25,11 +28,6 @@ services:
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
       
-      # Frontend Build Variables (passed at build time)
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
-      - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
-      - VITE_APP_DOMAIN=${VITE_APP_DOMAIN:-https://oraclelumira.com}
-      
       # Security & CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://oraclelumira.com}
       - JWT_SECRET=${JWT_SECRET}
@@ -44,11 +42,11 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
     
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health.json", "||", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health.json"]
+      interval: 15s
+      timeout: 5s
       retries: 3
-      start_period: 60s
+      start_period: 90s
     
     networks:
       - default
