@@ -2,7 +2,7 @@
 import { Router, Request, Response } from 'express';
 import { body, param } from 'express-validator';
 import { StripeService } from '../services/stripe';
-import { getProductById, validateProductId, PRODUCT_CATALOG } from '../catalog';
+import { getProductById, validateProductId, PRODUCT_CATALOG, getAllProducts } from '../catalog';
 import { 
   CreatePaymentIntentRequest,
   CreatePaymentIntentResponse,
@@ -539,3 +539,11 @@ async function handleProductPaymentCancellation(paymentIntent: Stripe.PaymentInt
 }
 
 export default router;
+/**
+ * GET /api/products
+ * Return the product catalog
+ */
+router.get('/', (req: Request, res: Response) => {
+  const products = getAllProducts();
+  res.json({ products });
+});

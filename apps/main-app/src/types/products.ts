@@ -1,4 +1,5 @@
 // Oracle Lumira - Frontend types for product ordering
+
 export interface Product {
   id: string;
   name: string;
@@ -68,51 +69,52 @@ export interface PaymentRequestButtonOptions {
   requestPayerEmail: boolean;
 }
 
+// Temporary local catalog for UI defaults (prices as display strings)
 export const PRODUCT_CATALOG: Record<string, Omit<Product, 'amountCents'> & { price: string }> = {
-  'initie': {
+  initie: {
     id: 'initie',
     name: 'Niveau Initié',
     description: 'Découverte des mystères fondamentaux',
-    price: '49€',
+    price: '27€',
     currency: 'eur',
     level: 'initie',
     features: [
       'Accès aux enseignements de base',
       'Méditations guidées',
-      'Support communautaire'
+      'Support communautaire',
     ],
     metadata: {
       duration: '3 mois',
       access: ['basic-content', 'community'],
-      bonus: ['welcome-guide']
-    }
+      bonus: ['welcome-guide'],
+    },
   },
 
-  'mystique': {
+  mystique: {
     id: 'mystique',
     name: 'Niveau Mystique',
     description: 'Approfondissement des connaissances ésotériques',
-    price: '99€',
+    price: '47€',
     currency: 'eur',
     level: 'mystique',
     features: [
       'Tout le contenu Initié',
       'Rituels avancés',
       'Sessions personnalisées',
-      'Accès prioritaire aux événements'
+      'Accès prioritaire aux événements',
     ],
     metadata: {
       duration: '6 mois',
       access: ['basic-content', 'advanced-content', 'community', 'events'],
-      bonus: ['mystical-tools', 'private-sessions']
-    }
+      bonus: ['mystical-tools', 'private-sessions'],
+    },
   },
 
-  'profond': {
+  profond: {
     id: 'profond',
     name: 'Niveau Profond',
     description: 'Maîtrise complète des arts mystiques',
-    price: '199€',
+    price: '67€',
     currency: 'eur',
     level: 'profond',
     features: [
@@ -120,16 +122,16 @@ export const PRODUCT_CATALOG: Record<string, Omit<Product, 'amountCents'> & { pr
       'Mentorat personnalisé',
       'Certification Oracle Lumira',
       'Accès aux archives secrètes',
-      'Groupe élite privé'
+      'Groupe élite privé',
     ],
     metadata: {
       duration: '12 mois',
       access: ['all-content', 'mentoring', 'certification', 'elite-group'],
-      bonus: ['master-certification', 'exclusive-content', 'personal-mentor']
-    }
-  }
-  ,
-  'integrale': {
+      bonus: ['master-certification', 'exclusive-content', 'personal-mentor'],
+    },
+  },
+
+  integrale: {
     id: 'integrale',
     name: 'Niveau Intégral',
     description: 'Expérience complète multidimensionnelle',
@@ -137,17 +139,18 @@ export const PRODUCT_CATALOG: Record<string, Omit<Product, 'amountCents'> & { pr
     currency: 'eur',
     level: 'integrale',
     features: [
-      'Mission d’âme',
+      "Mission d'âme",
       'Ligne karmique',
       'Cycles de vie',
       'Audio complet',
       'Mandala personnalisé',
-      'Suivi 30 jours'
+      'Suivi 30 jours',
     ],
     metadata: {
       duration: '12 mois',
       access: ['all-content', 'mentoring', 'certification', 'elite-group'],
-      bonus: ['master-certification', 'exclusive-content', 'personal-mentor']
-    }
-  }
+      bonus: ['master-certification', 'exclusive-content', 'personal-mentor'],
+    },
+  },
 };
+

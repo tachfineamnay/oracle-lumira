@@ -7,7 +7,7 @@ export interface Product {
   description: string;
   amountCents: number;
   currency: string;
-  level: 'initie' | 'mystique' | 'profond';
+  level: 'initie' | 'mystique' | 'profond' | 'integrale';
   features: string[];
   metadata: {
     duration?: string;
@@ -17,50 +17,50 @@ export interface Product {
 }
 
 export const PRODUCT_CATALOG: Record<string, Product> = {
-  'initie': {
+  initie: {
     id: 'initie',
     name: 'Niveau Initié',
     description: 'Découverte des mystères fondamentaux',
-    amountCents: 4900, // 49.00 EUR
+    amountCents: 2700, // 27.00 EUR
     currency: 'eur',
     level: 'initie',
     features: [
       'Accès aux enseignements de base',
       'Méditations guidées',
-      'Support communautaire'
+      'Support communautaire',
     ],
     metadata: {
       duration: '3 mois',
       access: ['basic-content', 'community'],
-      bonus: ['welcome-guide']
-    }
+      bonus: ['welcome-guide'],
+    },
   },
 
-  'mystique': {
+  mystique: {
     id: 'mystique',
     name: 'Niveau Mystique',
     description: 'Approfondissement des connaissances ésotériques',
-    amountCents: 9900, // 99.00 EUR
+    amountCents: 4700, // 47.00 EUR
     currency: 'eur',
     level: 'mystique',
     features: [
       'Tout le contenu Initié',
       'Rituels avancés',
       'Sessions personnalisées',
-      'Accès prioritaire aux événements'
+      'Accès prioritaire aux événements',
     ],
     metadata: {
       duration: '6 mois',
       access: ['basic-content', 'advanced-content', 'community', 'events'],
-      bonus: ['mystical-tools', 'private-sessions']
-    }
+      bonus: ['mystical-tools', 'private-sessions'],
+    },
   },
 
-  'profond': {
+  profond: {
     id: 'profond',
     name: 'Niveau Profond',
     description: 'Maîtrise complète des arts mystiques',
-    amountCents: 19900, // 199.00 EUR
+    amountCents: 6700, // 67.00 EUR
     currency: 'eur',
     level: 'profond',
     features: [
@@ -68,36 +68,36 @@ export const PRODUCT_CATALOG: Record<string, Product> = {
       'Mentorat personnalisé',
       'Certification Oracle Lumira',
       'Accès aux archives secrètes',
-      'Groupe élite privé'
+      'Groupe élite privé',
     ],
     metadata: {
       duration: '12 mois',
       access: ['all-content', 'mentoring', 'certification', 'elite-group'],
-      bonus: ['master-certification', 'exclusive-content', 'personal-mentor']
-    }
-  }
-  ,
-  'integrale': {
+      bonus: ['master-certification', 'exclusive-content', 'personal-mentor'],
+    },
+  },
+
+  integrale: {
     id: 'integrale',
     name: 'Niveau Intégral',
     description: 'Expérience complète multidimensionnelle',
-    amountCents: 9700, // 97.00 EUR (aligné au front)
+    amountCents: 9700, // 97.00 EUR
     currency: 'eur',
-    level: 'profond',
+    level: 'integrale',
     features: [
-      'Mission d’âme',
+      "Mission d'âme",
       'Ligne karmique',
       'Cycles de vie',
       'Audio complet',
       'Mandala personnalisé',
-      'Suivi 30 jours'
+      'Suivi 30 jours',
     ],
     metadata: {
       duration: '12 mois',
       access: ['all-content', 'mentoring', 'certification', 'elite-group'],
-      bonus: ['master-certification', 'exclusive-content', 'personal-mentor']
-    }
-  }
+      bonus: ['master-certification', 'exclusive-content', 'personal-mentor'],
+    },
+  },
 };
 
 // Helper functions
@@ -121,8 +121,8 @@ export const getAllProducts = (): Product[] => {
 };
 
 // Metadata for frontend integration
-export const PRODUCT_LEVELS = ['initie', 'mystique', 'profond'] as const;
+export const PRODUCT_LEVELS = ['initie', 'mystique', 'profond', 'integrale'] as const;
 export type ProductLevel = typeof PRODUCT_LEVELS[number];
-// Note: integrale ajouté pour l’offre 4
 
 export default PRODUCT_CATALOG;
+
