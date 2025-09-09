@@ -7,10 +7,12 @@ WORKDIR /app
 # Build-time arguments for Vite environment variables
 ARG VITE_STRIPE_PUBLISHABLE_KEY
 ARG VITE_API_BASE_URL
+ARG VITE_APP_DOMAIN
 
 # Set environment variables for Vite build
 ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_APP_DOMAIN=$VITE_APP_DOMAIN
 
 # Copy and install frontend dependencies
 COPY apps/main-app/package*.json ./apps/main-app/
