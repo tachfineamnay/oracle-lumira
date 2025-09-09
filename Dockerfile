@@ -1,6 +1,6 @@
-# Multi-stage build: Frontend + Backend API
+## Frontend-only multi-stage build (Option A: API séparée)
 
-# Stage 1: Build Frontend with Vite environment variables
+# Stage 1: Build frontend (Vite)
 FROM node:20.18.1-alpine AS frontend-builder
 WORKDIR /app
 
@@ -14,75 +14,27 @@ ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_APP_DOMAIN=$VITE_APP_DOMAIN
 
-# Copy and install frontend dependencies
+# Install dependencies and build
 COPY apps/main-app/package*.json ./apps/main-app/
-# No per-workspace lockfile; use npm install instead of npm ci
 RUN cd apps/main-app && npm install
-
-# Install Linux-specific rollup binding for Alpine
-RUN cd apps/main-app && npm install @rollup/rollup-linux-x64-musl --save-dev
-
-# Copy frontend source and build with environment variables
 COPY apps/main-app ./apps/main-app/
 RUN cd apps/main-app && npm run build
 
-# Stage 2: Build Backend API
-FROM node:20.18.1-alpine AS backend-builder
-WORKDIR /app
+# Stage 2: Nginx static server
+FROM nginx:1.27-alpine
 
-# Copy backend package files
-COPY apps/api-backend/package*.json ./apps/api-backend/
-# No per-workspace lockfile; use npm install instead of npm ci
-RUN cd apps/api-backend && npm install
-
-# Copy backend source code
-COPY apps/api-backend ./apps/api-backend/
-
-# Build TypeScript to JavaScript and remove devDependencies
-RUN cd apps/api-backend && npm run build && npm prune --omit=dev
-
-# Stage 3: Production with nginx + Node.js 20.18.1 UNIFIED
-FROM node:20.18.1-alpine
-
-# Install nginx, PM2, netcat for health checks, bash for startup script
-RUN apk add --no-cache nginx curl netcat-openbsd dumb-init bash && \
-    npm install -g pm2@latest && \
-    npm cache clean --force
-
-# Setup nginx directories with proper permissions
-RUN mkdir -p /run/nginx /var/log/nginx /var/cache/nginx /var/lib/nginx/tmp && \
-    chmod -R 755 /var/lib/nginx /var/log/nginx /var/cache/nginx /run/nginx
-
-# Copy built frontend to nginx html directory
+# Copy built assets
 COPY --from=frontend-builder /app/apps/main-app/dist /usr/share/nginx/html
 
-# Create health.json for Coolify healthcheck (port 8080)
-RUN echo '{"status":"healthy","service":"oracle-lumira","timestamp":"'$(date -Iseconds)'","port":8080}' > /usr/share/nginx/html/health.json
+# Health file for Coolify
+RUN echo '{"status":"healthy","service":"oracle-lumira-frontend","timestamp":"'$(date -Iseconds)'","port":80}' > /usr/share/nginx/html/health.json
 
-# Copy built backend API
-COPY --from=backend-builder /app/apps/api-backend/dist /app/apps/api-backend/dist
-COPY --from=backend-builder /app/apps/api-backend/node_modules /app/apps/api-backend/node_modules
-COPY --from=backend-builder /app/apps/api-backend/package.json /app/apps/api-backend/
+# Minimal nginx config for SPA
+COPY nginx-frontend.conf /etc/nginx/nginx.conf
 
-# Copy configurations
-COPY ecosystem.config.json /app/ecosystem.config.json
-COPY nginx-fullstack.conf /etc/nginx/nginx.conf
+EXPOSE 80
 
-# Set working directory
-WORKDIR /app
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=3 \
+  CMD wget -qO- http://localhost/health.json >/dev/null 2>&1 || exit 1
 
-# Copy startup script
-COPY start-fullstack.sh /start.sh
-COPY .coolify/entrypoint.sh /entrypoint.sh
-RUN chmod +x /start.sh /entrypoint.sh
-
-# Expose port 8080 for nginx
-EXPOSE 8080
-
-# Health check for Coolify with increased start period
-HEALTHCHECK --interval=15s --timeout=5s --start-period=90s --retries=3 \
-    CMD curl -fsS http://localhost:8080/health.json || exit 1
-
-# Use dumb-init for proper signal handling
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
