@@ -76,6 +76,28 @@ export const PRODUCT_CATALOG: Record<string, Product> = {
       bonus: ['master-certification', 'exclusive-content', 'personal-mentor']
     }
   }
+  ,
+  'integrale': {
+    id: 'integrale',
+    name: 'Niveau Intégral',
+    description: 'Expérience complète multidimensionnelle',
+    amountCents: 9700, // 97.00 EUR (aligné au front)
+    currency: 'eur',
+    level: 'profond',
+    features: [
+      'Mission d’âme',
+      'Ligne karmique',
+      'Cycles de vie',
+      'Audio complet',
+      'Mandala personnalisé',
+      'Suivi 30 jours'
+    ],
+    metadata: {
+      duration: '12 mois',
+      access: ['all-content', 'mentoring', 'certification', 'elite-group'],
+      bonus: ['master-certification', 'exclusive-content', 'personal-mentor']
+    }
+  }
 };
 
 // Helper functions
@@ -101,5 +123,6 @@ export const getAllProducts = (): Product[] => {
 // Metadata for frontend integration
 export const PRODUCT_LEVELS = ['initie', 'mystique', 'profond'] as const;
 export type ProductLevel = typeof PRODUCT_LEVELS[number];
+// Note: integrale ajouté pour l’offre 4
 
 export default PRODUCT_CATALOG;

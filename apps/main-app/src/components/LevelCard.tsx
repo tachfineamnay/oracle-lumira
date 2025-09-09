@@ -29,7 +29,8 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
     const productIdMap: Record<number, string> = {
       1: 'initie',
       2: 'mystique',
-      3: 'profond'
+      3: 'profond',
+      4: 'integrale'
     };
     
     const productId = productIdMap[level.id] || level.productId;

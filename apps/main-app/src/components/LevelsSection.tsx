@@ -12,7 +12,8 @@ const levels = [
     description: 'Découvre ton archétype principal et ta phrase vibratoire personnalisée.',
     includes: ['Archétype principal', 'Phrase vibratoire', 'Conseil immédiat'],
     gradient: 'from-mystical-gold/20 to-mystical-amber/20',
-    recommended: false
+    recommended: false,
+    productId: 'initie'
   },
   {
     id: 2,
@@ -23,7 +24,8 @@ const levels = [
     description: 'Plonge dans ton profil d\'âme complet avec un domaine de vie ciblé.',
     includes: ['Profil d\'âme complet', 'Domaine ciblé', 'Rituel symbolique', 'Audio 432 Hz'],
     gradient: 'from-mystical-purple/20 to-mystical-gold/20',
-    recommended: true
+    recommended: true,
+    productId: 'mystique'
   },
   {
     id: 3,
@@ -34,7 +36,8 @@ const levels = [
     description: 'Transmute tes blocages en force avec une approche thérapeutique profonde.',
     includes: ['Analyse des blocages', 'Transmutation énergétique', 'Mantra personnel', 'Plan d\'action 7 jours', 'Mandala HD'],
     gradient: 'from-mystical-amber/20 to-mystical-purple/20',
-    recommended: false
+    recommended: false,
+    productId: 'profond'
   },
   {
     id: 4,
@@ -45,7 +48,8 @@ const levels = [
     description: 'L\'expérience complète : mission d\'âme, ligne karmique et guidance multidimensionnelle.',
     includes: ['Mission d\'âme', 'Ligne karmique', 'Cycles de vie', 'Audio complet', 'Mandala personnalisé', 'Suivi 30 jours'],
     gradient: 'from-mystical-gold/30 to-mystical-purple/30',
-    recommended: false
+    recommended: false,
+    productId: 'integrale'
   }
 ];
 

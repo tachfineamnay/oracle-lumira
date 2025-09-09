@@ -5,7 +5,7 @@ export interface Product {
   description: string;
   amountCents: number;
   currency: string;
-  level: 'initie' | 'mystique' | 'profond';
+  level: 'initie' | 'mystique' | 'profond' | 'integrale';
   features: string[];
   metadata: {
     duration?: string;
@@ -121,6 +121,28 @@ export const PRODUCT_CATALOG: Record<string, Omit<Product, 'amountCents'> & { pr
       'Certification Oracle Lumira',
       'Accès aux archives secrètes',
       'Groupe élite privé'
+    ],
+    metadata: {
+      duration: '12 mois',
+      access: ['all-content', 'mentoring', 'certification', 'elite-group'],
+      bonus: ['master-certification', 'exclusive-content', 'personal-mentor']
+    }
+  }
+  ,
+  'integrale': {
+    id: 'integrale',
+    name: 'Niveau Intégral',
+    description: 'Expérience complète multidimensionnelle',
+    price: '97€',
+    currency: 'eur',
+    level: 'integrale',
+    features: [
+      'Mission d’âme',
+      'Ligne karmique',
+      'Cycles de vie',
+      'Audio complet',
+      'Mandala personnalisé',
+      'Suivi 30 jours'
     ],
     metadata: {
       duration: '12 mois',
