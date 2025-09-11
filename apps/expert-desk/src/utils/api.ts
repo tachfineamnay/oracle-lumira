@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// API base URL - adjust based on environment
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// API base URL - prefer same-origin proxy to avoid CORS/CSP issues in prod
+// In production, Nginx proxies /api -> https://api.oraclelumira.com
+// For local dev, set VITE_API_URL=http://localhost:3001/api
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance
 export const api = axios.create({
