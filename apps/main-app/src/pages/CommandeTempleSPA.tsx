@@ -455,7 +455,6 @@ const CommandeTemple: React.FC = () => {
                   <CheckoutForm
                     clientSecret={clientSecret}
                     orderId={orderId}
-                    amount={parseInt(product.price.replace('€', '')) * 100} // Convert to cents
                     productName={product.name}
                     amount={product.amountCents}
                     onSuccess={handlePaymentSuccess}
