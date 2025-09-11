@@ -11,21 +11,21 @@ import {
   useStripe, 
   useElements 
 } from '@stripe/react-stripe-js';
-import { PRODUCT_CATALOG } from '../types/products';
+import type { Product } from '../types/products';
 import ProductOrderService from '../services/productOrder';
 import { validateStripeKey } from '../utils/api';
 
 // Stripe initialization with validation
 let stripePromise: Promise<any> | null = null;
 
-try {
+  try {
   const stripeKey = validateStripeKey();
   stripePromise = loadStripe(stripeKey);
   console.log('Stripe initialized successfully');
-} catch (error) {
+  } catch (error) {
   console.error('Stripe initialization failed:', error);
   stripePromise = null;
-}
+  }
 
 // Stripe appearance customization (mystical theme)
 const stripeAppearance = {
@@ -253,11 +253,34 @@ const CommandeTemple: React.FC = () => {
   
   const [clientSecret, setClientSecret] = useState<string>('');
   const [orderId, setOrderId] = useState<string>('');
+  const [paymentAmountCents, setPaymentAmountCents] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [catalog, setCatalog] = useState<Product[] | null>(null);
+  const product = productId && catalog ? catalog.find(p => p.id === productId) || null : null;
 
-  const product = productId ? PRODUCT_CATALOG[productId] : null;
+  // Charger le catalogue produits depuis l'API
+  useEffect(() => {
+    // Attendre le chargement du catalogue avant de continuer
+    if (!catalog) {
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      try {
+        const list = await ProductOrderService.getCatalog();
+        if (!mounted) return;
+        setCatalog(list);
+      } catch (e) {
+        console.error('Failed to load catalog:', e);
+        if (!mounted) return;
+        setError('Impossible de charger le catalogue produits');
+        setIsLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     if (!productId || !product) {
@@ -284,7 +307,7 @@ const CommandeTemple: React.FC = () => {
     };
 
     initializePayment();
-  }, [productId, product, customerEmail]);
+  }, [productId, product, customerEmail, catalog]);
 
   const handlePaymentSuccess = () => {
     navigate(`/confirmation?order_id=${orderId}`);
@@ -375,7 +398,7 @@ const CommandeTemple: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Prix</span>
-                      <span className="text-2xl font-bold text-mystical-gold">{product.price}</span>
+                      <span className="text-2xl font-bold text-mystical-gold">{ProductOrderService.formatPrice(product.amountCents, product.currency)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Durée</span>
@@ -434,6 +457,7 @@ const CommandeTemple: React.FC = () => {
                     orderId={orderId}
                     amount={parseInt(product.price.replace('€', '')) * 100} // Convert to cents
                     productName={product.name}
+                    amount={product.amountCents}
                     onSuccess={handlePaymentSuccess}
                   />
                 </Elements>

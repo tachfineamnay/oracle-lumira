@@ -1,5 +1,5 @@
 // Oracle Lumira - API service for product ordering (Production Ready)
-import { CreatePaymentIntentResponse, OrderStatus } from '../types/products';
+import { CreatePaymentIntentResponse, OrderStatus, Product } from '../types/products';
 import { apiRequest } from '../utils/api';
 
 export class ProductOrderService {
@@ -53,6 +53,14 @@ export class ProductOrderService {
         error instanceof Error ? error.message : 'Failed to get order status'
       );
     }
+  }
+
+  /**
+   * Fetch product catalog from backend
+   */
+  static async getCatalog(): Promise<Product[]> {
+    const res = await apiRequest<{ products: Product[] }>(`/products`, { method: 'GET' });
+    return res.products;
   }
 
   /**

@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { PRODUCT_CATALOG } from '../types/products';
 
 interface Level {
   id: number;

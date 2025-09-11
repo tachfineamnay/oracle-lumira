@@ -1,0 +1,456 @@
+    1: // Oracle Lumira - Commande SPA avec Stripe Elements
+    2: import React, { useState, useEffect } from 'react';
+    3: import { motion, AnimatePresence } from 'framer-motion';
+    4: import { ArrowLeft, ShoppingBag, Loader, AlertCircle, CheckCircle, CreditCard, Smartphone } from 'lucide-react';
+    5: import { useNavigate, useSearchParams } from 'react-router-dom';
+    6: import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
+    7: import { 
+    8:   Elements, 
+    9:   PaymentElement, 
+   10:   PaymentRequestButtonElement,
+   11:   useStripe, 
+   12:   useElements 
+   13: } from '@stripe/react-stripe-js';
+   14: import type { Product } from '../types/products';
+   15: import ProductOrderService from '../services/productOrder';
+   16: import { validateStripeKey } from '../utils/api';
+   17: 
+   18: // Stripe initialization with validation
+   19: let stripePromise: Promise<any> | null = null;
+   20: 
+   21:   try {
+   22:   const stripeKey = validateStripeKey();
+   23:   stripePromise = loadStripe(stripeKey);
+   24:   console.log('Stripe initialized successfully');
+   25:   } catch (error) {
+   26:   console.error('Stripe initialization failed:', error);
+   27:   stripePromise = null;
+   28:   }
+   29: 
+   30: // Stripe appearance customization (mystical theme)
+   31: const stripeAppearance = {
+   32:   theme: 'night' as const,
+   33:   variables: {
+   34:     colorPrimary: '#D4AF37', // mystical gold
+   35:     colorBackground: '#0F0B19', // mystical dark
+   36:     colorText: '#E5E7EB', // light text
+   37:     colorDanger: '#EF4444',
+   38:     borderRadius: '12px',
+   39:     fontFamily: 'Inter, system-ui, sans-serif',
+   40:   },
+   41:   rules: {
+   42:     '.Input': {
+   43:       backgroundColor: 'rgba(15, 11, 25, 0.8)',
+   44:       border: '1px solid rgba(212, 175, 55, 0.3)',
+   45:     },
+   46:     '.Input:focus': {
+   47:       borderColor: '#D4AF37',
+   48:       boxShadow: '0 0 0 1px #D4AF37',
+   49:     },
+   50:     '.Tab': {
+   51:       backgroundColor: 'rgba(15, 11, 25, 0.5)',
+   52:       border: '1px solid rgba(212, 175, 55, 0.2)',
+   53:     },
+   54:     '.Tab:hover': {
+   55:       backgroundColor: 'rgba(212, 175, 55, 0.1)',
+   56:     },
+   57:     '.Tab--selected': {
+   58:       backgroundColor: 'rgba(212, 175, 55, 0.2)',
+   59:       borderColor: '#D4AF37',
+   60:     },
+   61:   },
+   62: };
+   63: 
+   64: interface CheckoutFormProps {
+   65:   clientSecret: string;
+   66:   orderId: string;
+   67:   amount: number;
+   68:   productName: string;
+   69:   onSuccess: () => void;
+   70: }
+   71: 
+   72: const CheckoutForm: React.FC<CheckoutFormProps> = ({ 
+   73:   clientSecret,
+   74:   orderId, 
+   75:   amount, 
+   76:   productName,
+   77:   onSuccess 
+   78: }) => {
+   79:   const stripe = useStripe();
+   80:   const elements = useElements();
+   81:   const [isLoading, setIsLoading] = useState(false);
+   82:   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+   83:   const [paymentRequest, setPaymentRequest] = useState<any>(null);
+   84: 
+   85:   // Initialize Payment Request Button (Apple Pay, Google Pay, etc.)
+   86:   useEffect(() => {
+   87:     if (!stripe) return;
+   88: 
+   89:     const pr = stripe.paymentRequest({
+   90:       country: 'FR',
+   91:       currency: 'eur',
+   92:       total: {
+   93:         label: productName,
+   94:         amount: amount,
+   95:       },
+   96:       requestPayerName: true,
+   97:       requestPayerEmail: true,
+   98:     });
+   99: 
+  100:     pr.canMakePayment().then((result) => {
+  101:       if (result) {
+  102:         setPaymentRequest(pr);
+  103:       }
+  104:     });
+  105: 
+  106:     pr.on('paymentmethod', async (event) => {
+  107:       try {
+  108:         // Create PaymentIntent for Payment Request
+  109:         const { error: confirmError } = await stripe.confirmPayment({
+  110:           clientSecret,
+  111:           confirmParams: {
+  112:             payment_method: event.paymentMethod.id,
+  113:             return_url: `${window.location.origin}/confirmation?order_id=${orderId}`,
+  114:           },
+  115:           redirect: 'if_required'
+  116:         });
+  117: 
+  118:         if (confirmError) {
+  119:           event.complete('fail');
+  120:           setErrorMessage(confirmError.message || 'Erreur lors du paiement express');
+  121:         } else {
+  122:           event.complete('success');
+  123:           onSuccess();
+  124:         }
+  125:       } catch (error) {
+  126:         event.complete('fail');
+  127:         setErrorMessage('Erreur lors du paiement express');
+  128:         console.error('Payment Request error:', error);
+  129:       }
+  130:     });
+  131:   }, [stripe, amount, productName, clientSecret, orderId, onSuccess]);
+  132: 
+  133:   const handleSubmit = async (event: React.FormEvent) => {
+  134:     event.preventDefault();
+  135: 
+  136:     if (!stripe || !elements) {
+  137:       return;
+  138:     }
+  139: 
+  140:     setIsLoading(true);
+  141:     setErrorMessage(null);
+  142: 
+  143:     try {
+  144:       const returnUrl = `${window.location.origin}/confirmation?order_id=${orderId}`;
+  145:       
+  146:       const { error } = await stripe.confirmPayment({
+  147:         elements,
+  148:         confirmParams: {
+  149:           return_url: returnUrl,
+  150:         },
+  151:         redirect: 'if_required'
+  152:       });
+  153: 
+  154:       if (error) {
+  155:         setErrorMessage(error.message || 'Une erreur est survenue lors du paiement');
+  156:       } else {
+  157:         onSuccess();
+  158:       }
+  159:     } catch (error) {
+  160:       console.error('Payment error:', error);
+  161:       setErrorMessage('Une erreur inattendue est survenue');
+  162:     } finally {
+  163:       setIsLoading(false);
+  164:     }
+  165:   };
+  166: 
+  167:   return (
+  168:     <div className="space-y-6">
+  169:       {/* Payment Request Button (Apple Pay, Google Pay) */}
+  170:       {paymentRequest && (
+  171:         <motion.div
+  172:           initial={{ opacity: 0, y: -10 }}
+  173:           animate={{ opacity: 1, y: 0 }}
+  174:           className="mb-6"
+  175:         >
+  176:           <div className="flex items-center justify-center mb-4 space-x-2 text-mystical-gold">
+  177:             <Smartphone className="w-5 h-5" />
+  178:             <span className="text-sm font-medium">Paiement express</span>
+  179:           </div>
+  180:           <PaymentRequestButtonElement 
+  181:             options={{ 
+  182:               paymentRequest,
+  183:               style: {
+  184:                 paymentRequestButton: {
+  185:                   theme: 'dark',
+  186:                   height: '48px',
+  187:                   type: 'default',
+  188:                 },
+  189:               },
+  190:             }} 
+  191:           />
+  192:           <div className="mt-4 flex items-center">
+  193:             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-mystical-gold/30 to-transparent"></div>
+  194:             <span className="px-4 text-sm text-gray-400">ou</span>
+  195:             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-mystical-gold/30 to-transparent"></div>
+  196:           </div>
+  197:         </motion.div>
+  198:       )}
+  199: 
+  200:       {/* Traditional Payment Form */}
+  201:       <form onSubmit={handleSubmit} className="space-y-6">
+  202:         <div className="flex items-center space-x-2 text-mystical-gold mb-4">
+  203:           <CreditCard className="w-5 h-5" />
+  204:           <span className="font-medium">Informations de paiement</span>
+  205:         </div>
+  206: 
+  207:         <PaymentElement 
+  208:           options={{
+  209:             layout: 'tabs',
+  210:             business: {
+  211:               name: 'Oracle Lumira',
+  212:             },
+  213:           }}
+  214:         />
+  215: 
+  216:         {errorMessage && (
+  217:           <motion.div
+  218:             initial={{ opacity: 0, y: -10 }}
+  219:             animate={{ opacity: 1, y: 0 }}
+  220:             className="flex items-center space-x-2 text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-500/30"
+  221:           >
+  222:             <AlertCircle className="w-5 h-5 flex-shrink-0" />
+  223:             <span className="text-sm">{errorMessage}</span>
+  224:           </motion.div>
+  225:         )}
+  226: 
+  227:         <button
+  228:           type="submit"
+  229:           disabled={!stripe || !elements || isLoading}
+  230:           className="w-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-dark font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-mystical-gold/50 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+  231:         >
+  232:           {isLoading ? (
+  233:             <>
+  234:               <Loader className="w-5 h-5 animate-spin" />
+  235:               <span>Traitement en cours...</span>
+  236:             </>
+  237:           ) : (
+  238:             <>
+  239:               <CheckCircle className="w-5 h-5" />
+  240:               <span>Confirmer le paiement • {ProductOrderService.formatPrice(amount)}</span>
+  241:             </>
+  242:           )}
+  243:         </button>
+  244:       </form>
+  245:     </div>
+  246:   );
+  247: };
+  248: 
+  249: const CommandeTemple: React.FC = () => {
+  250:   const navigate = useNavigate();
+  251:   const [searchParams] = useSearchParams();
+  252:   const productId = searchParams.get('product');
+  253:   
+  254:   const [clientSecret, setClientSecret] = useState<string>('');
+  255:   const [orderId, setOrderId] = useState<string>('');
+  256:   const [paymentAmountCents, setPaymentAmountCents] = useState<number>(0);
+  257:   const [isLoading, setIsLoading] = useState(true);
+  258:   const [error, setError] = useState<string | null>(null);
+  259:   const [customerEmail, setCustomerEmail] = useState<string>('');
+  260:   const [catalog, setCatalog] = useState<Product[] | null>(null);
+  261:   const product = productId && catalog ? catalog.find(p => p.id === productId) || null : null;
+  262: 
+  263:   useEffect(() => {
+  264:     if (!productId || !product) {
+  265:       setError('Produit non trouvé');
+  266:       setIsLoading(false);
+  267:       return;
+  268:     }
+  269: 
+  270:     const initializePayment = async () => {
+  271:       try {
+  272:         const paymentData = await ProductOrderService.createPaymentIntent(
+  273:           productId,
+  274:           customerEmail || undefined
+  275:         );
+  276: 
+  277:         setClientSecret(paymentData.clientSecret);
+  278:         setOrderId(paymentData.orderId);
+  279:         setIsLoading(false);
+  280:       } catch (err) {
+  281:         console.error('Failed to initialize payment:', err);
+  282:         setError(err instanceof Error ? err.message : 'Erreur lors de l\'initialisation du paiement');
+  283:         setIsLoading(false);
+  284:       }
+  285:     };
+  286: 
+  287:     initializePayment();
+  288:   }, [productId, product, customerEmail]);
+  289: 
+  290:   const handlePaymentSuccess = () => {
+  291:     navigate(`/confirmation?order_id=${orderId}`);
+  292:   };
+  293: 
+  294:   const handleBackToLevels = () => {
+  295:     navigate('/#niveaux');
+  296:   };
+  297: 
+  298:   if (isLoading) {
+  299:     return (
+  300:       <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark flex items-center justify-center">
+  301:         <motion.div
+  302:           initial={{ opacity: 0 }}
+  303:           animate={{ opacity: 1 }}
+  304:           className="flex flex-col items-center space-y-4"
+  305:         >
+  306:           <Loader className="w-8 h-8 text-mystical-gold animate-spin" />
+  307:           <p className="text-mystical-gold">Préparation de votre commande...</p>
+  308:         </motion.div>
+  309:       </div>
+  310:     );
+  311:   }
+  312: 
+  313:   if (error || !product) {
+  314:     return (
+  315:       <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark flex items-center justify-center">
+  316:         <motion.div
+  317:           initial={{ opacity: 0 }}
+  318:           animate={{ opacity: 1 }}
+  319:           className="max-w-md p-8 text-center space-y-4"
+  320:         >
+  321:           <AlertCircle className="w-16 h-16 text-red-400 mx-auto" />
+  322:           <h2 className="text-2xl font-bold text-white">Erreur</h2>
+  323:           <p className="text-gray-300">{error || 'Produit non trouvé'}</p>
+  324:           <button
+  325:             onClick={handleBackToLevels}
+  326:             className="bg-mystical-gold text-mystical-dark px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold-light transition-colors"
+  327:           >
+  328:             Retour aux niveaux
+  329:           </button>
+  330:         </motion.div>
+  331:       </div>
+  332:     );
+  333:   }
+  334: 
+  335:   const elementsOptions: StripeElementsOptions = {
+  336:     clientSecret,
+  337:     appearance: stripeAppearance,
+  338:   };
+  339: 
+  340:   return (
+  341:     <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark">
+  342:       <div className="container mx-auto px-4 py-8">
+  343:         {/* Header */}
+  344:         <div className="flex items-center justify-between mb-8">
+  345:           <button
+  346:             onClick={handleBackToLevels}
+  347:             className="flex items-center space-x-2 text-mystical-gold hover:text-mystical-gold-light transition-colors"
+  348:           >
+  349:             <ArrowLeft className="w-5 h-5" />
+  350:             <span>Retour</span>
+  351:           </button>
+  352:           
+  353:           <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-mystical-gold to-mystical-gold-light bg-clip-text text-transparent">
+  354:             Oracle Lumira - Commande
+  355:           </h1>
+  356:           
+  357:           <div className="w-16"></div> {/* Spacer for centering */}
+  358:         </div>
+  359: 
+  360:         <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+  361:           {/* Product Summary */}
+  362:           <motion.div
+  363:             initial={{ opacity: 0, x: -20 }}
+  364:             animate={{ opacity: 1, x: 0 }}
+  365:             className="space-y-6"
+  366:           >
+  367:             <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6">
+  368:               <div className="flex items-start space-x-4">
+  369:                 <div className="p-3 bg-mystical-gold/20 rounded-lg">
+  370:                   <ShoppingBag className="w-6 h-6 text-mystical-gold" />
+  371:                 </div>
+  372:                 <div className="flex-1">
+  373:                   <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
+  374:                   <p className="text-gray-300 mb-4">{product.description}</p>
+  375:                   
+  376:                   <div className="space-y-2">
+  377:                     <div className="flex justify-between items-center">
+  378:                       <span className="text-gray-400">Prix</span>
+  379:                       <span className="text-2xl font-bold text-mystical-gold">{product.price}</span>
+  380:                     </div>
+  381:                     <div className="flex justify-between items-center">
+  382:                       <span className="text-gray-400">Durée</span>
+  383:                       <span className="text-white">{product.metadata.duration}</span>
+  384:                     </div>
+  385:                   </div>
+  386:                 </div>
+  387:               </div>
+  388:             </div>
+  389: 
+  390:             {/* Features */}
+  391:             <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6">
+  392:               <h4 className="font-bold text-white mb-4">Ce qui est inclus :</h4>
+  393:               <div className="space-y-3">
+  394:                 {product.features.map((feature, index) => (
+  395:                   <div key={index} className="flex items-start space-x-3">
+  396:                     <CheckCircle className="w-5 h-5 text-mystical-gold flex-shrink-0 mt-0.5" />
+  397:                     <span className="text-gray-300">{feature}</span>
+  398:                   </div>
+  399:                 ))}
+  400:               </div>
+  401:             </div>
+  402:           </motion.div>
+  403: 
+  404:           {/* Payment Form */}
+  405:           <motion.div
+  406:             initial={{ opacity: 0, x: 20 }}
+  407:             animate={{ opacity: 1, x: 0 }}
+  408:             className="space-y-6"
+  409:           >
+  410:             <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6">
+  411:               <h3 className="text-xl font-bold text-white mb-6">Finaliser votre commande</h3>
+  412:               
+  413:               {/* Email Input */}
+  414:               <div className="mb-6">
+  415:                 <label className="block text-sm font-medium text-gray-300 mb-2">
+  416:                   Adresse email (optionnel)
+  417:                 </label>
+  418:                 <input
+  419:                   type="email"
+  420:                   value={customerEmail}
+  421:                   onChange={(e) => setCustomerEmail(e.target.value)}
+  422:                   placeholder="votre@email.com"
+  423:                   className="w-full px-4 py-3 bg-mystical-dark/80 border border-mystical-gold/30 rounded-lg text-white placeholder-gray-500 focus:border-mystical-gold focus:outline-none focus:ring-1 focus:ring-mystical-gold"
+  424:                 />
+  425:                 <p className="text-xs text-gray-400 mt-1">
+  426:                   Pour recevoir votre confirmation et vos accès
+  427:                 </p>
+  428:               </div>
+  429: 
+  430:               {/* Stripe Elements */}
+  431:               {clientSecret && (
+  432:                 <Elements stripe={stripePromise} options={elementsOptions}>
+  433:                   <CheckoutForm
+  434:                     clientSecret={clientSecret}
+  435:                     orderId={orderId}
+  436:                     amount={parseInt(product.price.replace('€', '')) * 100} // Convert to cents
+  437:                     productName={product.name}
+  438:                     onSuccess={handlePaymentSuccess}
+  439:                   />
+  440:                 </Elements>
+  441:               )}
+  442:             </div>
+  443: 
+  444:             {/* Security Notice */}
+  445:             <div className="text-center text-sm text-gray-400 space-y-2">
+  446:               <p>🔒 Paiement sécurisé par Stripe</p>
+  447:               <p>Vos données bancaires sont chiffrées et protégées</p>
+  448:             </div>
+  449:           </motion.div>
+  450:         </div>
+  451:       </div>
+  452:     </div>
+  453:   );
+  454: };
+  455: 
+  456: export default CommandeTemple;
