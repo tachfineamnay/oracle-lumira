@@ -54,7 +54,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
           key={progress}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="font-inter font-semibold text-xl text-lumira-copper"
+          className="font-inter font-semibold text-xl text-mystical-copper"
         >
           {Math.round(progress)}%
         </motion.span>
@@ -62,7 +62,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
 
       {/* Outer Glow */}
       <motion.div
-        className="absolute inset-0 rounded-full bg-lumira-aurora/30 blur-xl"
+        className="absolute inset-0 rounded-full bg-mystical-aurora/30 blur-xl"
         animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         style={{ opacity: progress / 100 * 0.5 }}

@@ -79,7 +79,7 @@ const MandalaAnimation: React.FC = () => {
 
       {/* Central Glow */}
       <motion.div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-gradient-radial from-lumira-champagne/30 to-transparent blur-2xl"
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-gradient-radial from-mystical-champagne/30 to-transparent blur-2xl"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       />

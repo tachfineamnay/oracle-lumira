@@ -4,24 +4,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        lumira: {
+        // Palette claire et naturelle
+        mystical: {
           // Fonds clairs et naturels
           'cream': '#FEFCF8',
           'pearl': '#F8F6F3',
           'mist': '#F5F7FA',
           'dawn': '#FDF8F0',
+          'sky': '#E8F4FD',
           
           // Or doux et champagne
-          'gold-soft': '#E8D5B7',
-          'champagne': '#F7E7CE',
+          'gold': '#E8D5B7',
+          'gold-light': '#F7E7CE',
+          'champagne': '#F4E4BC',
           'copper': '#D2B48C',
           'bronze': '#CD7F32',
+          'amber': '#F0C674',
           
-          // Bleu nuit discret
+          // Bleu nuit discret (touches uniquement)
           'night': '#2C3E50',
           'night-soft': '#34495E',
           'constellation': '#4A6FA5',
-          'sky': '#E8F4FD',
           
           // Nuances naturelles
           'sage': '#9CAF88',
@@ -29,6 +32,11 @@ export default {
           'sand': '#F4E4BC',
           'water': '#B8E6E6',
           'aurora': '#E6F3FF',
+          
+          // Couleurs sombres (pour texte et contraste)
+          'dark': '#1A1A1A',
+          'purple': '#6B46C1',
+          'purple-light': '#A78BFA',
         }
       },
       fontFamily: {
@@ -41,6 +49,7 @@ export default {
         'rotate-slow': 'rotate-slow 20s linear infinite',
         'aurora-flow': 'aurora-flow 8s ease-in-out infinite',
         'constellation': 'constellation 12s ease-in-out infinite',
+        'breathe': 'breathe 6s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -75,6 +84,10 @@ export default {
           '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
           '50%': { opacity: '0.7', transform: 'scale(1.1)' },
         },
+        breathe: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.8' },
+          '50%': { transform: 'scale(1.05)', opacity: '1' },
+        },
       },
       backdropBlur: {
         'xs': '2px',
@@ -83,6 +96,11 @@ export default {
         'soft': '0 4px 20px rgba(232, 213, 183, 0.15)',
         'aurora': '0 8px 32px rgba(184, 230, 230, 0.2)',
         'constellation': '0 2px 12px rgba(74, 111, 165, 0.1)',
+        'organic': '0 10px 40px rgba(156, 175, 136, 0.15)',
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'organic-flow': 'linear-gradient(135deg, var(--tw-gradient-stops))',
       }
     },
   },

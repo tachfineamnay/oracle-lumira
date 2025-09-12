@@ -319,14 +319,14 @@ const CommandeTemple: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-mystical-cream via-mystical-pearl to-mystical-mist flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col items-center space-y-4"
         >
-          <Loader className="w-8 h-8 text-mystical-gold animate-spin" />
-          <p className="text-mystical-gold">Préparation de votre commande...</p>
+          <Loader className="w-8 h-8 text-mystical-copper animate-spin" />
+          <p className="text-mystical-night">Préparation de votre commande...</p>
         </motion.div>
       </div>
     );
@@ -334,18 +334,18 @@ const CommandeTemple: React.FC = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-mystical-cream via-mystical-pearl to-mystical-mist flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="max-w-md p-8 text-center space-y-4"
         >
           <AlertCircle className="w-16 h-16 text-red-400 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Erreur</h2>
-          <p className="text-gray-300">{error || 'Produit non trouvé'}</p>
+          <h2 className="text-2xl font-bold text-mystical-night">Erreur</h2>
+          <p className="text-mystical-night/70">{error || 'Produit non trouvé'}</p>
           <button
             onClick={handleBackToLevels}
-            className="bg-mystical-gold text-mystical-dark px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold-light transition-colors"
+            className="bg-mystical-gold text-mystical-night px-6 py-3 rounded-lg font-semibold hover:bg-mystical-champagne transition-colors"
           >
             Retour aux niveaux
           </button>

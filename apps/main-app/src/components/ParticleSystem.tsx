@@ -50,7 +50,7 @@ const ParticleSystem: React.FC = () => {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute rounded-full bg-lumira-constellation opacity-30"
+          className="absolute rounded-full bg-mystical-constellation opacity-30"
           style={{
             width: particle.size,
             height: particle.size,
@@ -80,7 +80,7 @@ const ParticleSystem: React.FC = () => {
       {[...Array(5)].map((_, i) => (
         <motion.div
           key={`mouse-${i}`} 
-          className="absolute w-1.5 h-1.5 rounded-full bg-lumira-gold-soft"
+          className="absolute w-1.5 h-1.5 rounded-full bg-mystical-gold"
           animate={{
             x: mousePosition.x - 4 + Math.sin(Date.now() * 0.005 + i) * 20,
             y: mousePosition.y - 4 + Math.cos(Date.now() * 0.005 + i) * 20,
