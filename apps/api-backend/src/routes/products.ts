@@ -538,7 +538,6 @@ async function handleProductPaymentCancellation(paymentIntent: Stripe.PaymentInt
   }
 }
 
-export default router;
 /**
  * GET /api/products
  * Return the product catalog
@@ -547,3 +546,5 @@ router.get('/', (req: Request, res: Response) => {
   const products = getAllProducts();
   res.json({ products });
 });
+
+export default router;
