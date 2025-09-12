@@ -1,4 +1,4 @@
-// Oracle Lumira - Commande SPA avec Stripe Elements
+﻿// Oracle Lumira - Commande SPA avec Stripe Elements
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ShoppingBag, Loader, AlertCircle, CheckCircle, CreditCard, Smartphone } from 'lucide-react';
@@ -262,10 +262,6 @@ const CommandeTemple: React.FC = () => {
 
   // Charger le catalogue produits depuis l'API
   useEffect(() => {
-    // Attendre le chargement du catalogue avant de continuer
-    if (!catalog) {
-      return;
-    }
     let mounted = true;
     (async () => {
       try {
