@@ -1,4 +1,4 @@
-﻿# Expert Desk - React + Vite + TypeScript Production Build
+# Expert Desk - React + Vite + TypeScript Production Build
 FROM node:20-alpine AS builder
 
 # Set working directory

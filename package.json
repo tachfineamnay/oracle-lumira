@@ -4,9 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"cd apps/api-backend && npm run dev\" \"cd apps/main-app && npm run dev\"",
+    "dev": "cd apps/main-app && npm run dev",
     "dev:main": "cd apps/main-app && npm run dev",
-    "dev:api": "cd apps/api-backend && npm run dev",
     "dev:desk": "cd apps/expert-desk && npm run dev",
     "build": "cd apps/main-app && npm run build",
     "build:main": "cd apps/main-app && npm run build",
