@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Import pages
 import LandingTemple from './pages/LandingTemple';
+import Home from './pages/Home';
 import CommandeTemple from './pages/CommandeTemple';
 import CommandeTempleSPA from './pages/CommandeTempleSPA';
 import ConfirmationTemple from './pages/ConfirmationTemple';
@@ -26,7 +27,7 @@ const App: React.FC = () => {
       <div className="relative z-10">
         <Router>
           <Routes>
-            <Route path="/" element={<LandingTemple />} />
+            <Route path="/" element={<Home />} />
             {/* Product SPA Routes (new system) */}
             <Route path="/commande" element={<CommandeTempleSPA />} />
             <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
