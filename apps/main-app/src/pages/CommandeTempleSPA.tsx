@@ -14,6 +14,9 @@ import {
 import type { Product } from '../types/products';
 import ProductOrderService from '../services/productOrder';
 import { validateStripeKey } from '../utils/api';
+import PageLayout from '../components/ui/PageLayout';
+import GlassCard from '../components/ui/GlassCard';
+import SectionHeader from '../components/ui/SectionHeader';
 
 // Stripe initialization with validation
 let stripePromise: Promise<any> | null = null;
@@ -357,8 +360,8 @@ const CommandeTemple: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark">
-      <div className="container mx-auto px-4 py-8">
+    <PageLayout variant="dark" className="py-8">
+      <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
@@ -383,7 +386,7 @@ const CommandeTemple: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6"
           >
-            <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6">
+            <GlassCard>
               <div className="flex items-start space-x-4">
                 <div className="p-3 bg-mystical-gold/20 rounded-lg">
                   <ShoppingBag className="w-6 h-6 text-mystical-gold" />
@@ -404,7 +407,7 @@ const CommandeTemple: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </GlassCard>
 
             {/* Features */}
             <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6">
@@ -426,7 +429,7 @@ const CommandeTemple: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6"
           >
-            <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6">
+            <GlassCard>
               <h3 className="text-xl font-bold text-white mb-6">Finaliser votre commande</h3>
               
               {/* Email Input */}
@@ -458,7 +461,7 @@ const CommandeTemple: React.FC = () => {
                   />
                 </Elements>
               )}
-            </div>
+            </GlassCard>
 
             {/* Security Notice */}
             <div className="text-center text-sm text-gray-400 space-y-2">
@@ -468,7 +471,7 @@ const CommandeTemple: React.FC = () => {
           </motion.div>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

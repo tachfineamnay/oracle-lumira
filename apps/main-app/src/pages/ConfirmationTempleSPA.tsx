@@ -5,6 +5,9 @@ import { CheckCircle, ArrowRight, Loader, AlertCircle, Crown } from 'lucide-reac
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ProductOrderService from '../services/productOrder';
 import { OrderStatus } from '../types/products';
+import PageLayout from '../components/ui/PageLayout';
+import GlassCard from '../components/ui/GlassCard';
+import SectionHeader from '../components/ui/SectionHeader';
 
 const ConfirmationTemple: React.FC = () => {
   const navigate = useNavigate();
@@ -79,39 +82,30 @@ const ConfirmationTemple: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center space-y-6"
-        >
+      <PageLayout variant="dark" className="py-12">
+        <div className="flex items-center justify-center"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center space-y-6">
           <Loader className="w-12 h-12 text-mystical-gold animate-spin mx-auto" />
           <h2 className="text-2xl font-bold text-white">Vérification de votre commande...</h2>
           <p className="text-gray-300">Nous vérifions le statut de votre paiement</p>
-        </motion.div>
-      </div>
+        </motion.div></div>
+      </PageLayout>
     );
   }
 
   if (error || !orderStatus) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md p-8 text-center space-y-6"
-        >
-          <AlertCircle className="w-16 h-16 text-red-400 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Erreur</h2>
-          <p className="text-gray-300">{error || 'Commande non trouvée'}</p>
-          <button
-            onClick={handleBackToHome}
-            className="bg-mystical-gold text-mystical-dark px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold-light transition-colors"
-          >
-            Retour à l'accueil
-          </button>
-        </motion.div>
-      </div>
+      <PageLayout variant="dark" className="py-12">
+        <div className="flex items-center justify-center">
+          <GlassCard>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md p-2 text-center space-y-6">
+              <AlertCircle className="w-16 h-16 text-red-400 mx-auto" />
+              <h2 className="text-2xl font-bold text-white">Erreur</h2>
+              <p className="text-gray-300">{error || 'Commande non trouvée'}</p>
+              <button onClick={handleBackToHome} className="bg-mystical-gold text-mystical-dark px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold-light transition-colors">Retour à l'accueil</button>
+            </motion.div>
+          </GlassCard>
+        </div>
+      </PageLayout>
     );
   }
 
@@ -120,12 +114,8 @@ const ConfirmationTemple: React.FC = () => {
   // Success state - payment completed and access granted
   if (accessGranted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-2xl mx-auto p-8 text-center space-y-8"
-        >
+      <PageLayout variant="dark" className="py-12">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto p-8 text-center space-y-8">
           {/* Success Icon */}
           <motion.div
             initial={{ scale: 0 }}
@@ -220,7 +210,7 @@ const ConfirmationTemple: React.FC = () => {
             <p>💎 Profitez de votre voyage initiatique</p>
           </motion.div>
         </motion.div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -266,12 +256,8 @@ const ConfirmationTemple: React.FC = () => {
   const StatusIcon = statusInfo.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark flex items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md mx-auto p-8 text-center space-y-6"
-      >
+    <PageLayout variant="dark" className="py-12">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto p-8 text-center space-y-6">
         {/* Status Icon */}
         <div className={`w-16 h-16 ${statusInfo.bgColor} rounded-full flex items-center justify-center mx-auto`}>
           <StatusIcon className={`w-8 h-8 ${statusInfo.color} ${order.status === 'pending' ? 'animate-spin' : ''}`} />
@@ -316,7 +302,7 @@ const ConfirmationTemple: React.FC = () => {
           </p>
         )}
       </motion.div>
-    </div>
+    </PageLayout>
   );
 };
 
