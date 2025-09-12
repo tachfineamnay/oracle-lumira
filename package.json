@@ -24,7 +24,8 @@
     "apps/shared"
   ],
   "devDependencies": {
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "concurrently": "^8.0.0"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^4.0.0",
