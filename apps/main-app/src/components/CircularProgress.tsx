@@ -20,7 +20,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
           cy="60"
           r={radius}
           fill="none"
-          stroke="rgba(212, 175, 55, 0.2)"
+          stroke="rgba(232, 213, 183, 0.3)"
           strokeWidth="8"
         />
         
@@ -30,7 +30,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
           cy="60"
           r={radius}
           fill="none"
-          stroke="url(#progressGradient)"
+          stroke="url(#auroraProgressGradient)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={strokeDasharray}
@@ -40,10 +40,10 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
         />
         
         <defs>
-          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#D4AF37" />
-            <stop offset="50%" stopColor="#FFD700" />
-            <stop offset="100%" stopColor="#FBBF24" />
+          <linearGradient id="auroraProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#E8D5B7" />
+            <stop offset="50%" stopColor="#B8E6E6" />
+            <stop offset="100%" stopColor="#9CAF88" />
           </linearGradient>
         </defs>
       </svg>
@@ -54,7 +54,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
           key={progress}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="font-inter font-semibold text-xl text-mystical-gold"
+          className="font-inter font-semibold text-xl text-lumira-copper"
         >
           {Math.round(progress)}%
         </motion.span>
@@ -62,9 +62,9 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
 
       {/* Outer Glow */}
       <motion.div
-        className="absolute inset-0 rounded-full bg-mystical-gold/20 blur-xl"
+        className="absolute inset-0 rounded-full bg-lumira-aurora/30 blur-xl"
         animate={{ scale: [1, 1.1, 1] }}
-        transition={{ duration: 3, repeat: Infinity }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         style={{ opacity: progress / 100 * 0.5 }}
       />
     </div>

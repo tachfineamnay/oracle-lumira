@@ -50,7 +50,7 @@ const ParticleSystem: React.FC = () => {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute rounded-full bg-mystical-gold opacity-60"
+          className="absolute rounded-full bg-lumira-constellation opacity-30"
           style={{
             width: particle.size,
             height: particle.size,
@@ -64,7 +64,7 @@ const ParticleSystem: React.FC = () => {
               particle.x + Math.sin(Date.now() * 0.001 + particle.id) * 50,
               particle.x,
             ],
-            opacity: [0.2, 0.8, 0.2],
+            opacity: [0.1, 0.4, 0.1],
             scale: [1, 1.5, 1],
           }}
           transition={{
@@ -79,8 +79,8 @@ const ParticleSystem: React.FC = () => {
       {/* Mouse Follower Particles */}
       {[...Array(5)].map((_, i) => (
         <motion.div
-          key={`mouse-${i}`}
-          className="absolute w-2 h-2 rounded-full bg-mystical-gold-light"
+          key={`mouse-${i}`} 
+          className="absolute w-1.5 h-1.5 rounded-full bg-lumira-gold-soft"
           animate={{
             x: mousePosition.x - 4 + Math.sin(Date.now() * 0.005 + i) * 20,
             y: mousePosition.y - 4 + Math.cos(Date.now() * 0.005 + i) * 20,
@@ -91,7 +91,7 @@ const ParticleSystem: React.FC = () => {
             stiffness: 300,
             delay: i * 0.1,
           }}
-          style={{ opacity: 0.3 - i * 0.05 }}
+          style={{ opacity: 0.2 - i * 0.03 }}
         />
       ))}
     </div>

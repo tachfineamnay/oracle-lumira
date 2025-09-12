@@ -26,11 +26,12 @@ function mapProductsToLevels(products: Product[]): LevelCardData[] {
     (a, b) => levelOrder.indexOf(a.level) - levelOrder.indexOf(b.level)
   );
 
+  // Gradients organiques et doux
   const gradients = [
-    "from-mystical-gold/20 to-mystical-amber/20",
-    "from-mystical-purple/20 to-mystical-gold/20",
-    "from-mystical-amber/20 to-mystical-purple/20",
-    "from-mystical-gold/30 to-mystical-purple/30",
+    "from-lumira-aurora/30 to-lumira-water/20",
+    "from-lumira-champagne/40 to-lumira-sage/20", 
+    "from-lumira-sand/30 to-lumira-constellation/15",
+    "from-lumira-copper/20 to-lumira-aurora/25",
   ];
 
   return sorted.map((p, idx) => ({
@@ -70,7 +71,15 @@ const LevelsSection: React.FC = () => {
   }, []);
 
   return (
-    <section id="levels" className="py-24 relative">
+    <section id="levels" className="py-24 relative bg-gradient-to-b from-lumira-pearl to-lumira-mist">
+      {/* Constellation Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-lumira-constellation/40 rounded-full animate-constellation"></div>
+        <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-lumira-constellation/30 rounded-full animate-constellation" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-1/3 left-1/4 w-1.5 h-1.5 bg-lumira-constellation/35 rounded-full animate-constellation" style={{animationDelay: '4s'}}></div>
+        <div className="absolute top-3/4 right-1/3 w-1 h-1 bg-lumira-constellation/25 rounded-full animate-constellation" style={{animationDelay: '6s'}}></div>
+      </div>
+      
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -79,27 +88,27 @@ const LevelsSection: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-20"
         >
-          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-6 bg-gradient-to-r from-mystical-gold via-mystical-gold-light to-mystical-amber bg-clip-text text-transparent">
+          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-6 bg-gradient-to-r from-lumira-copper via-lumira-gold-soft to-lumira-bronze bg-clip-text text-transparent">
             Choisis ton niveau d'�veil
           </h2>
-          <p className="font-inter font-light text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="font-inter font-light text-xl text-lumira-night/70 max-w-3xl mx-auto">
             Chaque niveau r�v�le une couche plus profonde de ton essence spirituelle
           </p>
         </motion.div>
 
         {/* Loading */}
         {!levels && !error && (
-          <div className="text-center text-gray-400">Chargement du catalogue...</div>
+          <div className="text-center text-lumira-night/60">Chargement du catalogue...</div>
         )}
 
         {/* Error */}
         {error && (
-          <div className="text-center text-red-400">{error}</div>
+          <div className="text-center text-red-500/80 bg-red-50 p-4 rounded-2xl">{error}</div>
         )}
 
         {/* Grid */}
         {levels && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto relative z-10">
             {levels.map((level, index) => (
               <motion.div
                 key={level.productId || level.id}

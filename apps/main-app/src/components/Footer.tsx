@@ -4,7 +4,7 @@ import { Heart, Mail, Shield, ExternalLink } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gradient-to-r from-mystical-dark via-mystical-purple/10 to-mystical-dark border-t border-mystical-gold/30 py-16">
+    <footer className="bg-gradient-to-r from-lumira-pearl via-lumira-mist to-lumira-pearl border-t border-lumira-gold-soft/30 py-16">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {/* Brand */}
@@ -14,14 +14,14 @@ const Footer: React.FC = () => {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h3 className="font-playfair italic text-2xl font-medium text-mystical-gold mb-4">
+            <h3 className="font-playfair italic text-2xl font-medium text-lumira-copper mb-4">
               Oracle Lumira
             </h3>
-            <p className="font-inter text-gray-400 leading-relaxed mb-6">
+            <p className="font-inter text-lumira-night/70 leading-relaxed mb-6">
               Révèle ton archétype spirituel à travers des lectures vibratoires personnalisées. 
               Une expérience mystique moderne pour explorer les profondeurs de ton âme.
             </p>
-            <div className="flex items-center gap-2 text-mystical-gold">
+            <div className="flex items-center gap-2 text-lumira-gold-soft">
               <Heart className="w-4 h-4" />
               <span className="font-inter text-sm">Avec amour et lumière</span>
             </div>
@@ -34,13 +34,13 @@ const Footer: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            <h4 className="font-inter font-semibold text-white mb-4">Contact</h4>
+            <h4 className="font-inter font-semibold text-lumira-night mb-4">Contact</h4>
             <div className="space-y-3">
-              <div className="flex items-center gap-3 text-gray-400">
-                <Mail className="w-4 h-4 text-mystical-gold" />
+              <div className="flex items-center gap-3 text-lumira-night/70">
+                <Mail className="w-4 h-4 text-lumira-copper" />
                 <span className="font-inter text-sm">oracle@lumira.com</span>
               </div>
-              <p className="font-inter text-xs text-gray-500">
+              <p className="font-inter text-xs text-lumira-night/50">
                 Réponse sous 24h • Support disponible 7j/7
               </p>
             </div>
@@ -53,17 +53,17 @@ const Footer: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <h4 className="font-inter font-semibold text-white mb-4">Légal</h4>
+            <h4 className="font-inter font-semibold text-lumira-night mb-4">Légal</h4>
             <div className="space-y-3">
               <a 
                 href="/mentions-legales" 
-                className="flex items-center gap-2 text-gray-400 hover:text-mystical-gold transition-colors duration-300"
+                className="flex items-center gap-2 text-lumira-night/70 hover:text-lumira-copper transition-colors duration-300"
               >
                 <Shield className="w-4 h-4" />
                 <span className="font-inter text-sm">Mentions légales</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
-              <p className="font-inter text-xs text-gray-500">
+              <p className="font-inter text-xs text-lumira-night/50">
                 Paiements sécurisés • Données protégées
               </p>
             </div>
@@ -71,7 +71,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-mystical-gold/20 my-8"></div>
+        <div className="border-t border-lumira-gold-soft/30 my-8"></div>
 
         {/* Bottom */}
         <motion.div
@@ -81,9 +81,9 @@ const Footer: React.FC = () => {
           viewport={{ once: true }}
           className="text-center"
         >
-          <p className="font-inter text-sm text-gray-500">
+          <p className="font-inter text-sm text-lumira-night/60">
             © 2024 Oracle Lumira. Tous droits réservés. 
-            <span className="text-mystical-gold ml-2">✨ Made with spiritual energy</span>
+            <span className="text-lumira-copper ml-2">✨ Made with spiritual energy</span>
           </p>
         </motion.div>
       </div>

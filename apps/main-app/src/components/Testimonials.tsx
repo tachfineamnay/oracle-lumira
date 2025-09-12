@@ -40,7 +40,7 @@ const testimonials: Testimonial[] = [
 
 const Testimonials: React.FC = () => {
   return (
-    <section className="py-24 relative">
+    <section className="py-24 relative bg-gradient-to-b from-lumira-mist to-lumira-pearl">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -49,10 +49,10 @@ const Testimonials: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-6 bg-gradient-to-r from-mystical-gold via-mystical-gold-light to-mystical-amber bg-clip-text text-transparent">
+          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-6 bg-gradient-to-r from-lumira-copper via-lumira-gold-soft to-lumira-bronze bg-clip-text text-transparent">
             Ils ont révélé leur essence
           </h2>
-          <p className="font-inter font-light text-xl text-gray-300">
+          <p className="font-inter font-light text-xl text-lumira-night/70">
             Des transformations authentiques, des âmes touchées
           </p>
         </motion.div>
@@ -67,16 +67,16 @@ const Testimonials: React.FC = () => {
               viewport={{ once: true }}
               className="group"
             >
-              <div className="relative p-8 rounded-2xl bg-gradient-to-br from-mystical-gold/10 to-mystical-purple/10 backdrop-blur-sm border border-mystical-gold/30 transition-all duration-500 hover:border-mystical-gold/60 hover:scale-105">
+              <div className="relative p-8 rounded-3xl bg-white/70 backdrop-blur-sm border border-lumira-gold-soft/30 shadow-soft transition-all duration-500 hover:shadow-aurora hover:scale-105">
                 {/* Glow Effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-mystical-gold/10 to-mystical-purple/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-lumira-aurora/20 to-lumira-water/15 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
 
                 <div className="relative z-10">
                   {/* Quote Icon */}
-                  <Quote className="w-8 h-8 text-mystical-gold mb-4 opacity-60" />
+                  <Quote className="w-8 h-8 text-lumira-copper mb-4 opacity-70" />
 
                   {/* Content */}
-                  <p className="font-inter font-light text-gray-200 mb-6 leading-relaxed">
+                  <p className="font-inter font-light text-lumira-night/80 mb-6 leading-relaxed">
                     "{testimonial.content}"
                   </p>
 
@@ -85,13 +85,13 @@ const Testimonials: React.FC = () => {
                     <img
                       src={testimonial.avatar}
                       alt={testimonial.name}
-                      className="w-12 h-12 rounded-full border-2 border-mystical-gold/30"
+                      className="w-12 h-12 rounded-full border-2 border-lumira-gold-soft/40 shadow-soft"
                     />
                     <div>
-                      <div className="font-inter font-medium text-white">
+                      <div className="font-inter font-medium text-lumira-night">
                         {testimonial.name}
                       </div>
-                      <div className="font-inter text-sm text-mystical-gold">
+                      <div className="font-inter text-sm text-lumira-constellation">
                         {testimonial.archetype}
                       </div>
                     </div>
@@ -100,7 +100,7 @@ const Testimonials: React.FC = () => {
                   {/* Rating */}
                   <div className="flex gap-1 mt-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-mystical-gold fill-current" />
+                      <Star key={i} className="w-4 h-4 text-lumira-copper fill-current" />
                     ))}
                   </div>
                 </div>

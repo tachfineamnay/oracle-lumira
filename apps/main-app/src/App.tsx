@@ -17,7 +17,7 @@ import GoldenMist from './components/GoldenMist';
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen bg-mystical-dark text-white overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-lumira-cream via-lumira-pearl to-lumira-mist text-lumira-night overflow-x-hidden">
       {/* Background Effects */}
       <ParticleSystem />
       <GoldenMist />
