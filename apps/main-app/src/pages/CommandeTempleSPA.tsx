@@ -279,6 +279,7 @@ const CommandeTemple: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!catalog) { return; }
     if (!productId || !product) {
       setError('Produit non trouvé');
       setIsLoading(false);
