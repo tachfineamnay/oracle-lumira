@@ -89,10 +89,10 @@ const LevelsSection: React.FC = () => {
           className="text-center mb-20"
         >
           <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-6 bg-gradient-to-r from-lumira-copper via-lumira-gold-soft to-lumira-bronze bg-clip-text text-transparent">
-            Choisis ton niveau d'�veil
+            Choisis ton niveau d'éveil
           </h2>
-          <p className="font-inter font-light text-xl text-lumira-night/70 max-w-3xl mx-auto">
-            Chaque niveau r�v�le une couche plus profonde de ton essence spirituelle
+          <p className="font-inter font-light text-xl text-lumira-night/70 max-w-3xl mx-auto leading-relaxed">
+            Chaque niveau révèle une couche plus profonde de ton essence spirituelle
           </p>
         </motion.div>
 
@@ -128,4 +128,3 @@ const LevelsSection: React.FC = () => {
 };
 
 export default LevelsSection;
-
