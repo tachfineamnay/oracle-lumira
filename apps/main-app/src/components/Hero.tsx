@@ -42,7 +42,7 @@ const Hero: React.FC = () => {
           </button>
 
           <p className="font-inter font-light text-sm text-mystical-silver">
-            🔮 Livraison en 24h • PDF + Audio • Mandala personnalisé
+            🔮 Livraison en 24h • PDF + Audio + Mandala personnalisé
           </p>
         </div>
       </div>

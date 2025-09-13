@@ -11,18 +11,15 @@ export default {
           'midnight': '#0F172A',
           'deep-blue': '#1E293B',
           'navy': '#334155',
-          
           // Lumières mystiques
           'gold': '#D4AF37',
           'gold-light': '#FFD700',
           'violet-astral': '#C084FC',
           'purple': '#A78BFA',
-          
           // Accents lunaires
           'moonlight': '#E2E8F0',
           'starlight': '#F8FAFC',
           'silver': '#CBD5E1',
-          
           // Forêt mystique
           'forest-dark': '#0A0F0A',
           'forest-deep': '#1A2F1A',
@@ -79,3 +76,4 @@ export default {
   },
   plugins: [],
 };
+
