@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Calendar, User, Heart, Zap } from 'lucide-react';
 import CircularProgress from './CircularProgress';
+import SpiritualWaves from './SpiritualWaves';
 
 interface FormData {
   level: number;
@@ -59,25 +60,28 @@ const DynamicForm: React.FC = () => {
   };
 
   return (
-    <section className="py-24 relative bg-gradient-to-b from-mystical-pearl to-mystical-dawn">
+    <section className="py-32 relative bg-gradient-to-b from-mystical-pearl via-mystical-serenity to-mystical-dawn overflow-hidden">
+      {/* Ondulations spirituelles */}
+      <SpiritualWaves intensity="medium" />
+      
       <div className="container mx-auto px-6 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-20 relative z-10"
         >
-          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-6 bg-gradient-to-r from-mystical-copper via-mystical-gold to-mystical-bronze bg-clip-text text-transparent">
+          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-8 bg-gradient-to-r from-mystical-copper via-mystical-gold to-mystical-radiance bg-clip-text text-transparent drop-shadow-sm">
             Commence ton voyage
           </h2>
-          <p className="font-inter font-light text-xl text-mystical-night/70">
+          <p className="font-inter font-light text-xl md:text-2xl text-mystical-night/80 tracking-wide">
             Quelques informations pour personnaliser ta lecture
           </p>
         </motion.div>
 
         {/* Level Selection */}
-        <div className="mb-12">
+        <div className="mb-16 relative z-10">
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             {[1, 2, 3, 4].map((level) => (
               <motion.button
@@ -86,25 +90,56 @@ const DynamicForm: React.FC = () => {
                   setSelectedLevel(level);
                   setCurrentStep(0);
                 }}
-                className={`px-6 py-3 rounded-full font-inter font-medium transition-all duration-300 ${
+                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 relative overflow-hidden group ${
                   selectedLevel === level
-                    ? 'bg-gradient-to-r from-mystical-gold to-mystical-champagne text-mystical-night shadow-soft'
-                    : 'bg-white/60 text-mystical-constellation border border-mystical-gold/30 hover:bg-mystical-aurora/30'
+                    ? 'bg-gradient-to-r from-mystical-gold to-mystical-radiance text-mystical-night shadow-spiritual'
+                    : 'bg-white/65 text-mystical-constellation border border-mystical-gold/40 hover:bg-mystical-aurora/25 shadow-serenity'
                 }`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
+                {/* Effet d'ondulation pour bouton sélectionné */}
+                {selectedLevel === level && (
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-mystical-luminous/30 to-mystical-gold/30 rounded-full"
+                    animate={{
+                      scale: [1, 1.1, 1],
+                      opacity: [0.3, 0.6, 0.3],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                )}
+                <span className="relative z-10 tracking-wide">
                 Niveau {level}
+                </span>
               </motion.button>
             ))}
           </div>
         </div>
 
         {/* Form Container */}
-        <div className="relative">
-          <div className="bg-white/80 backdrop-blur-sm border border-mystical-gold/30 rounded-3xl p-8 md:p-12 shadow-aurora">
+        <div className="relative z-10">
+          <div className="bg-white/85 backdrop-blur-md border border-mystical-gold/40 rounded-3xl p-8 md:p-12 shadow-spiritual relative overflow-hidden">
+            {/* Ondulation de formulaire */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-mystical-gold/3 to-mystical-water/3 rounded-3xl"
+              animate={{
+                opacity: [0, 0.5, 0],
+                scale: [1, 1.02, 1],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            
             {/* Progress */}
-            <div className="flex items-center justify-center mb-12">
+            <div className="flex items-center justify-center mb-16 relative z-10">
               <CircularProgress progress={progress} />
             </div>
 
@@ -115,22 +150,22 @@ const DynamicForm: React.FC = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="min-h-[300px] flex flex-col justify-center"
+                transition={{ duration: 0.5 }}
+                className="min-h-[300px] flex flex-col justify-center relative z-10"
               >
                 {renderStep(steps[currentStep], formData, setFormData)}
               </motion.div>
             </AnimatePresence>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center mt-12">
+            <div className="flex justify-between items-center mt-16 relative z-10">
               <motion.button
                 onClick={handlePrevious}
                 disabled={currentStep === 0}
-                className={`px-6 py-3 rounded-full font-inter font-medium transition-all duration-300 ${
+                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 tracking-wide ${
                   currentStep === 0
                     ? 'opacity-50 cursor-not-allowed text-gray-500'
-                    : 'text-mystical-copper border border-mystical-copper/30 hover:bg-mystical-copper/10'
+                    : 'text-mystical-copper/90 border border-mystical-copper/40 hover:bg-mystical-copper/10 shadow-serenity'
                 }`}
                 whileHover={currentStep > 0 ? { scale: 1.05 } : {}}
               >
@@ -139,11 +174,20 @@ const DynamicForm: React.FC = () => {
 
               <motion.button
                 onClick={currentStep === steps.length - 1 ? () => {} : handleNext}
-                className="px-8 py-3 rounded-full bg-gradient-to-r from-mystical-gold to-mystical-champagne text-mystical-night font-inter font-medium transition-all duration-300 hover:shadow-aurora hover:from-mystical-copper hover:to-mystical-gold flex items-center gap-2"
+                className="px-10 py-4 rounded-full bg-gradient-to-r from-mystical-gold via-mystical-radiance to-mystical-champagne text-mystical-night font-inter font-medium transition-all duration-500 hover:shadow-energy hover:from-mystical-copper hover:to-mystical-luminous flex items-center gap-2 relative overflow-hidden group tracking-wide"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
+                {/* Effet d'ondulation au survol */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-mystical-luminous/30 to-mystical-gold/30 rounded-full"
+                  initial={{ scale: 0, opacity: 0 }}
+                  whileHover={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.4 }}
+                />
+                <span className="relative z-10">
                 {currentStep === steps.length - 1 ? 'Recevoir ma lecture' : 'Suivant'}
+                </span>
                 <ChevronRight className="w-4 h-4" />
               </motion.button>
             </div>

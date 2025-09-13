@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import LevelCard from "./LevelCard";
 import type { Product } from "../types/products";
 import ProductOrderService from "../services/productOrder";
+import SpiritualWaves from "./SpiritualWaves";
 
 // Type local utilisé par la carte
 interface LevelCardData {
@@ -71,13 +72,35 @@ const LevelsSection: React.FC = () => {
   }, []);
 
   return (
-    <section id="levels" className="py-24 relative bg-gradient-to-b from-mystical-pearl to-mystical-mist">
+    <section id="levels" className="py-32 relative bg-gradient-to-b from-mystical-pearl via-mystical-whisper to-mystical-flow overflow-hidden">
+      {/* Ondulations spirituelles */}
+      <SpiritualWaves intensity="medium" />
+      
       {/* Constellation Background */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-mystical-constellation/40 rounded-full animate-constellation"></div>
-        <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-mystical-constellation/30 rounded-full animate-constellation" style={{animationDelay: '2s'}}></div>
-        <div className="absolute bottom-1/3 left-1/4 w-1.5 h-1.5 bg-mystical-constellation/35 rounded-full animate-constellation" style={{animationDelay: '4s'}}></div>
-        <div className="absolute top-3/4 right-1/3 w-1 h-1 bg-mystical-constellation/25 rounded-full animate-constellation" style={{animationDelay: '6s'}}></div>
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bg-mystical-constellation/30 rounded-full"
+            style={{
+              width: `${1 + Math.random() * 2}px`,
+              height: `${1 + Math.random() * 2}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0.2, 0.6, 0.2],
+              scale: [0.8, 1.2, 0.8],
+              y: [0, -20, 0],
+            }}
+            transition={{
+              duration: 6 + Math.random() * 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 6,
+            }}
+          />
+        ))}
       </div>
       
       <div className="container mx-auto px-6">
@@ -86,24 +109,52 @@ const LevelsSection: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="text-center mb-24 relative z-10"
         >
-          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-6 bg-gradient-to-r from-mystical-copper via-mystical-gold to-mystical-bronze bg-clip-text text-transparent">
+          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-8 bg-gradient-to-r from-mystical-copper via-mystical-gold to-mystical-radiance bg-clip-text text-transparent drop-shadow-sm">
             Choisis ton niveau d'éveil
           </h2>
-          <p className="font-inter font-light text-xl text-mystical-night/70 max-w-3xl mx-auto leading-relaxed">
+          <p className="font-inter font-light text-xl md:text-2xl text-mystical-night/80 max-w-4xl mx-auto leading-relaxed tracking-wide">
             Chaque niveau révèle une couche plus profonde de ton essence spirituelle
           </p>
+          
+          {/* Ligne décorative ondulante */}
+          <motion.div
+            className="w-32 h-0.5 bg-gradient-to-r from-transparent via-mystical-gold to-transparent mx-auto mt-8"
+            animate={{
+              scaleX: [1, 1.2, 1],
+              opacity: [0.5, 0.8, 0.5],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
         </motion.div>
 
         {/* Loading */}
         {!levels && !error && (
-          <div className="text-center text-mystical-night/60">Chargement du catalogue...</div>
+          <motion.div 
+            className="text-center text-mystical-night/70 py-16"
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Loader className="w-8 h-8 mx-auto mb-4 text-mystical-gold animate-spin" />
+            <p className="font-inter">Chargement du catalogue spirituel...</p>
+          </motion.div>
         )}
 
         {/* Error */}
         {error && (
-          <div className="text-center text-red-500/80 bg-red-50 p-4 rounded-2xl">{error}</div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center text-red-600 bg-red-50/80 backdrop-blur-sm p-6 rounded-2xl border border-red-200/50 max-w-md mx-auto"
+          >
+            <AlertCircle className="w-8 h-8 mx-auto mb-3 text-red-500" />
+            <p className="font-inter">{error}</p>
+          </motion.div>
         )}
 
         {/* Grid */}
@@ -114,8 +165,9 @@ const LevelsSection: React.FC = () => {
                 key={level.productId || level.id}
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                transition={{ duration: 0.8, delay: index * 0.15 }}
                 viewport={{ once: true }}
+                whileHover={{ y: -8 }}
               >
                 <LevelCard level={level} />
               </motion.div>

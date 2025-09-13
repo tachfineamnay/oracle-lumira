@@ -1,4 +1,4 @@
-﻿// Oracle Lumira - Commande SPA avec Stripe Elements
+// Oracle Lumira - Commande SPA avec Stripe Elements
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ShoppingBag, Loader, AlertCircle, CheckCircle, CreditCard, Smartphone } from 'lucide-react';
@@ -17,6 +17,7 @@ import { validateStripeKey } from '../utils/api';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
 import SectionHeader from '../components/ui/SectionHeader';
+import SpiritualWaves from '../components/SpiritualWaves';
 
 // Stripe initialization with validation
 let stripePromise: Promise<any> | null = null;
@@ -360,63 +361,128 @@ const CommandeTemple: React.FC = () => {
   };
 
   return (
-    <PageLayout variant="dark" className="py-8">
+    <div className="min-h-screen bg-gradient-to-br from-mystical-deep via-mystical-night to-mystical-shadow relative overflow-hidden">
+      {/* Ondulations spirituelles pour les pages sombres */}
+      <SpiritualWaves intensity="subtle" />
+      
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-12 pt-8 relative z-10">
           <button
             onClick={handleBackToLevels}
-            className="flex items-center space-x-2 text-mystical-gold hover:text-mystical-gold-light transition-colors"
+            className="flex items-center space-x-2 text-mystical-gold/90 hover:text-mystical-radiance transition-colors duration-500"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>Retour</span>
+            <span className="tracking-wide">Retour</span>
           </button>
           
-          <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-mystical-gold to-mystical-gold-light bg-clip-text text-transparent">
+          <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-mystical-gold via-mystical-radiance to-mystical-luminous bg-clip-text text-transparent tracking-wide">
             Oracle Lumira - Commande
           </h1>
           
           <div className="w-16"></div> {/* Spacer for centering */}
         </div>
 
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 relative z-10">
           {/* Product Summary */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
             className="space-y-6"
           >
-            <GlassCard>
+            <div className="bg-gradient-to-br from-mystical-night/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-2xl p-6 shadow-spiritual relative overflow-hidden">
+              {/* Ondulation de résumé produit */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-br from-mystical-gold/5 to-mystical-water/5 rounded-2xl"
+                animate={{
+                  opacity: [0, 0.6, 0],
+                  scale: [1, 1.02, 1],
+                }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+              
               <div className="flex items-start space-x-4">
-                <div className="p-3 bg-mystical-gold/20 rounded-lg">
+                <motion.div 
+                  className="p-3 bg-mystical-gold/25 rounded-lg shadow-harmony relative z-10"
+                  animate={{
+                    boxShadow: [
+                      '0 4px 24px rgba(156, 175, 136, 0.08)',
+                      '0 6px 30px rgba(156, 175, 136, 0.12)',
+                      '0 4px 24px rgba(156, 175, 136, 0.08)',
+                    ],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
                   <ShoppingBag className="w-6 h-6 text-mystical-gold" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
-                  <p className="text-gray-300 mb-4">{product.description}</p>
+                </motion.div>
+                <div className="flex-1 relative z-10">
+                  <h3 className="text-xl font-bold text-white/95 mb-2 tracking-wide">{product.name}</h3>
+                  <p className="text-gray-300/90 mb-4 tracking-wide leading-relaxed">{product.description}</p>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Prix</span>
-                      <span className="text-2xl font-bold text-mystical-gold">{ProductOrderService.formatPrice(product.amountCents, product.currency)}</span>
+                      <span className="text-gray-400/90 tracking-wide">Prix</span>
+                      <span className="text-2xl font-bold text-mystical-gold/95">{ProductOrderService.formatPrice(product.amountCents, product.currency)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Durée</span>
-                      <span className="text-white">{product.metadata.duration}</span>
+                      <span className="text-gray-400/90 tracking-wide">Durée</span>
+                      <span className="text-white/95 tracking-wide">{product.metadata.duration}</span>
                     </div>
                   </div>
                 </div>
               </div>
-            </GlassCard>
+            </div>
 
             {/* Features */}
-            <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6">
-              <h4 className="font-bold text-white mb-4">Ce qui est inclus :</h4>
+            <div className="bg-gradient-to-br from-mystical-night/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-2xl p-6 shadow-spiritual relative overflow-hidden">
+              {/* Ondulation des fonctionnalités */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-mystical-gold/4 to-mystical-water/4 rounded-2xl"
+                animate={{
+                  opacity: [0, 0.5, 0],
+                  x: ['-100%', '100%'],
+                }}
+                transition={{
+                  duration: 10,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+              />
+              
+              <h4 className="font-bold text-white/95 mb-4 tracking-wide relative z-10">Ce qui est inclus :</h4>
               <div className="space-y-3">
                 {product.features.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <CheckCircle className="w-5 h-5 text-mystical-gold flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">{feature}</span>
+                  <motion.div 
+                    key={index} 
+                    className="flex items-start space-x-3 relative z-10"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                  >
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.1, 1],
+                        opacity: [0.8, 1, 0.8],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: index * 0.3,
+                      }}
+                    >
+                      <CheckCircle className="w-5 h-5 text-mystical-gold/90 flex-shrink-0 mt-0.5" />
+                    </motion.div>
+                    <span className="text-gray-300/90 tracking-wide">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -427,14 +493,30 @@ const CommandeTemple: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
             className="space-y-6"
           >
-            <GlassCard>
-              <h3 className="text-xl font-bold text-white mb-6">Finaliser votre commande</h3>
+            <div className="bg-gradient-to-br from-mystical-night/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-2xl p-6 shadow-spiritual relative overflow-hidden">
+              {/* Ondulation de formulaire de paiement */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-br from-mystical-gold/4 to-mystical-harmony/4 rounded-2xl"
+                animate={{
+                  opacity: [0, 0.5, 0],
+                  scale: [1, 1.03, 1],
+                }}
+                transition={{
+                  duration: 7,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1,
+                }}
+              />
+              
+              <h3 className="text-xl font-bold text-white/95 mb-6 tracking-wide relative z-10">Finaliser votre commande</h3>
               
               {/* Email Input */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+              <div className="mb-6 relative z-10">
+                <label className="block text-sm font-medium text-gray-300/90 mb-2 tracking-wide">
                   Adresse email (optionnel)
                 </label>
                 <input
@@ -442,15 +524,16 @@ const CommandeTemple: React.FC = () => {
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="votre@email.com"
-                  className="w-full px-4 py-3 bg-mystical-dark/80 border border-mystical-gold/30 rounded-lg text-white placeholder-gray-500 focus:border-mystical-gold focus:outline-none focus:ring-1 focus:ring-mystical-gold"
+                  className="w-full px-4 py-3 bg-mystical-deep/80 border border-mystical-gold/40 rounded-lg text-white/95 placeholder-gray-500/80 focus:border-mystical-radiance focus:outline-none focus:ring-2 focus:ring-mystical-gold/30 transition-all duration-500 tracking-wide"
                 />
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-400/80 mt-1 tracking-wide">
                   Pour recevoir votre confirmation et vos accès
                 </p>
               </div>
 
               {/* Stripe Elements */}
               {clientSecret && (
+                <div className="relative z-10">
                 <Elements stripe={stripePromise} options={elementsOptions}>
                   <CheckoutForm
                     clientSecret={clientSecret}
@@ -460,18 +543,19 @@ const CommandeTemple: React.FC = () => {
                     onSuccess={handlePaymentSuccess}
                   />
                 </Elements>
+                </div>
               )}
-            </GlassCard>
+            </div>
 
             {/* Security Notice */}
-            <div className="text-center text-sm text-gray-400 space-y-2">
+            <div className="text-center text-sm text-gray-400/80 space-y-2 relative z-10">
               <p>🔒 Paiement sécurisé par Stripe</p>
-              <p>Vos données bancaires sont chiffrées et protégées</p>
+              <p className="tracking-wide">Vos données bancaires sont chiffrées et protégées</p>
             </div>
           </motion.div>
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 };
 
