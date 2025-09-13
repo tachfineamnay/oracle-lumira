@@ -1,7 +1,6 @@
 import React from 'react';
 import { Crown, Music, Zap, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { motion } from 'framer-motion';
 
 interface Upsell {
   id: string;
