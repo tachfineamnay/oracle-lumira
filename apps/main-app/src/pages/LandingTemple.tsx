@@ -10,7 +10,6 @@ const LandingTemple: React.FC = () => {
   return (
     <div className="min-h-screen">
       <Hero />
-      {/* Section existante (conservée) */}
       <LevelsSection />
       <DynamicForm />
       <Testimonials />
