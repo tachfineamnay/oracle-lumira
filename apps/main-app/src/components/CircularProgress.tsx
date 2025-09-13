@@ -19,7 +19,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
           cy="60"
           r={radius}
           fill="none"
-          stroke="rgba(226, 232, 240, 0.2)"
+          stroke="rgba(212, 175, 55, 0.2)"
           strokeWidth="8"
         />
         
@@ -29,18 +29,19 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
           cy="60"
           r={radius}
           fill="none"
-          stroke="rgba(226, 232, 240, 0.8)"
+          stroke="rgba(212, 175, 55, 0.8)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={strokeDasharray}
           strokeDashoffset={strokeDashoffset}
           style={{ transition: 'stroke-dashoffset 1.2s ease-in-out' }}
+          className="animate-gold-pulse"
         />
       </svg>
 
       {/* Center Content */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="font-inter font-semibold text-xl text-mystical-moonlight">
+        <span className="font-inter font-light text-xl text-mystical-gold animate-gold-pulse">
           {Math.round(progress)}%
         </span>
       </div>

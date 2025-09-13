@@ -39,14 +39,17 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
     }
   };
 
+  // Numéros romains
+  const romanNumerals = ['I', 'II', 'III', 'IV'];
+
   return (
     <div
-      className={`relative p-8 rounded-2xl bg-gradient-to-br ${level.gradient} backdrop-blur-sm border border-mystical-moonlight/20 shadow-forest hover:shadow-moonlight transition-all duration-500 cursor-pointer group h-full flex flex-col overflow-hidden`}
+      className={`relative p-8 rounded-2xl bg-gradient-to-br ${level.gradient} backdrop-blur-sm border border-mystical-gold/30 shadow-forest hover:shadow-gold-glow transition-all duration-500 cursor-pointer group h-full flex flex-col overflow-hidden`}
       onClick={handleChooseLevel}
     >
       {/* Badge recommandé */}
       {level.recommended && (
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-mystical-moonlight text-mystical-black px-4 py-1 rounded-full text-sm font-semibold">
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-mystical-gold text-mystical-abyss px-4 py-1 rounded-full text-sm font-semibold animate-gold-pulse">
           ⭐ Populaire
         </div>
       )}
@@ -54,25 +57,25 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-mystical-moonlight/10 border border-mystical-moonlight/30 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl font-playfair text-mystical-moonlight font-bold">
-              {level.id}
+          <div className="w-16 h-16 rounded-full bg-mystical-gold/20 border border-mystical-gold/50 flex items-center justify-center mx-auto mb-4 animate-gold-pulse">
+            <span className="text-2xl font-playfair italic text-mystical-gold font-bold">
+              {romanNumerals[level.id - 1]}
             </span>
           </div>
           
-          <h3 className="font-playfair text-2xl font-bold text-mystical-starlight mb-2">
+          <h3 className="font-playfair italic text-2xl font-bold text-mystical-starlight mb-2">
             {level.title}
           </h3>
-          <p className="font-inter text-sm text-mystical-silver mb-4">{level.subtitle}</p>
+          <p className="font-inter font-light text-sm text-mystical-silver mb-4">{level.subtitle}</p>
           
           <div className="flex items-baseline justify-center gap-2 mb-2">
-            <span className="text-3xl font-bold text-mystical-moonlight">{level.price}</span>
+            <span className="text-3xl font-bold text-mystical-gold">{level.price}</span>
             <span className="text-sm text-mystical-silver">• {level.duration}</span>
           </div>
         </div>
 
         {/* Description */}
-        <p className="font-inter text-sm text-mystical-silver leading-relaxed mb-6 flex-grow">
+        <p className="font-inter font-light text-sm text-mystical-silver leading-relaxed mb-6 flex-grow">
           {level.description}
         </p>
 
@@ -80,8 +83,8 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
         <div className="space-y-2 mb-8">
           {level.includes.map((item, index) => (
             <div key={index} className="flex items-center gap-3">
-              <Check className="w-4 h-4 text-mystical-moonlight flex-shrink-0" />
-              <span className="font-inter text-sm text-mystical-silver">{item}</span>
+              <Check className="w-4 h-4 text-mystical-gold flex-shrink-0" />
+              <span className="font-inter font-light text-sm text-mystical-silver">{item}</span>
             </div>
           ))}
         </div>
@@ -89,9 +92,9 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
         {/* CTA */}
         <button
           onClick={handleChooseLevel}
-          className="w-full py-4 rounded-xl bg-mystical-moonlight/10 border border-mystical-moonlight/30 text-mystical-starlight font-inter font-semibold hover:bg-mystical-moonlight/20 hover:border-mystical-moonlight/50 transition-all duration-500"
+          className="w-full py-4 rounded-xl bg-mystical-gold/20 border border-mystical-gold/50 text-mystical-starlight font-inter font-light hover:bg-mystical-gold/30 hover:border-mystical-gold/70 transition-all duration-500 shadow-gold-glow"
         >
-          Choisir ce niveau
+          Entrer dans cette étape
         </button>
       </div>
     </div>

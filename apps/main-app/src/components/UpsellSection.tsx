@@ -42,13 +42,13 @@ const upsells: Upsell[] = [
 
 const UpsellSection: React.FC = () => {
   return (
-    <section className="py-24 relative bg-gradient-to-b from-mystical-midnight via-mystical-deep-blue to-mystical-black overflow-hidden">
+    <section className="py-24 relative bg-gradient-to-b from-mystical-midnight via-mystical-deep-blue to-mystical-abyss overflow-hidden">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 relative z-10">
-          <h3 className="font-playfair text-3xl md:text-4xl font-medium text-mystical-starlight mb-6">
+          <h3 className="font-playfair italic text-3xl md:text-4xl font-medium text-mystical-starlight mb-6">
             Enrichissez votre expérience
           </h3>
-          <p className="font-inter text-lg text-mystical-silver">
+          <p className="font-inter font-light text-lg text-mystical-silver">
             Des compléments pour approfondir votre voyage intérieur
           </p>
         </div>
@@ -57,16 +57,16 @@ const UpsellSection: React.FC = () => {
           {upsells.map((upsell, index) => (
             <div
               key={upsell.id}
-              className="p-6 rounded-2xl bg-mystical-midnight/60 backdrop-blur-sm border border-mystical-moonlight/20 shadow-forest hover:shadow-moonlight transition-all duration-500 cursor-pointer group overflow-hidden"
+              className="p-6 rounded-2xl bg-mystical-midnight/60 backdrop-blur-sm border border-mystical-gold/30 shadow-forest hover:shadow-gold-glow transition-all duration-500 cursor-pointer group overflow-hidden"
             >
               <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-mystical-moonlight/10 border border-mystical-moonlight/30 flex items-center justify-center mx-auto mb-4">
-                  <upsell.icon className="w-6 h-6 text-mystical-moonlight" />
+                <div className="w-12 h-12 rounded-full bg-mystical-gold/20 border border-mystical-gold/50 flex items-center justify-center mx-auto mb-4 animate-gold-pulse">
+                  <upsell.icon className="w-6 h-6 text-mystical-gold" />
                 </div>
                 
-                <h4 className="font-inter font-medium text-mystical-starlight mb-2">{upsell.title}</h4>
-                <div className="text-2xl font-semibold text-mystical-moonlight mb-3">{upsell.price}</div>
-                <p className="font-inter text-sm text-mystical-silver leading-relaxed">
+                <h4 className="font-inter font-light text-mystical-starlight mb-2">{upsell.title}</h4>
+                <div className="text-2xl font-semibold text-mystical-gold mb-3">{upsell.price}</div>
+                <p className="font-inter font-light text-sm text-mystical-silver leading-relaxed">
                   {upsell.description}
                 </p>
               </div>

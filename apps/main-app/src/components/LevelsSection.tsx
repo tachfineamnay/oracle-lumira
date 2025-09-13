@@ -69,13 +69,13 @@ const LevelsSection: React.FC = () => {
   }, []);
 
   return (
-    <section id="levels" className="py-32 relative bg-gradient-to-br from-mystical-black via-mystical-midnight to-mystical-deep-blue overflow-hidden">
+    <section id="levels" className="py-32 relative bg-gradient-to-b from-mystical-abyss via-mystical-midnight to-mystical-deep-blue overflow-hidden">
       <div className="container mx-auto px-6">
         <div className="text-center mb-24 relative z-10">
-          <h2 className="font-playfair text-5xl md:text-6xl font-bold mb-8 text-mystical-starlight">
+          <h2 className="font-playfair italic text-5xl md:text-6xl font-bold mb-8 text-mystical-starlight">
             Choisis ton niveau d'éveil
           </h2>
-          <p className="font-inter text-xl md:text-2xl text-mystical-silver max-w-4xl mx-auto leading-relaxed">
+          <p className="font-inter font-light text-xl md:text-2xl text-mystical-silver max-w-4xl mx-auto leading-relaxed">
             Chaque niveau révèle une couche plus profonde de ton essence spirituelle
           </p>
         </div>
@@ -83,8 +83,8 @@ const LevelsSection: React.FC = () => {
         {/* Loading */}
         {!levels && !error && (
           <div className="text-center text-mystical-silver py-16">
-            <Loader className="w-8 h-8 mx-auto mb-4 text-mystical-moonlight" />
-            <p className="font-inter">Chargement du catalogue spirituel...</p>
+            <Loader className="w-8 h-8 mx-auto mb-4 text-mystical-gold animate-gold-pulse" />
+            <p className="font-inter font-light">Chargement du catalogue spirituel...</p>
           </div>
         )}
 
@@ -92,7 +92,7 @@ const LevelsSection: React.FC = () => {
         {error && (
           <div className="text-center text-red-400 bg-red-900/20 p-6 rounded-2xl border border-red-500/30 max-w-md mx-auto">
             <AlertCircle className="w-8 h-8 mx-auto mb-3" />
-            <p className="font-inter">{error}</p>
+            <p className="font-inter font-light">{error}</p>
           </div>
         )}
 

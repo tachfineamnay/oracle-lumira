@@ -58,13 +58,13 @@ const DynamicForm: React.FC = () => {
   };
 
   return (
-    <section className="py-32 relative bg-gradient-to-b from-mystical-black via-mystical-midnight to-mystical-deep-blue overflow-hidden">
+    <section className="py-32 relative bg-gradient-to-b from-mystical-abyss via-mystical-midnight to-mystical-deep-blue overflow-hidden">
       <div className="container mx-auto px-6 max-w-4xl">
         <div className="text-center mb-20 relative z-10">
-          <h2 className="font-playfair text-5xl md:text-6xl font-medium mb-8 text-mystical-starlight">
+          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-8 text-mystical-starlight">
             Commence ton voyage
           </h2>
-          <p className="font-inter text-xl md:text-2xl text-mystical-silver">
+          <p className="font-inter font-light text-xl md:text-2xl text-mystical-silver">
             Quelques informations pour personnaliser ta lecture
           </p>
         </div>
@@ -79,10 +79,10 @@ const DynamicForm: React.FC = () => {
                   setSelectedLevel(level);
                   setCurrentStep(0);
                 }}
-                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 ${
+                className={`px-8 py-4 rounded-full font-inter font-light transition-all duration-500 ${
                   selectedLevel === level
-                    ? 'bg-mystical-moonlight text-mystical-black'
-                    : 'bg-mystical-midnight/60 text-mystical-silver border border-mystical-moonlight/30 hover:bg-mystical-deep-blue/60'
+                    ? 'bg-mystical-gold text-mystical-abyss shadow-gold-glow'
+                    : 'bg-mystical-midnight/60 text-mystical-silver border border-mystical-gold/30 hover:bg-mystical-deep-blue/60'
                 }`}
               >
                 Niveau {level}
@@ -93,7 +93,7 @@ const DynamicForm: React.FC = () => {
 
         {/* Form Container */}
         <div className="relative z-10">
-          <div className="bg-mystical-midnight/60 backdrop-blur-sm border border-mystical-moonlight/20 rounded-2xl p-8 md:p-12 shadow-forest relative overflow-hidden">
+          <div className="bg-mystical-midnight/60 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-8 md:p-12 shadow-forest relative overflow-hidden">
             {/* Progress */}
             <div className="flex items-center justify-center mb-16 relative z-10">
               <CircularProgress progress={progress} />
@@ -109,10 +109,10 @@ const DynamicForm: React.FC = () => {
               <button
                 onClick={handlePrevious}
                 disabled={currentStep === 0}
-                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 ${
+                className={`px-8 py-4 rounded-full font-inter font-light transition-all duration-500 ${
                   currentStep === 0
                     ? 'opacity-50 cursor-not-allowed text-mystical-silver/50'
-                    : 'text-mystical-silver border border-mystical-moonlight/30 hover:bg-mystical-deep-blue/30'
+                    : 'text-mystical-silver border border-mystical-gold/30 hover:bg-mystical-deep-blue/30'
                 }`}
               >
                 Précédent
@@ -120,7 +120,7 @@ const DynamicForm: React.FC = () => {
 
               <button
                 onClick={currentStep === steps.length - 1 ? () => {} : handleNext}
-                className="px-10 py-4 rounded-full bg-mystical-moonlight text-mystical-black font-inter font-medium transition-all duration-500 hover:bg-mystical-silver flex items-center gap-2"
+                className="px-10 py-4 rounded-full bg-mystical-gold text-mystical-abyss font-inter font-light transition-all duration-500 hover:bg-mystical-gold/80 flex items-center gap-2 shadow-gold-glow"
               >
                 <span>
                 {currentStep === steps.length - 1 ? 'Recevoir ma lecture' : 'Suivant'}
@@ -141,10 +141,10 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
   return (
     <div className="text-center">
       <div className="mb-8">
-        <div className="w-16 h-16 rounded-full bg-mystical-moonlight/10 border border-mystical-moonlight/30 flex items-center justify-center mx-auto mb-4">
-          <Icon className="w-8 h-8 text-mystical-moonlight" />
+        <div className="w-16 h-16 rounded-full bg-mystical-gold/20 border border-mystical-gold/50 flex items-center justify-center mx-auto mb-4 animate-gold-pulse">
+          <Icon className="w-8 h-8 text-mystical-gold" />
         </div>
-        <h3 className="font-playfair text-3xl font-medium text-mystical-starlight mb-4">
+        <h3 className="font-playfair italic text-3xl font-medium text-mystical-starlight mb-4">
           {step.title}
         </h3>
       </div>
@@ -156,7 +156,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             placeholder="Votre prénom..."
             value={formData.firstName}
             onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-moonlight/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter focus:outline-none focus:border-mystical-moonlight focus:ring-2 focus:ring-mystical-moonlight/20 transition-all duration-300"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300"
           />
         )}
 
@@ -165,7 +165,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             type="date"
             value={formData.birthDate}
             onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-moonlight/30 text-mystical-starlight font-inter focus:outline-none focus:border-mystical-moonlight focus:ring-2 focus:ring-mystical-moonlight/20 transition-all duration-300"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300"
           />
         )}
 
@@ -175,7 +175,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             value={formData.intention}
             onChange={(e) => setFormData(prev => ({ ...prev, intention: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-moonlight/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter focus:outline-none focus:border-mystical-moonlight focus:ring-2 focus:ring-mystical-moonlight/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
           />
         )}
 
@@ -185,7 +185,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             value={formData.blockages}
             onChange={(e) => setFormData(prev => ({ ...prev, blockages: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-moonlight/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter focus:outline-none focus:border-mystical-moonlight focus:ring-2 focus:ring-mystical-moonlight/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
           />
         )}
 
@@ -195,7 +195,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             value={formData.familyHistory}
             onChange={(e) => setFormData(prev => ({ ...prev, familyHistory: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-moonlight/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter focus:outline-none focus:border-mystical-moonlight focus:ring-2 focus:ring-mystical-moonlight/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
           />
         )}
       </div>
