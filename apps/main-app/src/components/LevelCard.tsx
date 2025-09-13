@@ -101,9 +101,5 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
   );
 };
 
-<<<<<<< HEAD
 export default LevelCard;
-
-=======
-export default LevelCard;
->>>>>>> origin/main
+ 

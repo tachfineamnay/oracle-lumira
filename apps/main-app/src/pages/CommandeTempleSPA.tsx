@@ -318,13 +318,13 @@ const CommandeTemple: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-cream via-mystical-pearl to-mystical-mist flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-mystical-abyss via-mystical-midnight to-mystical-deep-blue flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex flex-col items-center space-y-4"
         >
-          <Loader className="w-8 h-8 text-mystical-copper animate-spin" />
+          <Loader className="w-8 h-8 text-mystical-gold animate-spin" />
           <p className="text-mystical-night">Préparation de votre commande...</p>
         </motion.div>
       </div>
@@ -333,7 +333,7 @@ const CommandeTemple: React.FC = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-cream via-mystical-pearl to-mystical-mist flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-mystical-abyss via-mystical-midnight to-mystical-deep-blue flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -344,7 +344,7 @@ const CommandeTemple: React.FC = () => {
           <p className="text-mystical-night/70">{error || 'Produit non trouvé'}</p>
           <button
             onClick={handleBackToLevels}
-            className="bg-mystical-gold text-mystical-night px-6 py-3 rounded-lg font-semibold hover:bg-mystical-champagne transition-colors"
+            className="bg-mystical-gold text-mystical-abyss px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold-light transition-colors"
           >
             Retour aux niveaux
           </button>
@@ -368,13 +368,13 @@ const CommandeTemple: React.FC = () => {
         <div className="flex items-center justify-between mb-12 pt-8 relative z-10">
           <button
             onClick={handleBackToLevels}
-            className="flex items-center space-x-2 text-mystical-gold/90 hover:text-mystical-radiance transition-colors duration-500"
+            className="flex items-center space-x-2 text-mystical-gold/90 hover:text-mystical-gold-light transition-colors duration-500"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="tracking-wide">Retour</span>
           </button>
           
-          <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-mystical-gold via-mystical-radiance to-mystical-luminous bg-clip-text text-transparent tracking-wide">
+          <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-mystical-gold via-mystical-gold-light to-mystical-gold-light bg-clip-text text-transparent tracking-wide">
             Oracle Lumira - Commande
           </h1>
           
@@ -392,7 +392,7 @@ const CommandeTemple: React.FC = () => {
             <div className="bg-gradient-to-br from-mystical-night/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-2xl p-6 shadow-spiritual relative overflow-hidden">
               {/* Ondulation de résumé produit */}
               <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-mystical-gold/5 to-mystical-water/5 rounded-2xl"
+                className="absolute inset-0 bg-gradient-to-br from-mystical-gold/5 to-mystical-sage/5 rounded-2xl"
                 animate={{
                   opacity: [0, 0.6, 0],
                   scale: [1, 1.02, 1],
@@ -444,7 +444,7 @@ const CommandeTemple: React.FC = () => {
             <div className="bg-gradient-to-br from-mystical-night/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-2xl p-6 shadow-spiritual relative overflow-hidden">
               {/* Ondulation des fonctionnalités */}
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-mystical-gold/4 to-mystical-water/4 rounded-2xl"
+                className="absolute inset-0 bg-gradient-to-r from-mystical-gold/4 to-mystical-sage/4 rounded-2xl"
                 animate={{
                   opacity: [0, 0.5, 0],
                   x: ['-100%', '100%'],
@@ -497,7 +497,7 @@ const CommandeTemple: React.FC = () => {
             <div className="bg-gradient-to-br from-mystical-night/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-2xl p-6 shadow-spiritual relative overflow-hidden">
               {/* Ondulation de formulaire de paiement */}
               <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-mystical-gold/4 to-mystical-harmony/4 rounded-2xl"
+                className="absolute inset-0 bg-gradient-to-br from-mystical-gold/4 to-mystical-sage/4 rounded-2xl"
                 animate={{
                   opacity: [0, 0.5, 0],
                   scale: [1, 1.03, 1],
@@ -522,7 +522,7 @@ const CommandeTemple: React.FC = () => {
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="votre@email.com"
-                  className="w-full px-4 py-3 bg-mystical-deep/80 border border-mystical-gold/40 rounded-lg text-white/95 placeholder-gray-500/80 focus:border-mystical-radiance focus:outline-none focus:ring-2 focus:ring-mystical-gold/30 transition-all duration-500 tracking-wide"
+                  className="w-full px-4 py-3 bg-mystical-deep-blue/80 border border-mystical-gold/40 rounded-lg text-white/95 placeholder-gray-500/80 focus:border-mystical-gold-light focus:outline-none focus:ring-2 focus:ring-mystical-gold/30 transition-all duration-500 tracking-wide"
                 />
                 <p className="text-xs text-gray-400/80 mt-1 tracking-wide">
                   Pour recevoir votre confirmation et vos accès
