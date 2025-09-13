@@ -37,39 +37,24 @@ const App: React.FC = () => {
         {/* Relief de forêt mystique */}
         <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-mystical-forest-deep/40 to-transparent"></div>
         <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-mystical-forest-dark/60 to-transparent"></div>
-      </div>
-        {/* Lumière lunaire */}
-        <div className="absolute top-10 right-20 w-32 h-32 bg-mystical-moonlight/20 rounded-full blur-3xl animate-moonbeam"></div>
-        <div className="absolute top-32 right-32 w-16 h-16 bg-mystical-moonlight/30 rounded-full blur-2xl animate-moonbeam" style={{animationDelay: '2s'}}></div>
-        
-        {/* Étoiles */}
-        <div className="absolute top-16 left-20 w-1 h-1 bg-mystical-starlight rounded-full animate-startwinkle"></div>
-        <div className="absolute top-24 left-40 w-1 h-1 bg-mystical-starlight rounded-full animate-startwinkle" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-40 left-60 w-1 h-1 bg-mystical-starlight rounded-full animate-startwinkle" style={{animationDelay: '3s'}}></div>
-        <div className="absolute top-20 right-60 w-1 h-1 bg-mystical-starlight rounded-full animate-startwinkle" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-60 right-40 w-1 h-1 bg-mystical-starlight rounded-full animate-startwinkle" style={{animationDelay: '4s'}}></div>
-        
-        {/* Relief de forêt mystique */}
-        <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-mystical-forest-deep/40 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-mystical-forest-dark/60 to-transparent"></div>
-      </div>
       
-      {/* Main Content */}
-      <div className="relative z-10">
-        <Router>
-          <Routes>
-            <Route path="/" element={<LandingTemple />} />
-            {/* Product SPA Routes (new system) */}
-            <Route path="/commande" element={<CommandeTempleSPA />} />
-            <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
-            {/* Legacy routes (fallback) */}
-            <Route path="/commande-legacy" element={<CommandeTemple />} />
-            <Route path="/confirmation-legacy" element={<ConfirmationTemple />} />
-            <Route path="/sanctuaire" element={<DashboardSanctuaire />} />
-            <Route path="/mentions-legales" element={<MentionsLegales />} />
-            <Route path="/expert" element={<ExpertDeskPage />} />
-          </Routes>
-        </Router>
+        {/* Main Content */}
+        <div className="relative z-10">
+          <Router>
+            <Routes>
+              <Route path="/" element={<LandingTemple />} />
+              {/* Product SPA Routes (new system) */}
+              <Route path="/commande" element={<CommandeTempleSPA />} />
+              <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
+              {/* Legacy routes (fallback) */}
+              <Route path="/commande-legacy" element={<CommandeTemple />} />
+              <Route path="/confirmation-legacy" element={<ConfirmationTemple />} />
+              <Route path="/sanctuaire" element={<DashboardSanctuaire />} />
+              <Route path="/mentions-legales" element={<MentionsLegales />} />
+              <Route path="/expert" element={<ExpertDeskPage />} />
+            </Routes>
+          </Router>
+        </div>
       </div>
     </div>
   );
