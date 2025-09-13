@@ -41,8 +41,8 @@ const testimonials: Testimonial[] = [
 const Testimonials: React.FC = () => {
   return (
     <section className="py-32 relative overflow-hidden">
-      {/* Nébuleuse de fond */}
-      <div className="absolute inset-0 bg-gradient-to-b from-cosmic-violet/10 via-transparent to-cosmic-aurora/10"></div>
+      {/* Nébuleuse de fond subtile */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cosmic-violet/8 via-transparent to-cosmic-aurora/8"></div>
       
       <div className="container mx-auto px-6 relative z-10">
         <motion.div 
@@ -53,16 +53,13 @@ const Testimonials: React.FC = () => {
           viewport={{ once: true }}
         >
           <motion.h2 
-            className="font-playfair italic text-6xl md:text-7xl font-bold mb-8 text-cosmic-divine"
+            className="font-playfair italic text-5xl md:text-6xl font-bold mb-8 text-cosmic-divine"
             style={{
               textShadow: '0 0 30px rgba(168, 85, 247, 0.5)',
             }}
           >
-            Ils ont révélé leur essence
-          </motion.h2>
-          <p className="font-inter font-light text-xl md:text-2xl text-cosmic-ethereal">
             Des transformations authentiques sous la voûte étoilée
-          </p>
+          </motion.h2>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -84,24 +81,24 @@ const Testimonials: React.FC = () => {
               }}
             >
               <div className="relative p-8 rounded-2xl bg-gradient-to-br from-cosmic-deep/80 via-cosmic-nebula/60 to-cosmic-galaxy/40 backdrop-blur-xl border border-cosmic-gold/30 shadow-cosmic hover:shadow-aurora transition-all duration-500 overflow-hidden">
-                {/* Effet de particules au survol */}
+                {/* Effet de particules subtiles au survol */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  {[...Array(6)].map((_, i) => (
+                  {[...Array(4)].map((_, i) => (
                     <motion.div
                       key={i}
                       className="absolute w-1 h-1 bg-cosmic-star rounded-full"
                       style={{
-                        left: `${20 + i * 12}%`,
-                        top: `${20 + (i % 3) * 25}%`,
+                        left: `${25 + i * 15}%`,
+                        top: `${25 + (i % 2) * 30}%`,
                       }}
                       animate={{
                         opacity: [0, 1, 0],
-                        scale: [0, 1.5, 0],
+                        scale: [0, 1.2, 0],
                       }}
                       transition={{
                         duration: 2,
                         repeat: Infinity,
-                        delay: i * 0.3,
+                        delay: i * 0.4,
                       }}
                     />
                   ))}
@@ -110,8 +107,7 @@ const Testimonials: React.FC = () => {
                 <div className="relative z-10">
                   <motion.div
                     animate={{ 
-                      rotate: [0, 5, -5, 0],
-                      scale: [1, 1.1, 1],
+                      scale: [1, 1.05, 1],
                     }}
                     transition={{ duration: 4, repeat: Infinity }}
                   >
@@ -149,8 +145,7 @@ const Testimonials: React.FC = () => {
                       <motion.div
                         key={i}
                         animate={{ 
-                          scale: [1, 1.2, 1],
-                          rotate: [0, 10, 0],
+                          scale: [1, 1.1, 1],
                         }}
                         transition={{ 
                           duration: 2, 

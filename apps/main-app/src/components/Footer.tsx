@@ -5,12 +5,12 @@ import { motion } from 'framer-motion';
 const Footer: React.FC = () => {
   return (
     <footer className="bg-cosmic-void border-t border-cosmic-gold/20 py-20 relative overflow-hidden">
-      {/* Aurore de footer */}
-      <div className="absolute inset-0 bg-gradient-to-t from-cosmic-void via-cosmic-deep/50 to-transparent"></div>
+      {/* Aurore de footer subtile */}
+      <div className="absolute inset-0 bg-gradient-to-t from-cosmic-void via-cosmic-deep/30 to-transparent"></div>
       
-      {/* Étoiles de footer */}
+      {/* Étoiles de footer discrètes */}
       <div className="absolute inset-0">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(12)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-cosmic-star rounded-full"
@@ -20,12 +20,12 @@ const Footer: React.FC = () => {
             }}
             animate={{
               opacity: [0.3, 1, 0.3],
-              scale: [1, 1.5, 1],
+              scale: [1, 1.3, 1],
             }}
             transition={{
-              duration: 3,
+              duration: 4,
               repeat: Infinity,
-              delay: Math.random() * 3,
+              delay: Math.random() * 4,
             }}
           />
         ))}
@@ -66,7 +66,6 @@ const Footer: React.FC = () => {
               <motion.div
                 animate={{ 
                   scale: [1, 1.2, 1],
-                  rotate: [0, 10, 0],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
               >

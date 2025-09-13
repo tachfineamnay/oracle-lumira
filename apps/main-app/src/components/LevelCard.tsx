@@ -52,7 +52,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
       }}
       whileTap={{ scale: 0.98 }}
     >
-      {/* Badge recommandé avec animation */}
+      {/* Badge recommandé premium */}
       {level.recommended && (
         <motion.div 
           className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void px-6 py-2 rounded-full text-sm font-bold shadow-stellar"
@@ -74,14 +74,14 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
         </motion.div>
       )}
 
-      {/* Effet de particules au survol */}
+      {/* Effet de particules subtiles au survol */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-        {[...Array(8)].map((_, i) => (
+        {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-cosmic-star rounded-full"
             style={{
-              left: `${20 + i * 10}%`,
+              left: `${20 + i * 12}%`,
               top: `${20 + (i % 3) * 20}%`,
             }}
             animate={{
@@ -98,7 +98,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
       </div>
 
       <div className="relative z-10 flex flex-col h-full">
-        {/* Header avec animation */}
+        {/* Header premium */}
         <div className="text-center mb-6">
           <motion.div 
             className="w-20 h-20 rounded-full bg-gradient-to-br from-cosmic-gold/30 to-cosmic-violet/20 border-2 border-cosmic-gold/50 flex items-center justify-center mx-auto mb-6 relative"
@@ -114,11 +114,11 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
             <span className="text-3xl font-playfair italic text-cosmic-gold font-bold">
               {romanNumerals[level.id - 1]}
             </span>
-            {/* Cercle orbital */}
+            {/* Cercle orbital subtil */}
             <motion.div
-              className="absolute inset-0 border border-cosmic-gold/30 rounded-full"
+              className="absolute inset-0 border border-cosmic-gold/20 rounded-full"
               animate={{ rotate: 360 }}
-              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
             />
           </motion.div>
           
@@ -150,7 +150,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
           {level.description}
         </p>
 
-        {/* Includes avec animations */}
+        {/* Includes avec animations subtiles */}
         <div className="space-y-3 mb-8">
           {level.includes.map((item, index) => (
             <motion.div 
@@ -163,11 +163,10 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
             >
               <motion.div
                 animate={{ 
-                  rotate: [0, 360],
                   scale: [1, 1.1, 1],
                 }}
                 transition={{ 
-                  duration: 4, 
+                  duration: 3, 
                   repeat: Infinity,
                   delay: index * 0.3,
                 }}
@@ -179,14 +178,14 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
           ))}
         </div>
 
-        {/* CTA avec effet cosmique */}
+        {/* CTA premium avec effet cosmique */}
         <motion.button
           onClick={handleChooseLevel}
           className="w-full py-4 rounded-xl bg-gradient-to-r from-cosmic-gold/20 via-cosmic-gold-warm/30 to-cosmic-gold/20 border border-cosmic-gold/50 text-cosmic-divine font-inter font-medium hover:from-cosmic-gold/30 hover:via-cosmic-gold-warm/40 hover:to-cosmic-gold/30 hover:border-cosmic-gold/70 transition-all duration-500 relative overflow-hidden group"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          {/* Effet de vague lumineuse */}
+          {/* Effet de vague lumineuse premium */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cosmic-star/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
           <span className="relative z-10">Entrer dans cette dimension</span>
         </motion.button>

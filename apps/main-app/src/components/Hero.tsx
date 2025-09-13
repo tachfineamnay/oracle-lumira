@@ -5,26 +5,36 @@ import { motion } from 'framer-motion';
 const Hero: React.FC = () => {
   return (
     <section className="min-h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
-      {/* Mandala cosmique animé en arrière-plan */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-20">
+      {/* Mandala cosmique premium en arrière-plan */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-15">
         <motion.div 
-          className="relative w-96 h-96"
+          className="relative w-[500px] h-[500px]"
           animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
         >
-          {/* Cercles concentriques du mandala */}
-          <div className="absolute inset-0 border border-cosmic-gold/40 rounded-full animate-mandala-pulse"></div>
-          <div className="absolute inset-8 border border-cosmic-violet/30 rounded-full animate-mandala-pulse" style={{animationDelay: '1s'}}></div>
-          <div className="absolute inset-16 border border-cosmic-star/20 rounded-full animate-mandala-pulse" style={{animationDelay: '2s'}}></div>
-          <div className="absolute inset-24 border border-cosmic-gold/30 rounded-full animate-mandala-pulse" style={{animationDelay: '3s'}}></div>
+          {/* Cercles concentriques du mandala premium */}
+          <div className="absolute inset-0 border border-cosmic-gold/30 rounded-full"></div>
+          <div className="absolute inset-12 border border-cosmic-violet/25 rounded-full"></div>
+          <div className="absolute inset-24 border border-cosmic-star/20 rounded-full"></div>
+          <div className="absolute inset-36 border border-cosmic-gold/25 rounded-full"></div>
+          <div className="absolute inset-48 border border-cosmic-aurora/20 rounded-full"></div>
           
-          {/* Motifs géométriques */}
+          {/* Motifs géométriques sacrés */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-32 border border-cosmic-gold/30 rotate-45 animate-mandala-rotate"></div>
+            <div className="w-40 h-40 border border-cosmic-gold/20 rotate-45"></div>
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-24 border border-cosmic-violet/20 rotate-12 animate-mandala-rotate" style={{animationDirection: 'reverse'}}></div>
+            <div className="w-32 h-32 border border-cosmic-violet/15 rotate-12"></div>
           </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-24 h-24 border border-cosmic-aurora/15 rotate-30"></div>
+          </div>
+          
+          {/* Points cardinaux lumineux */}
+          <div className="absolute top-0 left-1/2 w-3 h-3 bg-cosmic-gold rounded-full transform -translate-x-1/2 animate-glow-pulse"></div>
+          <div className="absolute bottom-0 left-1/2 w-3 h-3 bg-cosmic-violet rounded-full transform -translate-x-1/2 animate-glow-pulse" style={{animationDelay: '1s'}}></div>
+          <div className="absolute left-0 top-1/2 w-3 h-3 bg-cosmic-star rounded-full transform -translate-y-1/2 animate-glow-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute right-0 top-1/2 w-3 h-3 bg-cosmic-aurora rounded-full transform -translate-y-1/2 animate-glow-pulse" style={{animationDelay: '3s'}}></div>
           
           {/* Centre lumineux pulsant */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-cosmic-gold rounded-full blur-sm animate-glow-pulse"></div>
@@ -32,7 +42,7 @@ const Hero: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Contenu principal */}
+      {/* Contenu principal premium */}
       <div className="text-center z-10 relative max-w-5xl mx-auto">
         <motion.div 
           className="mb-12"
@@ -46,21 +56,21 @@ const Hero: React.FC = () => {
               scale: [1, 1.05, 1],
             }}
             transition={{ 
-              duration: 4,
+              duration: 6,
               repeat: Infinity,
               ease: "easeInOut"
             }}
           >
-            <Sparkles className="w-16 h-16 text-cosmic-gold mx-auto mb-8 opacity-90" />
+            <Sparkles className="w-20 h-20 text-cosmic-gold mx-auto mb-8 opacity-90" />
           </motion.div>
           
           <motion.h1 
-            className="font-playfair italic text-7xl md:text-9xl font-bold mb-8 text-cosmic-divine"
+            className="font-playfair italic text-7xl md:text-9xl font-bold mb-8 text-cosmic-divine leading-tight"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.5, delay: 0.3 }}
             style={{
-              textShadow: '0 0 30px rgba(255, 215, 0, 0.5), 0 0 60px rgba(139, 123, 216, 0.3)',
+              textShadow: '0 0 40px rgba(255, 215, 0, 0.6), 0 0 80px rgba(139, 123, 216, 0.4)',
             }}
           >
             Oracle Lumira
@@ -91,7 +101,7 @@ const Hero: React.FC = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {/* Effet de brillance au survol */}
+            {/* Effet de brillance premium au survol */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             <span className="relative z-10 flex items-center gap-3">
               <Star className="w-6 h-6" />
@@ -110,7 +120,7 @@ const Hero: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Indicateur de scroll cosmique */}
+      {/* Indicateur de scroll premium */}
       <motion.div 
         className="absolute bottom-12 left-1/2 transform -translate-x-1/2"
         animate={{ y: [0, 10, 0] }}

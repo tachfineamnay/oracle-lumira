@@ -44,8 +44,8 @@ const upsells: Upsell[] = [
 const UpsellSection: React.FC = () => {
   return (
     <section className="py-32 relative overflow-hidden">
-      {/* Aurore de section */}
-      <div className="absolute inset-0 bg-gradient-to-b from-cosmic-aurora/5 via-cosmic-violet/10 to-cosmic-magenta/5"></div>
+      {/* Aurore de section subtile */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cosmic-aurora/5 via-cosmic-violet/8 to-cosmic-magenta/5"></div>
       
       <div className="container mx-auto px-6 relative z-10">
         <motion.div 
@@ -56,7 +56,7 @@ const UpsellSection: React.FC = () => {
           viewport={{ once: true }}
         >
           <motion.h3 
-            className="font-playfair italic text-5xl md:text-6xl font-bold text-cosmic-divine mb-6"
+            className="font-playfair italic text-4xl md:text-5xl font-bold text-cosmic-divine mb-6"
             style={{
               textShadow: '0 0 30px rgba(212, 175, 55, 0.5)',
             }}
@@ -87,34 +87,11 @@ const UpsellSection: React.FC = () => {
                 transition: { duration: 0.3 }
               }}
             >
-              {/* Effet de nébuleuse au survol */}
+              {/* Effet de nébuleuse subtile au survol */}
               <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-cosmic-violet/20 via-transparent to-cosmic-aurora/20 rounded-2xl opacity-0 group-hover:opacity-100"
+                className="absolute inset-0 bg-gradient-to-br from-cosmic-violet/15 via-transparent to-cosmic-aurora/15 rounded-2xl opacity-0 group-hover:opacity-100"
                 transition={{ duration: 0.5 }}
               />
-              
-              {/* Particules flottantes */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                {[...Array(5)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-1 h-1 bg-cosmic-star rounded-full"
-                    style={{
-                      left: `${20 + i * 15}%`,
-                      top: `${20 + (i % 2) * 30}%`,
-                    }}
-                    animate={{
-                      opacity: [0, 1, 0],
-                      scale: [0, 1.2, 0],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      delay: i * 0.4,
-                    }}
-                  />
-                ))}
-              </div>
 
               <div className="text-center relative z-10">
                 <motion.div 
