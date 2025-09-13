@@ -20,7 +20,10 @@ export const useMousePosition = () => {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+      // Normaliser les coordonnées pour un effet subtil
+      const x = (e.clientX - window.innerWidth / 2) / window.innerWidth;
+      const y = (e.clientY - window.innerHeight / 2) / window.innerHeight;
+      setMousePosition({ x: x * 100, y: y * 100 });
     };
 
     window.addEventListener('mousemove', handleMouseMove);
