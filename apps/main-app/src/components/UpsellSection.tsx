@@ -1,5 +1,6 @@
 import React from 'react';
 import { Crown, Music, Zap, Package } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Upsell {
   id: string;
@@ -12,65 +13,143 @@ interface Upsell {
 const upsells: Upsell[] = [
   {
     id: 'mandala',
-    title: 'Mandala HD',
+    title: 'Mandala Cosmique HD',
     price: '19 €',
-    description: 'Votre mandala personnel en haute définition, prêt à imprimer',
+    description: 'Votre mandala personnel en haute définition, aligné sur les constellations',
     icon: Crown,
   },
   {
     id: 'audio',
-    title: 'Audio Mystique',
+    title: 'Audio Galactique',
     price: '14 €',
-    description: 'Lecture audio complète avec musique sacrée',
+    description: 'Lecture audio complète avec fréquences 432 Hz et sons cosmiques',
     icon: Music,
   },
   {
     id: 'ritual',
-    title: 'Rituel Personnalisé',
+    title: 'Rituel Stellaire',
     price: '22 €',
-    description: 'Cérémonie sur-mesure pour activer votre archétype',
+    description: 'Cérémonie sur-mesure pour activer votre archétype sous les étoiles',
     icon: Zap,
   },
   {
     id: 'complete',
-    title: 'Pack Complet',
+    title: 'Pack Univers Complet',
     price: '49 €',
-    description: 'Tous les extras inclus + suivi personnalisé',
+    description: 'Tous les extras inclus + suivi personnalisé + connexion cosmique',
     icon: Package,
   }
 ];
 
 const UpsellSection: React.FC = () => {
   return (
-    <section className="py-24 relative bg-gradient-to-b from-mystical-midnight via-mystical-deep-blue to-mystical-abyss overflow-hidden">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16 relative z-10">
-          <h3 className="font-playfair italic text-3xl md:text-4xl font-medium text-mystical-starlight mb-6">
+    <section className="py-32 relative overflow-hidden">
+      {/* Aurore de section */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cosmic-aurora/5 via-cosmic-violet/10 to-cosmic-magenta/5"></div>
+      
+      <div className="container mx-auto px-6 relative z-10">
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          viewport={{ once: true }}
+        >
+          <motion.h3 
+            className="font-playfair italic text-5xl md:text-6xl font-bold text-cosmic-divine mb-6"
+            style={{
+              textShadow: '0 0 30px rgba(212, 175, 55, 0.5)',
+            }}
+          >
             Enrichissez votre expérience
-          </h3>
-          <p className="font-inter font-light text-lg text-mystical-silver">
-            Des compléments pour approfondir votre voyage intérieur
+          </motion.h3>
+          <p className="font-inter font-light text-lg text-cosmic-ethereal">
+            Des compléments pour approfondir votre voyage dans l'univers
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
-          {upsells.map((upsell) => (
-            <div
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {upsells.map((upsell, index) => (
+            <motion.div
               key={upsell.id}
-              className="p-6 rounded-2xl bg-mystical-midnight/60 backdrop-blur-sm border border-mystical-gold/30 shadow-forest hover:shadow-gold-glow transition-all duration-500 cursor-pointer group overflow-hidden"
+              className="relative p-6 rounded-2xl bg-gradient-to-br from-cosmic-deep/80 via-cosmic-nebula/60 to-cosmic-galaxy/40 backdrop-blur-xl border border-cosmic-gold/30 shadow-cosmic hover:shadow-aurora transition-all duration-500 cursor-pointer group overflow-hidden"
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ 
+                duration: 0.8, 
+                delay: index * 0.15,
+                ease: "easeOut"
+              }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                y: -8,
+                scale: 1.02,
+                transition: { duration: 0.3 }
+              }}
             >
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-mystical-gold/20 border border-mystical-gold/50 flex items-center justify-center mx-auto mb-4 animate-gold-pulse">
-                  <upsell.icon className="w-6 h-6 text-mystical-gold" />
-                </div>
+              {/* Effet de nébuleuse au survol */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-br from-cosmic-violet/20 via-transparent to-cosmic-aurora/20 rounded-2xl opacity-0 group-hover:opacity-100"
+                transition={{ duration: 0.5 }}
+              />
+              
+              {/* Particules flottantes */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-1 h-1 bg-cosmic-star rounded-full"
+                    style={{
+                      left: `${20 + i * 15}%`,
+                      top: `${20 + (i % 2) * 30}%`,
+                    }}
+                    animate={{
+                      opacity: [0, 1, 0],
+                      scale: [0, 1.2, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      delay: i * 0.4,
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div className="text-center relative z-10">
+                <motion.div 
+                  className="w-16 h-16 rounded-full bg-gradient-to-br from-cosmic-gold/30 to-cosmic-violet/20 border-2 border-cosmic-gold/50 flex items-center justify-center mx-auto mb-6"
+                  animate={{ 
+                    boxShadow: [
+                      '0 0 20px rgba(255, 215, 0, 0.3)',
+                      '0 0 40px rgba(255, 215, 0, 0.5)',
+                      '0 0 20px rgba(255, 215, 0, 0.3)',
+                    ]
+                  }}
+                  transition={{ duration: 3, repeat: Infinity, delay: index * 0.5 }}
+                >
+                  <upsell.icon className="w-8 h-8 text-cosmic-gold" />
+                </motion.div>
                 
-                <h4 className="font-inter font-light text-mystical-starlight mb-2">{upsell.title}</h4>
-                <div className="text-2xl font-semibold text-mystical-gold mb-3">{upsell.price}</div>
-                <p className="font-inter font-light text-sm text-mystical-silver leading-relaxed">
+                <h4 className="font-inter font-medium text-cosmic-divine mb-3">{upsell.title}</h4>
+                <motion.div 
+                  className="text-3xl font-bold text-cosmic-gold mb-4"
+                  animate={{ 
+                    textShadow: [
+                      '0 0 10px rgba(255, 215, 0, 0.5)',
+                      '0 0 20px rgba(255, 215, 0, 0.8)',
+                      '0 0 10px rgba(255, 215, 0, 0.5)',
+                    ]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
+                >
+                  {upsell.price}
+                </motion.div>
+                <p className="font-inter font-light text-sm text-cosmic-ethereal leading-relaxed">
                   {upsell.description}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -78,5 +157,4 @@ const UpsellSection: React.FC = () => {
   );
 };
 
-export default UpsellSection;
-
+export default Testimonials;
