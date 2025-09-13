@@ -1,5 +1,4 @@
 import React from 'react';
-import SpiritualWaves from '../SpiritualWaves';
 
 type Variant = 'light' | 'dark';
 
@@ -15,12 +14,9 @@ const variants: Record<Variant, string> = {
 };
 
 const PageLayout: React.FC<PageLayoutProps> = ({ children, variant = 'light', className = '' }) => {
-  const wavesIntensity = variant === 'dark' ? 'strong' : 'subtle';
   return (
-    <div className={`min-h-screen relative overflow-hidden ${variants[variant]} ${className}`}>
-      {/* Subtle organic waves background */}
-      <SpiritualWaves intensity={wavesIntensity as any} />
-      <div className="container mx-auto px-4 md:px-6 py-8 md:py-12 relative z-10">
+    <div className={`min-h-screen ${variants[variant]} ${className}`}>
+      <div className="container mx-auto px-4 md:px-6 py-8 md:py-12">
         {children}
       </div>
     </div>

@@ -5,11 +5,10 @@ import DynamicForm from '../components/DynamicForm';
 import Testimonials from '../components/Testimonials';
 import UpsellSection from '../components/UpsellSection';
 import Footer from '../components/Footer';
-import PageLayout from '../components/ui/PageLayout';
 
 const LandingTemple: React.FC = () => {
   return (
-    <PageLayout variant="light" className="pt-0">
+    <div className="min-h-screen">
       <Hero />
       {/* Section existante (conservée) */}
       <LevelsSection />
@@ -17,7 +16,7 @@ const LandingTemple: React.FC = () => {
       <Testimonials />
       <UpsellSection />
       <Footer />
-    </PageLayout>
+    </div>
   );
 };
 
