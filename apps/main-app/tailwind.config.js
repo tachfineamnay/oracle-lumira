@@ -12,6 +12,8 @@ export default {
           'mist': '#F5F7FA',
           'dawn': '#FDF8F0',
           'sky': '#E8F4FD',
+          'serenity': '#F0F8FF',
+          'whisper': '#FAFBFC',
           
           // Or doux et champagne
           'gold': '#E8D5B7',
@@ -20,11 +22,15 @@ export default {
           'copper': '#D2B48C',
           'bronze': '#CD7F32',
           'amber': '#F0C674',
+          'radiance': '#FFE5B4',
+          'luminous': '#FFF8DC',
           
           // Bleu nuit discret (touches uniquement)
-          'night': '#2C3E50',
-          'night-soft': '#34495E',
+          'night': '#1A202C',
+          'night-soft': '#2D3748',
           'constellation': '#4A6FA5',
+          'deep': '#0F1419',
+          'shadow': '#1A1A1A',
           
           // Nuances naturelles
           'sage': '#9CAF88',
@@ -32,11 +38,15 @@ export default {
           'sand': '#F4E4BC',
           'water': '#B8E6E6',
           'aurora': '#E6F3FF',
+          'flow': '#E0F2F1',
+          'harmony': '#F3E5F5',
           
           // Couleurs sombres (pour texte et contraste)
-          'dark': '#1A1A1A',
+          'dark': '#0A0A0F',
           'purple': '#6B46C1',
           'purple-light': '#A78BFA',
+          'violet': '#8B5CF6',
+          'indigo': '#6366F1',
         }
       },
       fontFamily: {
@@ -76,27 +86,19 @@ export default {
           '100%': { transform: 'rotate(360deg)' },
         },
         'aurora-flow': {
-        'cream': '#FEFCF8',
-        'pearl': '#F8F6F3',
-        'mist': '#F5F7FA',
-        'dawn': '#FDF8F0',
-        'sky': '#E8F4FD',
-        'serenity': '#F0F8FF',
-        'whisper': '#FAFBFC',
+          '0%, 100%': { 
+            background: 'linear-gradient(45deg, rgba(184, 230, 230, 0.1), rgba(156, 175, 136, 0.1))',
+            transform: 'translateX(0%)'
+          },
+          '50%': { 
             background: 'linear-gradient(45deg, rgba(184, 230, 230, 0.1), rgba(156, 175, 136, 0.1))',
             transform: 'translateX(10%)'
-        'gold': '#E8D5B7',
-        'gold-light': '#F7E7CE',
-        'champagne': '#F4E4BC',
-        'copper': '#D2B48C',
-        'bronze': '#CD7F32',
-        'amber': '#F0C674',
-        'radiance': '#FFE5B4',
-        'luminous': '#FFF8DC',
+          },
+        },
         breathe: {
           '0%, 100%': { transform: 'scale(1)', opacity: '0.8' },
-        'night': '#1A202C',
-        'night-soft': '#2D3748',
+          '50%': { transform: 'scale(1.05)', opacity: '1' },
+        },
         'wave-subtle': {
           '0%, 100%': { 
             transform: 'translateY(0px) scaleY(1)',
@@ -161,31 +163,20 @@ export default {
             clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 85%)'
           },
         },
-        'constellation': '#4A6FA5',
-        'deep': '#0F1419',
-        'shadow': '#1A1A1A',
+      },
       backdropBlur: {
         'xs': '2px',
-        'sage': '#9CAF88',
-        'moss': '#8FBC8F',
-        'sand': '#F4E4BC',
-        'water': '#B8E6E6',
-        'aurora': '#E6F3FF',
-        'flow': '#E0F2F1',
-        'harmony': '#F3E5F5',
+      },
+      boxShadow: {
         'organic': '0 10px 40px rgba(156, 175, 136, 0.15)',
         'spiritual': '0 8px 32px rgba(232, 213, 183, 0.12)',
         'harmony': '0 4px 24px rgba(156, 175, 136, 0.08)',
         'serenity': '0 2px 16px rgba(184, 230, 230, 0.1)',
         'energy': '0 0 30px rgba(232, 213, 183, 0.15)',
       },
-        'dark': '#0A0A0F',
-        'purple': '#6B46C1',
-        'purple-light': '#A78BFA',
+      backgroundImage: {
         'spiritual-gradient': 'linear-gradient(135deg, var(--tw-gradient-stops))',
         'wave-pattern': 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(232, 213, 183, 0.03) 2px, rgba(232, 213, 183, 0.03) 4px)',
-        'violet': '#8B5CF6',
-        'indigo': '#6366F1',
       }
     },
   },
