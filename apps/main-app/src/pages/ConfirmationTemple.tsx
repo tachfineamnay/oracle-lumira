@@ -48,9 +48,9 @@ const ConfirmationTemple: React.FC = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="font-playfair italic text-4xl md:text-5xl font-medium mb-6 bg-gradient-to-r from-mystical-gold via-mystical-gold-light to-mystical-amber bg-clip-text text-transparent"
+            className="font-playfair italic text-4xl md:text-5xl font-medium mb-6 bg-gradient-to-r from-mystical-gold via-mystical-gold-light to-mystical-gold bg-clip-text text-transparent"
           >
-            Commande confirmée ! 🎉
+            Commande confirmée ! ✨
           </motion.h1>
 
           <motion.p
@@ -59,8 +59,7 @@ const ConfirmationTemple: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="font-inter font-light text-xl text-gray-300 mb-12 max-w-2xl mx-auto"
           >
-            Votre lecture vibratoire est en cours de préparation. 
-            Vous recevrez votre révélation dans les 24 prochaines heures.
+            Votre lecture vibratoire est en cours de préparation. Vous recevrez votre révélation dans les 24 prochaines heures.
           </motion.p>
 
           {/* Timeline */}
@@ -76,7 +75,7 @@ const ConfirmationTemple: React.FC = () => {
             
             <div className="grid md:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="w-8 h-8 rounded-full bg-mystical-gold text-mystical-dark font-semibold flex items-center justify-center mx-auto mb-3">
+                <div className="w-8 h-8 rounded-full bg-mystical-gold text-mystical-abyss font-semibold flex items-center justify-center mx-auto mb-3">
                   1
                 </div>
                 <h4 className="font-inter font-medium text-white mb-2">Canalisation</h4>
@@ -110,7 +109,7 @@ const ConfirmationTemple: React.FC = () => {
           >
             <motion.button
               onClick={() => navigate('/sanctuaire')}
-              className="px-8 py-3 rounded-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-dark font-inter font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-mystical-gold/30 flex items-center justify-center gap-2"
+              className="px-8 py-3 rounded-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-abyss font-inter font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-mystical-gold/30 flex items-center justify-center gap-2"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

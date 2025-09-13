@@ -37,7 +37,7 @@ const DashboardSanctuaire: React.FC = () => {
             {[1, 2, 3, 4].map((level, index) => (
               <div key={level} className="text-center">
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                  index <= 1 ? 'bg-mystical-gold text-mystical-dark' : 'bg-mystical-gold/20 text-mystical-gold'
+                  index <= 1 ? 'bg-mystical-gold text-mystical-abyss' : 'bg-mystical-gold/20 text-mystical-gold'
                 }`}>
                   <span className="font-semibold">{level}</span>
                 </div>
@@ -85,8 +85,8 @@ const DashboardSanctuaire: React.FC = () => {
                 <span className="font-inter text-sm text-white">Écouter Audio (25 min)</span>
               </button>
               
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-mystical-amber/20 hover:bg-mystical-amber/30 transition-colors duration-300">
-                <Download className="w-4 h-4 text-mystical-amber" />
+              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-mystical-gold/20 hover:bg-mystical-gold/30 transition-colors duration-300">
+                <Download className="w-4 h-4 text-mystical-gold" />
                 <span className="font-inter text-sm text-white">Mandala HD (1920x1920)</span>
               </button>
             </div>

@@ -179,7 +179,7 @@ const CommandeTemple: React.FC = () => {
 
   if (paymentSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-deep via-mystical-night to-mystical-shadow flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-mystical-deep-blue via-mystical-midnight to-mystical-black flex items-center justify-center">
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center text-white/95">
           <CheckCircle className="mx-auto mb-4 text-mystical-gold/95" size={64} />
           <h2 className="text-3xl font-bold mb-2">Paiement reussi</h2>
@@ -226,7 +226,7 @@ const CommandeTemple: React.FC = () => {
   } as const;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mystical-deep via-mystical-night to-mystical-shadow">
+    <div className="min-h-screen bg-gradient-to-br from-mystical-deep-blue via-mystical-midnight to-mystical-black">
       {/* Header */}
       <header className="bg-mystical-midnight/60 backdrop-blur-lg border-b border-mystical-gold/20">
         <div className="container mx-auto px-4 py-4">

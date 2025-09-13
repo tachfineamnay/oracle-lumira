@@ -359,7 +359,7 @@ const CommandeTemple: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mystical-deep via-mystical-night to-mystical-shadow relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-mystical-deep-blue via-mystical-midnight to-mystical-black relative overflow-hidden">
       {/* Ondulations spirituelles pour les pages sombres */}
       {/* Waves removed */}
       
