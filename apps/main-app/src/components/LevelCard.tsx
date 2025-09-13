@@ -40,7 +40,6 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
     }
   };
 
-  // Numéros romains
   const romanNumerals = ['I', 'II', 'III', 'IV'];
 
   return (
@@ -196,4 +195,3 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
 };
 
 export default LevelCard;
- 

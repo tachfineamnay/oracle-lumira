@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronRight, Calendar, User, Heart, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 import CircularProgress from './CircularProgress';
 
 interface FormData {
@@ -58,78 +59,162 @@ const DynamicForm: React.FC = () => {
   };
 
   return (
-    <section className="py-32 relative bg-gradient-to-b from-mystical-abyss via-mystical-midnight to-mystical-deep-blue overflow-hidden">
-      <div className="container mx-auto px-6 max-w-4xl">
-        <div className="text-center mb-20 relative z-10">
-          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-8 text-mystical-starlight">
+    <section className="py-32 relative overflow-hidden">
+      {/* Aurore cosmique de section */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cosmic-aurora/5 via-transparent to-cosmic-violet/5"></div>
+      
+      <div className="container mx-auto px-6 max-w-4xl relative z-10">
+        <motion.div 
+          className="text-center mb-20"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          viewport={{ once: true }}
+        >
+          <motion.h2 
+            className="font-playfair italic text-6xl md:text-7xl font-bold mb-8 text-cosmic-divine"
+            style={{
+              textShadow: '0 0 30px rgba(139, 123, 216, 0.5)',
+            }}
+          >
             Commence ton voyage
-          </h2>
-          <p className="font-inter font-light text-xl md:text-2xl text-mystical-silver">
-            Quelques informations pour personnaliser ta lecture
+          </motion.h2>
+          <p className="font-inter font-light text-xl md:text-2xl text-cosmic-ethereal">
+            Quelques informations pour personnaliser ta lecture cosmique
           </p>
-        </div>
+        </motion.div>
 
-        {/* Level Selection */}
-        <div className="mb-16 relative z-10">
+        {/* Level Selection avec effets */}
+        <motion.div 
+          className="mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          viewport={{ once: true }}
+        >
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             {[1, 2, 3, 4].map((level) => (
-              <button
+              <motion.button
                 key={level}
                 onClick={() => {
                   setSelectedLevel(level);
                   setCurrentStep(0);
                 }}
-                className={`px-8 py-4 rounded-full font-inter font-light transition-all duration-500 ${
+                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 relative overflow-hidden ${
                   selectedLevel === level
-                    ? 'bg-mystical-gold text-mystical-abyss shadow-gold-glow'
-                    : 'bg-mystical-midnight/60 text-mystical-silver border border-mystical-gold/30 hover:bg-mystical-deep-blue/60'
+                    ? 'bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void shadow-stellar'
+                    : 'bg-cosmic-deep/60 text-cosmic-ethereal border border-cosmic-gold/30 hover:bg-cosmic-nebula/60'
                 }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                Niveau {level}
-              </button>
+                {selectedLevel === level && (
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-cosmic-star/20 via-cosmic-gold/30 to-cosmic-star/20"
+                    animate={{ x: ['-100%', '100%'] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                )}
+                <span className="relative z-10">Niveau {level}</span>
+              </motion.button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Form Container */}
-        <div className="relative z-10">
-          <div className="bg-mystical-midnight/60 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-8 md:p-12 shadow-forest relative overflow-hidden">
-            {/* Progress */}
-            <div className="flex items-center justify-center mb-16 relative z-10">
-              <CircularProgress progress={progress} />
+        {/* Form Container cosmique */}
+        <motion.div 
+          className="relative"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          viewport={{ once: true }}
+        >
+          <div className="bg-gradient-to-br from-cosmic-deep/80 via-cosmic-nebula/60 to-cosmic-galaxy/40 backdrop-blur-xl border border-cosmic-gold/40 rounded-3xl p-8 md:p-12 shadow-nebula relative overflow-hidden">
+            {/* Effet de nébuleuse en arrière-plan */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-cosmic-violet/10 via-transparent to-cosmic-aurora/10 rounded-3xl"
+              animate={{
+                opacity: [0.3, 0.6, 0.3],
+                scale: [1, 1.02, 1],
+              }}
+              transition={{ duration: 8, repeat: Infinity }}
+            />
+            
+            {/* Particules flottantes */}
+            <div className="absolute inset-0">
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 bg-cosmic-star rounded-full"
+                  style={{
+                    left: `${10 + i * 7}%`,
+                    top: `${15 + (i % 4) * 20}%`,
+                  }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    y: [0, -20, 0],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    delay: i * 0.3,
+                  }}
+                />
+              ))}
             </div>
+
+            {/* Progress cosmique */}
+            <motion.div 
+              className="flex items-center justify-center mb-16 relative z-10"
+              animate={{ 
+                filter: [
+                  'drop-shadow(0 0 10px rgba(255, 215, 0, 0.3))',
+                  'drop-shadow(0 0 20px rgba(255, 215, 0, 0.6))',
+                  'drop-shadow(0 0 10px rgba(255, 215, 0, 0.3))',
+                ]
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              <CircularProgress progress={progress} />
+            </motion.div>
 
             {/* Form Steps */}
             <div className="min-h-[300px] flex flex-col justify-center relative z-10">
               {renderStep(steps[currentStep], formData, setFormData)}
             </div>
 
-            {/* Navigation */}
+            {/* Navigation cosmique */}
             <div className="flex justify-between items-center mt-16 relative z-10">
-              <button
+              <motion.button
                 onClick={handlePrevious}
                 disabled={currentStep === 0}
-                className={`px-8 py-4 rounded-full font-inter font-light transition-all duration-500 ${
+                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 ${
                   currentStep === 0
-                    ? 'opacity-50 cursor-not-allowed text-mystical-silver/50'
-                    : 'text-mystical-silver border border-mystical-gold/30 hover:bg-mystical-deep-blue/30'
+                    ? 'opacity-50 cursor-not-allowed text-cosmic-silver/50'
+                    : 'text-cosmic-ethereal border border-cosmic-gold/30 hover:bg-cosmic-violet/20 hover:border-cosmic-gold/50'
                 }`}
+                whileHover={currentStep > 0 ? { scale: 1.05 } : {}}
+                whileTap={currentStep > 0 ? { scale: 0.95 } : {}}
               >
                 Précédent
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
                 onClick={currentStep === steps.length - 1 ? () => {} : handleNext}
-                className="px-10 py-4 rounded-full bg-mystical-gold text-mystical-abyss font-inter font-light transition-all duration-500 hover:bg-mystical-gold/80 flex items-center gap-2 shadow-gold-glow"
+                className="px-12 py-4 rounded-full bg-gradient-to-r from-cosmic-gold via-cosmic-gold-warm to-cosmic-gold text-cosmic-void font-inter font-bold transition-all duration-500 hover:shadow-stellar flex items-center gap-3 relative overflow-hidden group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <span>
-                {currentStep === steps.length - 1 ? 'Recevoir ma lecture' : 'Suivant'}
+                {/* Effet de brillance */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                <span className="relative z-10">
+                  {currentStep === steps.length - 1 ? 'Recevoir ma révélation' : 'Suivant'}
                 </span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+                <ChevronRight className="w-5 h-5 relative z-10" />
+              </motion.button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -139,67 +224,87 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
   const Icon = step.icon;
 
   return (
-    <div className="text-center">
+    <motion.div 
+      className="text-center"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
       <div className="mb-8">
-        <div className="w-16 h-16 rounded-full bg-mystical-gold/20 border border-mystical-gold/50 flex items-center justify-center mx-auto mb-4 animate-gold-pulse">
-          <Icon className="w-8 h-8 text-mystical-gold" />
-        </div>
-        <h3 className="font-playfair italic text-3xl font-medium text-mystical-starlight mb-4">
+        <motion.div 
+          className="w-20 h-20 rounded-full bg-gradient-to-br from-cosmic-gold/30 to-cosmic-violet/20 border-2 border-cosmic-gold/50 flex items-center justify-center mx-auto mb-6"
+          animate={{ 
+            boxShadow: [
+              '0 0 20px rgba(255, 215, 0, 0.3)',
+              '0 0 40px rgba(255, 215, 0, 0.5)',
+              '0 0 20px rgba(255, 215, 0, 0.3)',
+            ]
+          }}
+          transition={{ duration: 3, repeat: Infinity }}
+        >
+          <Icon className="w-10 h-10 text-cosmic-gold" />
+        </motion.div>
+        <h3 className="font-playfair italic text-3xl font-bold text-cosmic-divine mb-4">
           {step.title}
         </h3>
       </div>
 
       <div className="max-w-md mx-auto">
         {step.id === 'name' && (
-          <input
+          <motion.input
             type="text"
-            placeholder="Votre prénom..."
+            placeholder="Votre prénom cosmique..."
             value={formData.firstName}
             onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300"
+            className="w-full px-6 py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine placeholder-cosmic-silver/60 font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 backdrop-blur-sm"
+            whileFocus={{ scale: 1.02 }}
           />
         )}
 
         {step.id === 'birth' && (
-          <input
+          <motion.input
             type="date"
             value={formData.birthDate}
             onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300"
+            className="w-full px-6 py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 backdrop-blur-sm"
+            whileFocus={{ scale: 1.02 }}
           />
         )}
 
         {step.id === 'intention' && (
-          <textarea
-            placeholder="Quelle est votre intention pour cette lecture..."
+          <motion.textarea
+            placeholder="Quelle est votre intention pour cette lecture cosmique..."
             value={formData.intention}
             onChange={(e) => setFormData(prev => ({ ...prev, intention: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine placeholder-cosmic-silver/60 font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 resize-none backdrop-blur-sm"
+            whileFocus={{ scale: 1.02 }}
           />
         )}
 
         {step.id === 'blockages' && (
-          <textarea
-            placeholder="Décrivez les blocages que vous ressentez..."
+          <motion.textarea
+            placeholder="Décrivez les blocages énergétiques que vous ressentez..."
             value={formData.blockages}
             onChange={(e) => setFormData(prev => ({ ...prev, blockages: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine placeholder-cosmic-silver/60 font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 resize-none backdrop-blur-sm"
+            whileFocus={{ scale: 1.02 }}
           />
         )}
 
         {step.id === 'family' && (
-          <textarea
-            placeholder="Partagez l'histoire énergétique de votre lignée (optionnel)..."
+          <motion.textarea
+            placeholder="Partagez l'histoire énergétique de votre lignée stellaire (optionnel)..."
             value={formData.familyHistory}
             onChange={(e) => setFormData(prev => ({ ...prev, familyHistory: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine placeholder-cosmic-silver/60 font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 resize-none backdrop-blur-sm"
+            whileFocus={{ scale: 1.02 }}
           />
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
