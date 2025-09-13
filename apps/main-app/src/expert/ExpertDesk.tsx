@@ -26,7 +26,7 @@ const ExpertDesk: React.FC = () => {
           
           <div className="flex items-center justify-center gap-3 mb-6">
             <Crown className="w-8 h-8 text-mystical-gold" />
-            <h1 className="font-playfair italic text-4xl md:text-5xl font-medium bg-gradient-to-r from-mystical-gold via-mystical-gold-light to-mystical-amber bg-clip-text text-transparent">
+            <h1 className="font-playfair italic text-4xl md:text-5xl font-medium bg-gradient-to-r from-mystical-gold via-mystical-gold-light to-mystical-gold bg-clip-text text-transparent">
               Expert Desk
             </h1>
           </div>

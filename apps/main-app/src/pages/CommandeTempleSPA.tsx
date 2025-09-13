@@ -17,7 +17,7 @@ import { validateStripeKey } from '../utils/api';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
 import SectionHeader from '../components/ui/SectionHeader';
-import SpiritualWaves from '../components/SpiritualWaves';
+// Legacy waves removed for dark theme
 
 // Stripe initialization with validation
 let stripePromise: Promise<any> | null = null;
@@ -361,7 +361,7 @@ const CommandeTemple: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-mystical-deep via-mystical-night to-mystical-shadow relative overflow-hidden">
       {/* Ondulations spirituelles pour les pages sombres */}
-      <SpiritualWaves intensity="subtle" />
+      {/* Waves removed */}
       
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}

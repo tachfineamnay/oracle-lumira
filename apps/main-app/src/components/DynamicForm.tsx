@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Calendar, User, Heart, Zap } from 'lucide-react';
 import CircularProgress from './CircularProgress';
-import SpiritualWaves from './SpiritualWaves';
 
 interface FormData {
   level: number;
@@ -60,136 +58,75 @@ const DynamicForm: React.FC = () => {
   };
 
   return (
-    <section className="py-32 relative bg-gradient-to-b from-mystical-pearl via-mystical-serenity to-mystical-dawn overflow-hidden">
-      {/* Ondulations spirituelles */}
-      <SpiritualWaves intensity="medium" />
-      
+    <section className="py-32 relative bg-gradient-to-b from-mystical-abyss via-mystical-midnight to-mystical-deep-blue overflow-hidden">
       <div className="container mx-auto px-6 max-w-4xl">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          viewport={{ once: true }}
-          className="text-center mb-20 relative z-10"
-        >
-          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-8 bg-gradient-to-r from-mystical-copper via-mystical-gold to-mystical-radiance bg-clip-text text-transparent drop-shadow-sm">
+        <div className="text-center mb-20 relative z-10">
+          <h2 className="font-playfair italic text-5xl md:text-6xl font-medium mb-8 text-mystical-starlight">
             Commence ton voyage
           </h2>
-          <p className="font-inter font-light text-xl md:text-2xl text-mystical-night/80 tracking-wide">
+          <p className="font-inter font-light text-xl md:text-2xl text-mystical-silver">
             Quelques informations pour personnaliser ta lecture
           </p>
-        </motion.div>
+        </div>
 
         {/* Level Selection */}
         <div className="mb-16 relative z-10">
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             {[1, 2, 3, 4].map((level) => (
-              <motion.button
+              <button
                 key={level}
                 onClick={() => {
                   setSelectedLevel(level);
                   setCurrentStep(0);
                 }}
-                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 relative overflow-hidden group ${
+                className={`px-8 py-4 rounded-full font-inter font-light transition-all duration-500 ${
                   selectedLevel === level
-                    ? 'bg-gradient-to-r from-mystical-gold to-mystical-radiance text-mystical-night shadow-spiritual'
-                    : 'bg-white/65 text-mystical-constellation border border-mystical-gold/40 hover:bg-mystical-aurora/25 shadow-serenity'
+                    ? 'bg-mystical-gold text-mystical-abyss shadow-gold-glow'
+                    : 'bg-mystical-midnight/60 text-mystical-silver border border-mystical-gold/30 hover:bg-mystical-deep-blue/60'
                 }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
-                {/* Effet d'ondulation pour bouton sélectionné */}
-                {selectedLevel === level && (
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-mystical-luminous/30 to-mystical-gold/30 rounded-full"
-                    animate={{
-                      scale: [1, 1.1, 1],
-                      opacity: [0.3, 0.6, 0.3],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  />
-                )}
-                <span className="relative z-10 tracking-wide">
                 Niveau {level}
-                </span>
-              </motion.button>
+              </button>
             ))}
           </div>
         </div>
 
         {/* Form Container */}
         <div className="relative z-10">
-          <div className="bg-white/85 backdrop-blur-md border border-mystical-gold/40 rounded-3xl p-8 md:p-12 shadow-spiritual relative overflow-hidden">
-            {/* Ondulation de formulaire */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-br from-mystical-gold/3 to-mystical-water/3 rounded-3xl"
-              animate={{
-                opacity: [0, 0.5, 0],
-                scale: [1, 1.02, 1],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            
+          <div className="bg-mystical-midnight/60 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-8 md:p-12 shadow-forest relative overflow-hidden">
             {/* Progress */}
             <div className="flex items-center justify-center mb-16 relative z-10">
               <CircularProgress progress={progress} />
             </div>
 
             {/* Form Steps */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.5 }}
-                className="min-h-[300px] flex flex-col justify-center relative z-10"
-              >
-                {renderStep(steps[currentStep], formData, setFormData)}
-              </motion.div>
-            </AnimatePresence>
+            <div className="min-h-[300px] flex flex-col justify-center relative z-10">
+              {renderStep(steps[currentStep], formData, setFormData)}
+            </div>
 
             {/* Navigation */}
             <div className="flex justify-between items-center mt-16 relative z-10">
-              <motion.button
+              <button
                 onClick={handlePrevious}
                 disabled={currentStep === 0}
-                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 tracking-wide ${
+                className={`px-8 py-4 rounded-full font-inter font-light transition-all duration-500 ${
                   currentStep === 0
-                    ? 'opacity-50 cursor-not-allowed text-gray-500'
-                    : 'text-mystical-copper/90 border border-mystical-copper/40 hover:bg-mystical-copper/10 shadow-serenity'
+                    ? 'opacity-50 cursor-not-allowed text-mystical-silver/50'
+                    : 'text-mystical-silver border border-mystical-gold/30 hover:bg-mystical-deep-blue/30'
                 }`}
-                whileHover={currentStep > 0 ? { scale: 1.05 } : {}}
               >
                 Précédent
-              </motion.button>
+              </button>
 
-              <motion.button
+              <button
                 onClick={currentStep === steps.length - 1 ? () => {} : handleNext}
-                className="px-10 py-4 rounded-full bg-gradient-to-r from-mystical-gold via-mystical-radiance to-mystical-champagne text-mystical-night font-inter font-medium transition-all duration-500 hover:shadow-energy hover:from-mystical-copper hover:to-mystical-luminous flex items-center gap-2 relative overflow-hidden group tracking-wide"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-10 py-4 rounded-full bg-mystical-gold text-mystical-abyss font-inter font-light transition-all duration-500 hover:bg-mystical-gold/80 flex items-center gap-2 shadow-gold-glow"
               >
-                {/* Effet d'ondulation au survol */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-mystical-luminous/30 to-mystical-gold/30 rounded-full"
-                  initial={{ scale: 0, opacity: 0 }}
-                  whileHover={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                />
-                <span className="relative z-10">
+                <span>
                 {currentStep === steps.length - 1 ? 'Recevoir ma lecture' : 'Suivant'}
                 </span>
                 <ChevronRight className="w-4 h-4" />
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>
@@ -204,10 +141,10 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
   return (
     <div className="text-center">
       <div className="mb-8">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-mystical-gold/30 to-mystical-champagne/40 flex items-center justify-center mx-auto mb-4 shadow-constellation">
-          <Icon className="w-8 h-8 text-mystical-night/80" />
+        <div className="w-16 h-16 rounded-full bg-mystical-gold/20 border border-mystical-gold/50 flex items-center justify-center mx-auto mb-4 animate-gold-pulse">
+          <Icon className="w-8 h-8 text-mystical-gold" />
         </div>
-        <h3 className="font-playfair italic text-3xl font-medium text-mystical-night mb-4">
+        <h3 className="font-playfair italic text-3xl font-medium text-mystical-starlight mb-4">
           {step.title}
         </h3>
       </div>
@@ -219,7 +156,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             placeholder="Votre prénom..."
             value={formData.firstName}
             onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-            className="w-full px-6 py-4 rounded-xl bg-white/70 border border-mystical-gold/30 text-mystical-night placeholder-mystical-night/50 font-inter focus:outline-none focus:border-mystical-copper focus:ring-2 focus:ring-mystical-copper/20 transition-all duration-300"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300"
           />
         )}
 
@@ -228,7 +165,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             type="date"
             value={formData.birthDate}
             onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))}
-            className="w-full px-6 py-4 rounded-xl bg-white/70 border border-mystical-gold/30 text-mystical-night font-inter focus:outline-none focus:border-mystical-copper focus:ring-2 focus:ring-mystical-copper/20 transition-all duration-300"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300"
           />
         )}
 
@@ -238,7 +175,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             value={formData.intention}
             onChange={(e) => setFormData(prev => ({ ...prev, intention: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-white/70 border border-mystical-gold/30 text-mystical-night placeholder-mystical-night/50 font-inter focus:outline-none focus:border-mystical-copper focus:ring-2 focus:ring-mystical-copper/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
           />
         )}
 
@@ -248,7 +185,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             value={formData.blockages}
             onChange={(e) => setFormData(prev => ({ ...prev, blockages: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-white/70 border border-mystical-gold/30 text-mystical-night placeholder-mystical-night/50 font-inter focus:outline-none focus:border-mystical-copper focus:ring-2 focus:ring-mystical-copper/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
           />
         )}
 
@@ -258,7 +195,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             value={formData.familyHistory}
             onChange={(e) => setFormData(prev => ({ ...prev, familyHistory: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-white/70 border border-mystical-gold/30 text-mystical-night placeholder-mystical-night/50 font-inter focus:outline-none focus:border-mystical-copper focus:ring-2 focus:ring-mystical-copper/20 transition-all duration-300 resize-none"
+            className="w-full px-6 py-4 rounded-xl bg-mystical-midnight/40 border border-mystical-gold/30 text-mystical-starlight placeholder-mystical-silver/50 font-inter font-light focus:outline-none focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20 transition-all duration-300 resize-none"
           />
         )}
       </div>

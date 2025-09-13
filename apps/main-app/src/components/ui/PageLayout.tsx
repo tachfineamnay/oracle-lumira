@@ -1,6 +1,6 @@
 import React from 'react';
 
-type Variant = 'light' | 'dark';
+type Variant = 'dark';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -9,11 +9,10 @@ interface PageLayoutProps {
 }
 
 const variants: Record<Variant, string> = {
-  light: 'bg-gradient-to-b from-mystical-aurora via-mystical-cream to-mystical-pearl',
-  dark: 'bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark',
+  dark: 'bg-gradient-to-br from-mystical-abyss via-mystical-midnight to-mystical-deep-blue',
 };
 
-const PageLayout: React.FC<PageLayoutProps> = ({ children, variant = 'light', className = '' }) => {
+const PageLayout: React.FC<PageLayoutProps> = ({ children, variant = 'dark', className = '' }) => {
   return (
     <div className={`min-h-screen ${variants[variant]} ${className}`}>
       <div className="container mx-auto px-4 md:px-6 py-8 md:py-12">
