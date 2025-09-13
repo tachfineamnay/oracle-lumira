@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { getApiBaseUrl } from '../utils/api';
+const API_BASE_URL = getApiBaseUrl();
 
 export interface CreatePaymentIntentRequest {
   level: string;

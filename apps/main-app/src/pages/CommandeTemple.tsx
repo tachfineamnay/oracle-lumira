@@ -4,10 +4,18 @@ import { ArrowLeft, ShoppingBag, X, Loader, AlertCircle, CheckCircle } from 'luc
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import { validateStripeKey } from '../utils/api';
 import { stripeAPI } from '../api/stripe';
 
-// Public Stripe key (dev)
-const stripePromise = loadStripe('pk_test_51S4LPjCyn6GQT2lZ7HLyNYqEWpqkg7rzytnjsymM6163eHBjXKxcYcHP32JCHkUzVhzb90hTyBQJJcU0fOBa6VGR00glO1kzek');
+// Stripe initialization with validation (aligned with SPA)
+let stripePromise: Promise<any> | null = null;
+try {
+  const stripeKey = validateStripeKey();
+  stripePromise = loadStripe(stripeKey);
+} catch (error) {
+  console.error('Stripe initialization failed:', error);
+  stripePromise = null;
+}
 
 type CheckoutFormProps = {
   orderId: string;
@@ -294,7 +302,7 @@ const CommandeTemple: React.FC = () => {
             >
               <h2 className="text-2xl font-bold text-white/95 mb-6">Paiement securise</h2>
 
-              {clientSecret && orderId && (
+              {clientSecret && orderId && stripePromise && (
                 <Elements stripe={stripePromise} options={stripeOptions}>
                   <CheckoutForm
                     orderId={orderId}
@@ -372,4 +380,3 @@ const CommandeTemple: React.FC = () => {
 };
 
 export default CommandeTemple;
-

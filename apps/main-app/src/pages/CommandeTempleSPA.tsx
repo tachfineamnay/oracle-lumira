@@ -21,15 +21,13 @@ import SpiritualWaves from '../components/SpiritualWaves';
 
 // Stripe initialization with validation
 let stripePromise: Promise<any> | null = null;
-
-  try {
+try {
   const stripeKey = validateStripeKey();
   stripePromise = loadStripe(stripeKey);
-  console.log('Stripe initialized successfully');
-  } catch (error) {
+} catch (error) {
   console.error('Stripe initialization failed:', error);
   stripePromise = null;
-  }
+}
 
 // Stripe appearance customization (mystical theme)
 const stripeAppearance = {

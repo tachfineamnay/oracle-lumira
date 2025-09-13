@@ -59,7 +59,9 @@ export function validateStripeKey(): string {
     throw new Error(`Invalid Stripe publishable key format: ${pk.substring(0, 10)}...`);
   }
   
-  console.log(`Stripe key validated: ${pk.substring(0, 15)}...`);
+  if (import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true') {
+    console.log(`Stripe key validated: ${pk.substring(0, 15)}...`);
+  }
   return pk;
 }
 

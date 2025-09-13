@@ -11,7 +11,8 @@ export class ProductOrderService {
     customerEmail?: string
   ): Promise<CreatePaymentIntentResponse> {
     try {
-      console.log('Creating payment intent for product:', productId);
+      const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true';
+      if (DEBUG) console.log('Creating payment intent for product:', productId);
       
       const response = await apiRequest<CreatePaymentIntentResponse>('/products/create-payment-intent', {
         method: 'POST',
@@ -25,7 +26,7 @@ export class ProductOrderService {
         }),
       });
 
-      console.log('Payment intent created:', response.orderId);
+      if (DEBUG) console.log('Payment intent created:', response.orderId);
       return response;
     } catch (error) {
       console.error('Failed to create payment intent:', error);
@@ -40,7 +41,8 @@ export class ProductOrderService {
    */
   static async getOrderStatus(orderId: string): Promise<OrderStatus> {
     try {
-      console.log('Fetching order status:', orderId);
+      const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true';
+      if (DEBUG) console.log('Fetching order status:', orderId);
       
       const response = await apiRequest<OrderStatus>(`/products/orders/${orderId}`, {
         method: 'GET',
