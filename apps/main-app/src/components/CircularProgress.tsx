@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 interface CircularProgressProps {
   progress: number;
@@ -20,69 +19,31 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ progress }) => {
           cy="60"
           r={radius}
           fill="none"
-          stroke="rgba(232, 213, 183, 0.2)"
+          stroke="rgba(226, 232, 240, 0.2)"
           strokeWidth="8"
         />
         
         {/* Progress Circle */}
-        <motion.circle
+        <circle
           cx="60"
           cy="60"
           r={radius}
           fill="none"
-          stroke="url(#spiritualProgressGradient)"
+          stroke="rgba(226, 232, 240, 0.8)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={strokeDasharray}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset }}
-          transition={{ duration: 1.2, ease: "easeInOut" }}
+          strokeDashoffset={strokeDashoffset}
+          style={{ transition: 'stroke-dashoffset 1.2s ease-in-out' }}
         />
-        
-        <defs>
-          <linearGradient id="spiritualProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#E8D5B7" />
-            <stop offset="30%" stopColor="#FFE5B4" />
-            <stop offset="70%" stopColor="#B8E6E6" />
-            <stop offset="100%" stopColor="#9CAF88" />
-          </linearGradient>
-        </defs>
       </svg>
 
       {/* Center Content */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <motion.span
-          key={progress}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="font-inter font-semibold text-xl text-mystical-copper/90"
-        >
+        <span className="font-inter font-semibold text-xl text-mystical-moonlight">
           {Math.round(progress)}%
-        </motion.span>
+        </span>
       </div>
-
-      {/* Outer Glow */}
-      <motion.div
-        className="absolute inset-0 rounded-full bg-mystical-aurora/20 blur-xl"
-        animate={{ scale: [1, 1.1, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        style={{ opacity: progress / 100 * 0.5 }}
-      />
-      
-      {/* Ondulation énergétique */}
-      <motion.div
-        className="absolute inset-0 rounded-full border border-mystical-gold/20"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0, 0.4, 0],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
     </div>
   );
 };

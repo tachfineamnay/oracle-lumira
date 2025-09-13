@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { Loader, AlertCircle } from 'lucide-react';
 import LevelCard from "./LevelCard";
 import type { Product } from "../types/products";
@@ -27,10 +26,10 @@ function mapProductsToLevels(products: Product[]): LevelCardData[] {
   );
 
   const gradients = [
-    "from-mystical-purple/20 to-mystical-gold/20",
-    "from-mystical-gold/20 to-mystical-purple/20", 
-    "from-mystical-dark/30 to-mystical-purple/30",
-    "from-mystical-gold/30 to-mystical-dark/20",
+    "from-mystical-midnight/80 to-mystical-deep-blue/60",
+    "from-mystical-deep-blue/80 to-mystical-navy/60", 
+    "from-mystical-navy/80 to-mystical-midnight/60",
+    "from-mystical-forest-deep/80 to-mystical-midnight/60",
   ];
 
   return sorted.map((p, idx) => ({
@@ -70,61 +69,40 @@ const LevelsSection: React.FC = () => {
   }, []);
 
   return (
-    <section id="levels" className="py-32 relative bg-gradient-to-br from-mystical-dark via-mystical-purple to-mystical-dark overflow-hidden">
+    <section id="levels" className="py-32 relative bg-gradient-to-br from-mystical-black via-mystical-midnight to-mystical-deep-blue overflow-hidden">
       <div className="container mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          viewport={{ once: true }}
-          className="text-center mb-24 relative z-10"
-        >
-          <h2 className="font-playfair text-5xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-mystical-gold to-mystical-gold-light bg-clip-text text-transparent">
+        <div className="text-center mb-24 relative z-10">
+          <h2 className="font-playfair text-5xl md:text-6xl font-bold mb-8 text-mystical-starlight">
             Choisis ton niveau d'éveil
           </h2>
-          <p className="font-inter text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
+          <p className="font-inter text-xl md:text-2xl text-mystical-silver max-w-4xl mx-auto leading-relaxed">
             Chaque niveau révèle une couche plus profonde de ton essence spirituelle
           </p>
-        </motion.div>
+        </div>
 
         {/* Loading */}
         {!levels && !error && (
-          <motion.div 
-            className="text-center text-gray-300 py-16"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Loader className="w-8 h-8 mx-auto mb-4 text-mystical-gold animate-spin" />
+          <div className="text-center text-mystical-silver py-16">
+            <Loader className="w-8 h-8 mx-auto mb-4 text-mystical-moonlight" />
             <p className="font-inter">Chargement du catalogue spirituel...</p>
-          </motion.div>
+          </div>
         )}
 
         {/* Error */}
         {error && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center text-red-400 bg-red-900/20 p-6 rounded-2xl border border-red-500/30 max-w-md mx-auto"
-          >
+          <div className="text-center text-red-400 bg-red-900/20 p-6 rounded-2xl border border-red-500/30 max-w-md mx-auto">
             <AlertCircle className="w-8 h-8 mx-auto mb-3" />
             <p className="font-inter">{error}</p>
-          </motion.div>
+          </div>
         )}
 
         {/* Grid */}
         {levels && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto relative z-10">
             {levels.map((level, index) => (
-              <motion.div
-                key={level.productId || level.id}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.15 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -8 }}
-              >
+              <div key={level.productId || level.id}>
                 <LevelCard level={level} />
-              </motion.div>
+              </div>
             ))}
           </div>
         )}

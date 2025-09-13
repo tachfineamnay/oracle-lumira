@@ -5,16 +5,23 @@ export default {
     extend: {
       colors: {
         mystical: {
-          // Dark theme colors (original)
-          'dark': '#0A0A0F',
-          'purple': '#6B46C1',
-          'purple-light': '#A78BFA',
-          'gold': '#D4AF37',
-          'gold-light': '#FFD700',
-          'amber': '#FBBF24',
-          'night': '#1A202C',
-          'deep': '#0F1419',
-          'shadow': '#1A1A1A',
+          // Base colors - Noir et Bleu nuit
+          'black': '#000000',
+          'midnight': '#0F172A',
+          'deep-blue': '#1E293B',
+          'navy': '#334155',
+          
+          // Accents - Lumière lunaire et étoiles
+          'moonlight': '#E2E8F0',
+          'starlight': '#F8FAFC',
+          'silver': '#CBD5E1',
+          'pearl': '#F1F5F9',
+          
+          // Forêt mystique
+          'forest-dark': '#0A0F0A',
+          'forest-deep': '#1A2F1A',
+          'moss': '#2D5A2D',
+          'sage': '#4A6741',
         }
       },
       fontFamily: {
@@ -22,17 +29,27 @@ export default {
         'inter': ['Inter', 'sans-serif'],
       },
       animation: {
-        'float': 'float 6s ease-in-out infinite',
-        'pulse-slow': 'pulse 3s ease-in-out infinite',
+        'wave-gentle': 'wave-gentle 8s ease-in-out infinite',
+        'moonbeam': 'moonbeam 12s ease-in-out infinite',
+        'startwinkle': 'startwinkle 4s ease-in-out infinite',
       },
       keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-20px)' },
+        'wave-gentle': {
+          '0%, 100%': { transform: 'translateY(0px) scale(1)' },
+          '50%': { transform: 'translateY(-10px) scale(1.02)' },
+        },
+        'moonbeam': {
+          '0%, 100%': { opacity: '0.3' },
+          '50%': { opacity: '0.6' },
+        },
+        'startwinkle': {
+          '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+          '50%': { opacity: '1', transform: 'scale(1.1)' },
         },
       },
       boxShadow: {
-        'mystical-gold': '0 0 30px rgba(212, 175, 55, 0.3)',
+        'moonlight': '0 4px 20px rgba(226, 232, 240, 0.1)',
+        'forest': '0 8px 32px rgba(10, 15, 10, 0.3)',
       },
     },
   },
