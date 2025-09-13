@@ -192,7 +192,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
                 }}
               />
               <span className="font-inter text-sm text-mystical-night/85 tracking-wide">{item}</span>
-            </div>
+            </motion.div>
           ))}
         </div>
 

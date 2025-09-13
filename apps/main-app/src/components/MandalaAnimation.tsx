@@ -133,7 +133,7 @@ const MandalaAnimation: React.FC = () => {
           }}
         />
       ))}
-      />
+      
     </div>
   );
 };

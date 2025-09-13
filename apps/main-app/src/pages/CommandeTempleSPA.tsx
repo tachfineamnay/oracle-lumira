@@ -483,7 +483,7 @@ const CommandeTemple: React.FC = () => {
                       <CheckCircle className="w-5 h-5 text-mystical-gold/90 flex-shrink-0 mt-0.5" />
                     </motion.div>
                     <span className="text-gray-300/90 tracking-wide">{feature}</span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
