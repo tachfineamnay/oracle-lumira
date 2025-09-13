@@ -4,9 +4,9 @@ import { motion } from 'framer-motion';
 const GoldenMist: React.FC = () => {
   return (
     <div className="fixed inset-0 pointer-events-none z-0">
-      {/* Aurora Layer 1 - Doux et spirituel */}
+      {/* Golden Mist Layer 1 */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-tr from-mystical-aurora/15 via-transparent to-mystical-flow/12"
+        className="absolute inset-0 bg-gradient-to-tr from-mystical-gold/10 via-transparent to-mystical-purple/10"
         animate={{
           opacity: [0.3, 0.6, 0.3],
           scale: [1, 1.1, 1],
@@ -18,9 +18,9 @@ const GoldenMist: React.FC = () => {
         }}
       />
 
-      {/* Brume spirituelle Layer 2 */}
+      {/* Golden Mist Layer 2 */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-bl from-transparent via-mystical-sage/8 to-mystical-harmony/12"
+        className="absolute inset-0 bg-gradient-to-bl from-transparent via-mystical-gold/8 to-mystical-purple/12"
         animate={{
           opacity: [0.2, 0.5, 0.2],
           scale: [1.1, 1, 1.1],
@@ -33,9 +33,9 @@ const GoldenMist: React.FC = () => {
         }}
       />
 
-      {/* Flux énergétique spirituel */}
+      {/* Flowing Energy */}
       <motion.div
-        className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-mystical-gold/6 via-transparent to-mystical-constellation/6"
+        className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-mystical-gold/6 via-transparent to-mystical-purple/6"
         animate={{
           x: ['-100%', '100%'],
           opacity: [0, 0.3, 0],
@@ -47,9 +47,9 @@ const GoldenMist: React.FC = () => {
         }}
       />
       
-      {/* Ondulations énergétiques multiples */}
+      {/* Floating Orbs */}
       <motion.div
-        className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-radial from-mystical-water/8 to-transparent rounded-full"
+        className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-radial from-mystical-gold/8 to-transparent rounded-full"
         animate={{
           scale: [1, 1.3, 1],
           opacity: [0.2, 0.5, 0.2],
@@ -63,9 +63,8 @@ const GoldenMist: React.FC = () => {
         }}
       />
       
-      {/* Ondulation complémentaire */}
       <motion.div
-        className="absolute bottom-1/3 left-1/5 w-64 h-64 bg-gradient-radial from-mystical-sage/6 to-transparent rounded-full"
+        className="absolute bottom-1/3 left-1/5 w-64 h-64 bg-gradient-radial from-mystical-purple/6 to-transparent rounded-full"
         animate={{
           scale: [1, 1.4, 1],
           opacity: [0.15, 0.4, 0.15],

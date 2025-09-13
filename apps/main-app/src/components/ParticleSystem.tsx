@@ -50,7 +50,7 @@ const ParticleSystem: React.FC = () => {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute rounded-full bg-mystical-constellation opacity-30"
+          className="absolute rounded-full bg-mystical-gold/30 opacity-30"
           style={{
             width: particle.size,
             height: particle.size,

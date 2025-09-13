@@ -18,16 +18,15 @@ const MandalaAnimation: React.FC = () => {
           cy="192"
           r="180"
           fill="none"
-          stroke="url(#spiritualMandalaGradient)"
+          stroke="url(#mandalaGradient)"
           strokeWidth="1"
           strokeDasharray="2,12"
         />
         <defs>
-          <linearGradient id="spiritualMandalaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#E8D5B7" />
-            <stop offset="30%" stopColor="#FFE5B4" />
-            <stop offset="70%" stopColor="#B8E6E6" />
-            <stop offset="100%" stopColor="#9CAF88" />
+          <linearGradient id="mandalaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#D4AF37" />
+            <stop offset="50%" stopColor="#FFD700" />
+            <stop offset="100%" stopColor="#FBBF24" />
           </linearGradient>
         </defs>
       </motion.svg>
@@ -46,15 +45,15 @@ const MandalaAnimation: React.FC = () => {
           cy="192"
           r="120"
           fill="none"
-          stroke="url(#harmonyGradient)"
+          stroke="url(#purpleGradient)"
           strokeWidth="1"
           strokeDasharray="1,8"
         />
         <defs>
-          <linearGradient id="harmonyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#4A6FA5" />
-            <stop offset="50%" stopColor="#9CAF88" />
-            <stop offset="100%" stopColor="#2D3748" />
+          <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6B46C1" />
+            <stop offset="50%" stopColor="#A78BFA" />
+            <stop offset="100%" stopColor="#C084FC" />
           </linearGradient>
         </defs>
       </motion.svg>
@@ -73,7 +72,7 @@ const MandalaAnimation: React.FC = () => {
           cy="192"
           r="60"
           fill="none"
-          stroke="rgba(232, 213, 183, 0.6)"
+          stroke="rgba(212, 175, 55, 0.6)"
           strokeWidth="1.5"
           strokeDasharray="0.5,6"
         />
@@ -81,59 +80,13 @@ const MandalaAnimation: React.FC = () => {
 
       {/* Central Glow */}
       <motion.div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-gradient-radial from-mystical-radiance/25 to-transparent blur-2xl"
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-gradient-radial from-mystical-gold/25 to-transparent blur-2xl"
         animate={{ 
           scale: [1, 1.3, 1],
           opacity: [0.4, 0.7, 0.4],
         }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
-      
-      {/* Ondulations énergétiques concentriques */}
-      {[...Array(3)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border border-mystical-gold/10 rounded-full"
-          style={{
-            width: `${120 + i * 40}px`,
-            height: `${120 + i * 40}px`,
-          }}
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0, 0.3, 0],
-          }}
-          transition={{
-            duration: 4 + i * 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 1.5,
-          }}
-        />
-      ))}
-      
-      {/* Particules spirituelles flottantes */}
-      {[...Array(8)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-mystical-gold/30 rounded-full"
-          style={{
-            left: `${45 + Math.cos(i * 45 * Math.PI / 180) * 150}px`,
-            top: `${45 + Math.sin(i * 45 * Math.PI / 180) * 150}px`,
-          }}
-          animate={{
-            scale: [0.5, 1.5, 0.5],
-            opacity: [0.2, 0.8, 0.2],
-            rotate: [0, 360],
-          }}
-          transition={{
-            duration: 6 + i * 0.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.8,
-          }}
-        />
-      ))}
-      
     </div>
   );
 };
