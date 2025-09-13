@@ -157,4 +157,4 @@ const UpsellSection: React.FC = () => {
   );
 };
 
-export default Testimonials;
+export default UpsellSection;
