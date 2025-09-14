@@ -69,20 +69,20 @@ const LevelsSection: React.FC = () => {
   }, []);
 
   return (
-    <section id="levels" className="py-32 relative overflow-hidden">
-      {/* Nébuleuse de section */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cosmic-nebula/10 to-transparent"></div>
+    <section id="levels" className="py-12 sm:py-16 lg:py-24 xl:py-32 relative overflow-hidden">
+      {/* Nébuleuse de section - RESPONSIVE */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cosmic-nebula/8 sm:via-cosmic-nebula/10 to-transparent"></div>
       
-      <div className="container mx-auto px-6 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div 
-          className="text-center mb-24"
+          className="text-center mb-12 sm:mb-16 lg:mb-20 xl:mb-24"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           viewport={{ once: true }}
         >
           <motion.h2 
-            className="font-playfair italic text-6xl md:text-7xl font-bold mb-8 text-cosmic-divine"
+            className="font-playfair italic text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 sm:mb-8 text-cosmic-divine leading-tight px-2"
             style={{
               textShadow: '0 0 30px rgba(255, 215, 0, 0.4)',
             }}
@@ -90,7 +90,7 @@ const LevelsSection: React.FC = () => {
             Choisis ton niveau d'éveil
           </motion.h2>
           <motion.p 
-            className="font-inter font-light text-xl md:text-2xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed"
+            className="font-inter font-light text-base sm:text-lg md:text-xl lg:text-2xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed px-4"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.3 }}
@@ -129,9 +129,9 @@ const LevelsSection: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Grid des niveaux */}
+        {/* Grid des niveaux - RESPONSIVE OPTIMISÉ */}
         {levels && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 max-w-8xl mx-auto">
             {levels.map((level, index) => (
               <motion.div 
                 key={level.productId || level.id}
@@ -139,14 +139,15 @@ const LevelsSection: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ 
                   duration: 0.8, 
-                  delay: index * 0.2,
+                  delay: index * 0.15,
                   ease: "easeOut"
                 }}
                 viewport={{ once: true }}
                 whileHover={{ 
-                  y: -10,
+                  y: -8,
                   transition: { duration: 0.3 }
                 }}
+                className="h-full"
               >
                 <LevelCard level={level} />
               </motion.div>

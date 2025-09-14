@@ -57,7 +57,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ orderId, amount, onSuccess 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="p-6 bg-mystical-deep-blue/80 border border-mystical-gold/30 rounded-lg">
+      <div className="p-4 sm:p-6 bg-mystical-deep-blue/80 border border-mystical-gold/30 rounded-lg">
         <PaymentElement />
       </div>
 
@@ -67,25 +67,27 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ orderId, amount, onSuccess 
           animate={{ opacity: 1, y: 0 }}
           className="flex items-start space-x-2 text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-500/30"
         >
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span className="text-sm">{errorMessage}</span>
+          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" />
+          <span className="text-xs sm:text-sm">{errorMessage}</span>
         </motion.div>
       )}
 
       <button
         type="submit"
         disabled={!stripe || isLoading}
-        className="w-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-dark font-bold py-4 px-6 rounded-xl transition-all duration-300 hover:shadow-mystical-gold/40 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        className="w-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-dark font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-xl transition-all duration-300 hover:shadow-mystical-gold/40 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm sm:text-base"
       >
         {isLoading ? (
           <>
-            <Loader className="w-5 h-5 animate-spin mr-2" />
-            Traitement en cours...
+            <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2" />
+            <span className="hidden sm:inline">Traitement en cours...</span>
+            <span className="sm:hidden">Traitement...</span>
           </>
         ) : (
           <>
-            <ShoppingBag className="mr-2" size={20} />
-            Finaliser le paiement ({stripeAPI.formatPrice(amount)})
+            <ShoppingBag className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Finaliser le paiement ({stripeAPI.formatPrice(amount)})</span>
+            <span className="sm:hidden">Payer ({stripeAPI.formatPrice(amount)})</span>
           </>
         )}
       </button>
@@ -227,66 +229,68 @@ const CommandeTemple: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-mystical-deep-blue via-mystical-midnight to-mystical-black">
-      {/* Header */}
+      {/* Header - RESPONSIVE */}
       <header className="bg-mystical-midnight/60 backdrop-blur-lg border-b border-mystical-gold/20">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center text-mystical-gold/90 hover:text-mystical-radiance transition-colors"
+              className="flex items-center text-mystical-gold/90 hover:text-mystical-radiance transition-colors text-sm sm:text-base"
             >
-              <ArrowLeft size={20} className="mr-2" />
-              Retour
+              <ArrowLeft size={18} className="mr-1 sm:mr-2 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Retour</span>
             </button>
 
-            <h1 className="text-xl font-bold text-white/95">Finaliser votre commande</h1>
+            <h1 className="text-base sm:text-xl font-bold text-white/95 text-center flex-1 sm:flex-none px-2">
+              Finaliser votre commande
+            </h1>
 
             <button
               onClick={() => setShowCart(!showCart)}
-              className="flex items-center text-mystical-gold/90 hover:text-mystical-radiance transition-colors"
+              className="flex items-center text-mystical-gold/90 hover:text-mystical-radiance transition-colors text-sm sm:text-base"
             >
-              <ShoppingBag size={20} className="mr-2" />
-              Panier
+              <ShoppingBag size={18} className="mr-1 sm:mr-2 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Panier</span>
             </button>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Recap */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+            {/* Recap - RESPONSIVE */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-gradient-to-br from-mystical-midnight/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-2xl p-6 shadow-forest"
+              className="bg-gradient-to-br from-mystical-midnight/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-forest"
             >
-              <h2 className="text-2xl font-bold text-white/95 mb-6">Recapitulatif</h2>
+              <h2 className="text-lg sm:text-2xl font-bold text-white/95 mb-4 sm:mb-6">Récapitulatif</h2>
 
-              <div className="space-y-4">
-                <div className="border-b border-mystical-gold/20 pb-4">
-                  <h3 className="text-lg font-semibold text-white/95">{currentService.name}</h3>
-                  <p className="text-gray-300/90">Duree: {currentService.duration} min</p>
-                  <p className="text-gray-300/90">Expert: {expert}</p>
-                  <p className="text-gray-300/90">Niveau: {stripeAPI.getLevelDisplayName(level)}</p>
+              <div className="space-y-3 sm:space-y-4">
+                <div className="border-b border-mystical-gold/20 pb-3 sm:pb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-white/95">{currentService.name}</h3>
+                  <p className="text-sm sm:text-base text-gray-300/90">Durée: {currentService.duration} min</p>
+                  <p className="text-sm sm:text-base text-gray-300/90">Expert: {expert}</p>
+                  <p className="text-sm sm:text-base text-gray-300/90">Niveau: {stripeAPI.getLevelDisplayName(level)}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-white/95">Inclus dans cette consultation:</h4>
+                  <h4 className="text-sm sm:text-base font-semibold text-white/95">Inclus dans cette consultation:</h4>
                   <ul className="space-y-1">
                     {currentService.features.map((feature, index) => (
-                      <li key={index} className="text-gray-300/90 text-sm flex items-start">
-                        <span className="mr-2 text-mystical-gold/90">V</span>
+                      <li key={index} className="text-gray-300/90 text-xs sm:text-sm flex items-start">
+                        <span className="mr-2 text-mystical-gold/90 text-sm">✓</span>
                         {feature}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="border-t border-mystical-gold/20 pt-4">
+                <div className="border-t border-mystical-gold/20 pt-3 sm:pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-white/95 font-semibold">Total</span>
-                    <span className="text-2xl font-bold text-mystical-gold/95">
+                    <span className="text-white/95 font-semibold text-sm sm:text-base">Total</span>
+                    <span className="text-xl sm:text-2xl font-bold text-mystical-gold/95">
                       {stripeAPI.formatPrice(currentService.price)}
                     </span>
                   </div>
@@ -294,13 +298,13 @@ const CommandeTemple: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* Payment */}
+            {/* Payment - RESPONSIVE */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-gradient-to-br from-mystical-midnight/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-2xl p-6 shadow-forest"
+              className="bg-gradient-to-br from-mystical-midnight/60 to-mystical-purple/40 backdrop-blur-md border border-mystical-gold/40 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-forest"
             >
-              <h2 className="text-2xl font-bold text-white/95 mb-6">Paiement securise</h2>
+              <h2 className="text-lg sm:text-2xl font-bold text-white/95 mb-4 sm:mb-6">Paiement sécurisé</h2>
 
               {clientSecret && orderId && stripePromise && (
                 <Elements stripe={stripePromise} options={stripeOptions}>
@@ -312,13 +316,13 @@ const CommandeTemple: React.FC = () => {
                 </Elements>
               )}
 
-              <div className="mt-6 text-center">
-                <p className="text-gray-300/90 text-sm flex items-center justify-center">
+              <div className="mt-4 sm:mt-6 text-center">
+                <p className="text-gray-300/90 text-xs sm:text-sm flex items-center justify-center">
                   <span className="mr-2">💳</span>
-                  Paiement 100% securise avec Stripe
+                  Paiement 100% sécurisé avec Stripe
                 </p>
-                <p className="text-gray-400/80 text-xs mt-2">
-                  Vos donnees sont protegees par un chiffrement SSL
+                <p className="text-gray-400/80 text-xs mt-1 sm:mt-2">
+                  Vos données sont protégées par un chiffrement SSL
                 </p>
               </div>
             </motion.div>

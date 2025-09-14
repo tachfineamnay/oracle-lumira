@@ -59,40 +59,40 @@ const DynamicForm: React.FC = () => {
   };
 
   return (
-    <section className="py-32 relative overflow-hidden">
-      {/* Aurore cosmique de section */}
+    <section className="py-12 sm:py-16 lg:py-24 xl:py-32 relative overflow-hidden">
+      {/* Aurore cosmique de section - RESPONSIVE */}
       <div className="absolute inset-0 bg-gradient-to-b from-cosmic-aurora/5 via-transparent to-cosmic-violet/5"></div>
       
-      <div className="container mx-auto px-6 max-w-4xl relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl relative z-10">
         <motion.div 
-          className="text-center mb-20"
+          className="text-center mb-12 sm:mb-16 lg:mb-20 xl:mb-24"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           viewport={{ once: true }}
         >
           <motion.h2 
-            className="font-playfair italic text-6xl md:text-7xl font-bold mb-8 text-cosmic-divine"
+            className="font-playfair italic text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 sm:mb-8 text-cosmic-divine leading-tight px-2"
             style={{
               textShadow: '0 0 30px rgba(139, 123, 216, 0.5)',
             }}
           >
             Commence ton voyage
           </motion.h2>
-          <p className="font-inter font-light text-xl md:text-2xl text-cosmic-ethereal">
+          <p className="font-inter font-light text-base sm:text-lg md:text-xl lg:text-2xl text-cosmic-ethereal max-w-3xl mx-auto leading-relaxed px-4">
             Quelques informations pour personnaliser ta lecture cosmique
           </p>
         </motion.div>
 
-        {/* Level Selection avec effets */}
+        {/* Level Selection avec effets - RESPONSIVE */}
         <motion.div 
-          className="mb-16"
+          className="mb-12 sm:mb-16"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           viewport={{ once: true }}
         >
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 px-2">
             {[1, 2, 3, 4].map((level) => (
               <motion.button
                 key={level}
@@ -100,7 +100,7 @@ const DynamicForm: React.FC = () => {
                   setSelectedLevel(level);
                   setCurrentStep(0);
                 }}
-                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 relative overflow-hidden ${
+                className={`px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-full font-inter font-medium transition-all duration-500 relative overflow-hidden text-sm sm:text-base ${
                   selectedLevel === level
                     ? 'bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void shadow-stellar'
                     : 'bg-cosmic-deep/60 text-cosmic-ethereal border border-cosmic-gold/30 hover:bg-cosmic-nebula/60'
@@ -129,7 +129,7 @@ const DynamicForm: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.4 }}
           viewport={{ once: true }}
         >
-          <div className="bg-gradient-to-br from-cosmic-deep/80 via-cosmic-nebula/60 to-cosmic-galaxy/40 backdrop-blur-xl border border-cosmic-gold/40 rounded-3xl p-8 md:p-12 shadow-nebula relative overflow-hidden">
+          <div className="bg-gradient-to-br from-cosmic-deep/80 via-cosmic-nebula/60 to-cosmic-galaxy/40 backdrop-blur-xl border border-cosmic-gold/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 shadow-nebula relative overflow-hidden">
             {/* Effet de nébuleuse en arrière-plan */}
             <motion.div
               className="absolute inset-0 bg-gradient-to-br from-cosmic-violet/10 via-transparent to-cosmic-aurora/10 rounded-3xl"
@@ -163,9 +163,9 @@ const DynamicForm: React.FC = () => {
               ))}
             </div>
 
-            {/* Progress cosmique */}
+            {/* Progress cosmique - RESPONSIVE */}
             <motion.div 
-              className="flex items-center justify-center mb-16 relative z-10"
+              className="flex items-center justify-center mb-8 sm:mb-12 md:mb-16 relative z-10"
               animate={{ 
                 filter: [
                   'drop-shadow(0 0 10px rgba(255, 215, 0, 0.3))',
@@ -178,17 +178,17 @@ const DynamicForm: React.FC = () => {
               <CircularProgress progress={progress} />
             </motion.div>
 
-            {/* Form Steps */}
-            <div className="min-h-[300px] flex flex-col justify-center relative z-10">
+            {/* Form Steps - RESPONSIVE */}
+            <div className="min-h-[250px] sm:min-h-[300px] flex flex-col justify-center relative z-10">
               {renderStep(steps[currentStep], formData, setFormData)}
             </div>
 
-            {/* Navigation cosmique */}
-            <div className="flex justify-between items-center mt-16 relative z-10">
+            {/* Navigation cosmique - RESPONSIVE */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0 mt-8 sm:mt-12 md:mt-16 relative z-10">
               <motion.button
                 onClick={handlePrevious}
                 disabled={currentStep === 0}
-                className={`px-8 py-4 rounded-full font-inter font-medium transition-all duration-500 ${
+                className={`w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-full font-inter font-medium transition-all duration-500 text-sm sm:text-base ${
                   currentStep === 0
                     ? 'opacity-50 cursor-not-allowed text-cosmic-silver/50'
                     : 'text-cosmic-ethereal border border-cosmic-gold/30 hover:bg-cosmic-violet/20 hover:border-cosmic-gold/50'
@@ -201,7 +201,7 @@ const DynamicForm: React.FC = () => {
 
               <motion.button
                 onClick={currentStep === steps.length - 1 ? () => {} : handleNext}
-                className="px-12 py-4 rounded-full bg-gradient-to-r from-cosmic-gold via-cosmic-gold-warm to-cosmic-gold text-cosmic-void font-inter font-bold transition-all duration-500 hover:shadow-stellar flex items-center gap-3 relative overflow-hidden group"
+                className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 rounded-full bg-gradient-to-r from-cosmic-gold via-cosmic-gold-warm to-cosmic-gold text-cosmic-void font-inter font-bold transition-all duration-500 hover:shadow-stellar flex items-center justify-center gap-2 sm:gap-3 relative overflow-hidden group text-sm sm:text-base"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -230,9 +230,9 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <motion.div 
-          className="w-20 h-20 rounded-full bg-gradient-to-br from-cosmic-gold/30 to-cosmic-violet/20 border-2 border-cosmic-gold/50 flex items-center justify-center mx-auto mb-6"
+          className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-cosmic-gold/30 to-cosmic-violet/20 border-2 border-cosmic-gold/50 flex items-center justify-center mx-auto mb-4 sm:mb-6"
           animate={{ 
             boxShadow: [
               '0 0 20px rgba(255, 215, 0, 0.3)',
@@ -242,21 +242,21 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
           }}
           transition={{ duration: 3, repeat: Infinity }}
         >
-          <Icon className="w-10 h-10 text-cosmic-gold" />
+          <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-cosmic-gold" />
         </motion.div>
-        <h3 className="font-playfair italic text-3xl font-bold text-cosmic-divine mb-4">
+        <h3 className="font-playfair italic text-xl sm:text-2xl md:text-3xl font-bold text-cosmic-divine mb-3 sm:mb-4 px-2">
           {step.title}
         </h3>
       </div>
 
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto px-4 sm:px-0">
         {step.id === 'name' && (
           <motion.input
             type="text"
             placeholder="Votre prénom cosmique..."
             value={formData.firstName}
             onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-            className="w-full px-6 py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine placeholder-cosmic-silver/60 font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 backdrop-blur-sm"
+            className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine placeholder-cosmic-silver/60 font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 backdrop-blur-sm text-sm sm:text-base"
             whileFocus={{ scale: 1.02 }}
           />
         )}
@@ -266,7 +266,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             type="date"
             value={formData.birthDate}
             onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))}
-            className="w-full px-6 py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 backdrop-blur-sm"
+            className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 backdrop-blur-sm text-sm sm:text-base"
             whileFocus={{ scale: 1.02 }}
           />
         )}
@@ -277,7 +277,7 @@ const renderStep = (step: any, formData: FormData, setFormData: React.Dispatch<R
             value={formData.intention}
             onChange={(e) => setFormData(prev => ({ ...prev, intention: e.target.value }))}
             rows={4}
-            className="w-full px-6 py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine placeholder-cosmic-silver/60 font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 resize-none backdrop-blur-sm"
+            className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-xl bg-cosmic-deep/60 border border-cosmic-gold/40 text-cosmic-divine placeholder-cosmic-silver/60 font-inter font-light focus:outline-none focus:border-cosmic-gold focus:ring-2 focus:ring-cosmic-gold/30 transition-all duration-500 resize-none backdrop-blur-sm text-sm sm:text-base"
             whileFocus={{ scale: 1.02 }}
           />
         )}
