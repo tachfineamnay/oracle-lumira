@@ -1,0 +1,78 @@
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import LandingTemple from './pages/LandingTemple';
+import CommandeTempleSPA from './pages/CommandeTempleSPA';
+import ConfirmationTempleSPA from './pages/ConfirmationTempleSPA';
+import CommandeTemple from './pages/CommandeTemple';
+import ConfirmationTemple from './pages/ConfirmationTemple';
+import DashboardSanctuaire from './pages/DashboardSanctuaire';
+import Sanctuaire from './pages/Sanctuaire';
+import MentionsLegales from './pages/MentionsLegales';
+import ExpertDeskPage from './expert/ExpertDesk';
+import SphereSkeleton from './components/ui/SphereSkeleton';
+
+// note: keep direct imports for legacy direct links, but prefer lazy children under /sanctuaire
+const LazySpiritualPath = React.lazy(() => import('./components/spheres/SpiritualPath'));
+const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
+const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
+const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
+const LazyTools = React.lazy(() => import('./components/spheres/Tools'));
+
+const AppRoutes: React.FC = () => (
+  <Routes>
+    <Route path="/" element={<LandingTemple />} />
+    <Route path="/commande" element={<CommandeTempleSPA />} />
+    <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
+    <Route path="/commande-legacy" element={<CommandeTemple />} />
+    <Route path="/confirmation-legacy" element={<ConfirmationTemple />} />
+    <Route path="/sanctuaire" element={<Sanctuaire />}>
+      {/* nested children rendered inside Sanctuaire's <Outlet /> */}
+      <Route
+        path="path"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazySpiritualPath />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="draws"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazyRawDraws />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="synthesis"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazySynthesis />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="chat"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazyConversations />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="tools"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazyTools />
+          </React.Suspense>
+        }
+      />
+    </Route>
+
+    <Route path="/dashboard" element={<DashboardSanctuaire />} />
+    <Route path="/mentions-legales" element={<MentionsLegales />} />
+    <Route path="/expert" element={<ExpertDeskPage />} />
+  </Routes>
+);
+
+export default AppRoutes;

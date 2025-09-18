@@ -45,7 +45,7 @@ const ParticleSystem: React.FC = () => {
           vy: (Math.random() - 0.5) * 0.5,
           size: Math.random() * 2 + 0.5,
           opacity: Math.random() * 0.8 + 0.2,
-          color: Math.random() > 0.7 ? '#FFD700' : '#FFFFFF',
+          color: Math.random() > 0.7 ? 'gold' : 'white',
         });
       }
     };
@@ -77,7 +77,7 @@ const ParticleSystem: React.FC = () => {
         ctx.restore();
 
         // Add glow effect for gold particles
-        if (particle.color === '#FFD700') {
+        if (particle.color === 'gold') {
           ctx.save();
           ctx.globalAlpha = particle.opacity * 0.3;
           ctx.fillStyle = particle.color;
