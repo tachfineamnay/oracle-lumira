@@ -8,8 +8,9 @@ WORKDIR /app
 
 # Install dependencies first for better caching
 COPY package*.json ./
-# No app-specific package-lock.json; prefer npm install for now
-RUN npm install && npm cache clean --force
+# Ensure devDependencies (typescript, ts-node, jest, etc.) are present for build
+# Coolify may set NODE_ENV=production during build; override by explicitly including dev deps
+RUN npm install --include=dev && npm cache clean --force
 
 # Copy source and build
 COPY . .
