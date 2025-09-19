@@ -14,6 +14,7 @@ import {
 import type { Product } from '../types/products';
 import ProductOrderService from '../services/productOrder';
 import { validateStripeKey } from '../utils/api';
+import { useInitializeUserLevel } from '../contexts/UserLevelContext';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -112,7 +113,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           clientSecret,
           confirmParams: {
             payment_method: event.paymentMethod.id,
-            return_url: `${window.location.origin}/confirmation?order_id=${orderId}`,
+            return_url: `${window.location.origin}/payment-confirmation?order_id=${orderId}`,
           },
           redirect: 'if_required'
         });
@@ -252,10 +253,10 @@ const CommandeTemple: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const productId = searchParams.get('product');
+  const { initializeFromPurchase } = useInitializeUserLevel();
   
   const [clientSecret, setClientSecret] = useState<string>('');
   const [orderId, setOrderId] = useState<string>('');
-  const [paymentAmountCents, setPaymentAmountCents] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState<string>('');
@@ -309,7 +310,13 @@ const CommandeTemple: React.FC = () => {
   }, [productId, product, customerEmail, catalog]);
 
   const handlePaymentSuccess = () => {
-    navigate(`/confirmation?order_id=${orderId}`);
+    // Initialiser le niveau utilisateur après paiement réussi
+    if (product) {
+      initializeFromPurchase(product, orderId);
+    }
+    
+    // Redirection vers le Sanctuaire Upload avec le niveau acheté
+    navigate(`/upload-sanctuaire?level=${product?.level}&order_id=${orderId}`);
   };
 
   const handleBackToLevels = () => {
