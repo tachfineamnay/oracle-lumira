@@ -1,16 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { useMousePosition } from './hooks/useScrollAnimation';
 
-// Import pages
-import LandingTemple from './pages/LandingTemple';
-import CommandeTemple from './pages/CommandeTemple';
-import CommandeTempleSPA from './pages/CommandeTempleSPA';
-import ConfirmationTemple from './pages/ConfirmationTemple';
-import ConfirmationTempleSPA from './pages/ConfirmationTempleSPA';
-import DashboardSanctuaire from './pages/DashboardSanctuaire';
-import MentionsLegales from './pages/MentionsLegales';
-import ExpertDeskPage from './expert/ExpertDesk';
+// Centralized routes
+import AppRoutes from './router';
 
 const App: React.FC = () => {
   const mousePosition = useMousePosition();
@@ -97,18 +90,7 @@ const App: React.FC = () => {
       {/* Main Content */}
       <div className="relative z-10">
         <Router>
-          <Routes>
-            <Route path="/" element={<LandingTemple />} />
-            {/* Product SPA Routes (new system) */}
-            <Route path="/commande" element={<CommandeTempleSPA />} />
-            <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
-            {/* Legacy routes (fallback) */}
-            <Route path="/commande-legacy" element={<CommandeTemple />} />
-            <Route path="/confirmation-legacy" element={<ConfirmationTemple />} />
-            <Route path="/sanctuaire" element={<DashboardSanctuaire />} />
-            <Route path="/mentions-legales" element={<MentionsLegales />} />
-            <Route path="/expert" element={<ExpertDeskPage />} />
-          </Routes>
+          <AppRoutes />
         </Router>
       </div>
     </div>

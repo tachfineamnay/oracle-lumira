@@ -32,13 +32,8 @@ const Sanctuaire: React.FC = () => {
 
   const progress = Math.round(((user?.level || 1) / 4) * 100);
 
-  React.useEffect(() => {
-    if (!token) {
-      navigate('/login');
-    }
-  }, [token, navigate]);
-
-  if (!token) return null;
+  // Allow read-only access without strict auth to avoid dead routes in public builds
+  // In production with auth, this can be re-enabled to guard access
 
   return (
     <PageLayout variant="dark">
