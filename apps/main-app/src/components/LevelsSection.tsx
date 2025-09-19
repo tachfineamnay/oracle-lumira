@@ -87,16 +87,25 @@ const LevelsSection: React.FC = () => {
               textShadow: '0 0 30px rgba(255, 215, 0, 0.4)',
             }}
           >
-            Choisis ton niveau d'éveil
+            L'Ascension des Niveaux d'Éveil
           </motion.h2>
           <motion.p 
-            className="font-inter font-light text-base sm:text-lg md:text-xl lg:text-2xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed px-4"
+            className="font-inter font-light text-base sm:text-lg md:text-xl lg:text-2xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed px-4 mb-4"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            Chaque niveau révèle une couche plus profonde de ton essence cosmique
+            Tu n'achètes pas un produit. Tu ouvres une porte.
+          </motion.p>
+          <motion.p 
+            className="font-inter font-light text-lg text-cosmic-gold max-w-4xl mx-auto leading-relaxed px-4"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.5 }}
+            viewport={{ once: true }}
+          >
+            Chaque niveau est une clef vibratoire pour franchir les couches profondes de ta conscience.
           </motion.p>
         </motion.div>
 

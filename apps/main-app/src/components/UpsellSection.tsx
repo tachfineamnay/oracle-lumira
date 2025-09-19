@@ -13,30 +13,30 @@ interface Upsell {
 const upsells: Upsell[] = [
   {
     id: 'mandala',
-    title: 'Mandala Cosmique HD',
+    title: 'Mandala HD Fractal',
     price: '19 €',
-    description: 'Votre mandala personnel en haute définition, aligné sur les constellations',
+    description: 'Votre mandala personnel en haute définition, aligné sur vos fréquences fractales',
     icon: Crown,
   },
   {
     id: 'audio',
-    title: 'Audio Galactique',
+    title: 'Audio 432 Hz Cosmique',
     price: '14 €',
-    description: 'Lecture audio complète avec fréquences 432 Hz et sons cosmiques',
+    description: 'Lecture audio complète avec fréquences 432 Hz et résonances stellaires',
     icon: Music,
   },
   {
     id: 'ritual',
-    title: 'Rituel Stellaire',
+    title: 'Rituel sur mesure',
     price: '22 €',
-    description: 'Cérémonie sur-mesure pour activer votre archétype sous les étoiles',
+    description: 'Cérémonie personnalisée pour activer votre archétype vibratoire',
     icon: Zap,
   },
   {
     id: 'complete',
-    title: 'Pack Univers Complet',
+    title: 'Pack d\'Intégration Totale',
     price: '49 €',
-    description: 'Tous les extras inclus + suivi personnalisé + connexion cosmique',
+    description: 'Tous les compléments dimensionnels inclus + suivi vibratoire personnalisé',
     icon: Package,
   }
 ];
@@ -61,10 +61,10 @@ const UpsellSection: React.FC = () => {
               textShadow: '0 0 30px rgba(212, 175, 55, 0.5)',
             }}
           >
-            Enrichissez votre expérience
+            Compléments Dimensionnels
           </motion.h3>
           <p className="font-inter font-light text-lg text-cosmic-ethereal">
-            Des compléments pour approfondir votre voyage dans l'univers
+            Des extensions vibratoires pour amplifier votre exploration cosmique
           </p>
         </motion.div>
 

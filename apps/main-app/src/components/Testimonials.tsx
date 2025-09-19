@@ -15,24 +15,24 @@ const testimonials: Testimonial[] = [
   {
     id: 1,
     name: "Sarah M.",
-    archetype: "L'Exploratrice Cosmique",
-    content: "Cette lecture a complètement transformé ma vision de moi-même. L'audio était si juste que j'ai eu des frissons cosmiques.",
+    archetype: "Exploratrice du Soi",
+    content: "J'ai senti mes centres énergétiques s'ouvrir à l'écoute de l'audio. Une clarté que je n'avais jamais connue.",
     avatar: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1",
     rating: 5
   },
   {
     id: 2,
     name: "Marc L.",
-    archetype: "Le Sage Stellaire",
-    content: "Incroyable précision dans l'analyse. Le mandala personnalisé illumine maintenant mon espace de méditation.",
+    archetype: "Sage Stellaire",
+    content: "Le mandala agit comme une clé visuelle méditative. Je l'utilise chaque matin.",
     avatar: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1",
     rating: 5
   },
   {
     id: 3,
     name: "Emma K.",
-    archetype: "La Créatrice Galactique",
-    content: "Le rituel proposé m'a connectée à une créativité universelle que je ne soupçonnais pas. Absolument magique !",
+    archetype: "Créatrice Galactique",
+    content: "Je me suis révélée à une créativité ancienne. Comme si j'avais accès à une mémoire oubliée.",
     avatar: "https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1",
     rating: 5
   }
@@ -58,7 +58,7 @@ const Testimonials: React.FC = () => {
               textShadow: '0 0 30px rgba(168, 85, 247, 0.5)',
             }}
           >
-            Des transformations authentiques sous la voûte étoilée
+            Témoignages Vibratoires
           </motion.h2>
         </motion.div>
 

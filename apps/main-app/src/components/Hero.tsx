@@ -76,13 +76,22 @@ const Hero: React.FC = () => {
             Oracle Lumira
           </motion.h1>
           
-          <motion.p 
-            className="font-inter font-light text-xl md:text-2xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed mb-12"
+          <motion.h2 
+            className="font-inter font-medium text-2xl md:text-3xl text-cosmic-gold max-w-4xl mx-auto leading-relaxed mb-6"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.6 }}
           >
-            Révèle ton archétype spirituel à travers des lectures vibratoires personnalisées sous la voûte céleste
+            Explore les lois cachées de ton identité cosmique
+          </motion.h2>
+          
+          <motion.p 
+            className="font-inter font-light text-lg md:text-xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.8 }}
+          >
+            Grâce à une cartographie vibratoire personnalisée, Oracle Lumira décrypte les trames subtiles de ton archétype spirituel. Entre analyse fractale, algorithmes mystiques et résonances stellaires, reçois une lecture unique de ton code originel.
           </motion.p>
         </motion.div>
 
@@ -105,7 +114,7 @@ const Hero: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             <span className="relative z-10 flex items-center gap-3">
               <Star className="w-6 h-6" />
-              Commencer mon tirage cosmique
+              Lancer mon exploration cosmique
               <Star className="w-6 h-6" />
             </span>
           </motion.button>
@@ -115,7 +124,7 @@ const Hero: React.FC = () => {
             animate={{ opacity: [0.7, 1, 0.7] }}
             transition={{ duration: 3, repeat: Infinity }}
           >
-            ✨ Livraison en 24h • PDF + Audio + Mandala personnalisé ✨
+            ✨ Analyse sous 24 h • PDF initiatique + Audio 432 Hz + Mandala fractal ✨
           </motion.p>
         </motion.div>
       </div>

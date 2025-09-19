@@ -77,10 +77,10 @@ const DynamicForm: React.FC = () => {
               textShadow: '0 0 30px rgba(139, 123, 216, 0.5)',
             }}
           >
-            Commence ton voyage
+            Commence ton analyse fractale
           </motion.h2>
           <p className="font-inter font-light text-base sm:text-lg md:text-xl lg:text-2xl text-cosmic-ethereal max-w-3xl mx-auto leading-relaxed px-4">
-            Quelques informations pour personnaliser ta lecture cosmique
+            Remplis ce champ vibratoire pour synchroniser ta lecture cosmique
           </p>
         </motion.div>
 
