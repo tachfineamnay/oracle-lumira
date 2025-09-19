@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import PageLayout from '../components/ui/PageLayout';
 import MandalaNav from '../components/mandala/MandalaNav';
 import StarField from '../components/micro/StarField';
@@ -20,9 +21,15 @@ const ContextualHint: React.FC = () => {
   else hint = 'Naviguez dans votre sanctuaire personnel';
 
   return (
-    <GlassCard className="p-4">
-      <p className="text-sm text-white/80 italic">{hint}</p>
-    </GlassCard>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.3 }}
+    >
+      <GlassCard className="p-6 backdrop-blur-xl bg-white/5 border-white/10">
+        <p className="text-sm text-white/70 italic font-light leading-relaxed">{hint}</p>
+      </GlassCard>
+    </motion.div>
   );
 };
 
@@ -32,28 +39,80 @@ const Sanctuaire: React.FC = () => {
 
   const progress = Math.round(((user?.level || 1) / 4) * 100);
 
-  // Allow read-only access without strict auth to avoid dead routes in public builds
-  // In production with auth, this can be re-enabled to guard access
-
+  // ux: cosmic breath - generous spacing for premium feel
   return (
     <PageLayout variant="dark">
-      <div className="max-w-5xl mx-auto space-y-6 py-8">
-        {/* Header */}
-        <div className="relative w-full h-48 rounded-2xl overflow-hidden">
-          <StarField progress={progress} className="absolute inset-0" />
-          <div className="relative z-10 p-6">
-            <h1 className="text-2xl font-playfair italic text-mystical-gold">Bienvenue, âme lumineuse</h1>
-            <p className="text-sm text-white/90 mt-1">{user?.firstName ? `Bonjour ${user.firstName}` : 'Bonjour'}</p>
-          </div>
-        </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div 
+          className="space-y-8 py-6 sm:py-8 lg:py-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, staggerChildren: 0.1 }}
+        >
+          {/* Cosmic Header */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative"
+          >
+            <div className="relative w-full h-56 sm:h-64 lg:h-72 rounded-3xl overflow-hidden backdrop-blur-2xl bg-gradient-to-br from-mystical-900/40 via-mystical-800/30 to-mystical-700/20 border border-white/10 shadow-2xl">
+              <StarField progress={progress} className="absolute inset-0" />
+              {/* ux: cosmic overlay gradient for depth */}
+              <div className="absolute inset-0 bg-gradient-to-t from-mystical-900/60 via-transparent to-transparent" />
+              
+              <div className="relative z-10 h-full flex flex-col justify-center px-8 sm:px-12">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-cinzel font-light text-amber-400 mb-3 tracking-wide">
+                    Bienvenue, âme lumineuse
+                  </h1>
+                  <p className="text-lg sm:text-xl text-white/80 font-light">
+                    {user?.firstName ? `Bonjour ${user.firstName}` : 'Bonjour'}
+                  </p>
+                  {/* ux: progress indicator */}
+                  <div className="mt-6 flex items-center space-x-3">
+                    <div className="w-32 h-1 bg-white/20 rounded-full overflow-hidden">
+                      <motion.div 
+                        className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.8, delay: 0.6 }}
+                      />
+                    </div>
+                    <span className="text-sm text-amber-400 font-medium">{progress}%</span>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
 
-        <MandalaNav />
+          {/* Mandala Navigation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <MandalaNav />
+          </motion.div>
 
-        <ContextualHint />
+          {/* Contextual Hint */}
+          <ContextualHint />
 
-        <GlassCard>
-          <Outlet />
-        </GlassCard>
+          {/* Content Area */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <GlassCard className="min-h-[400px] backdrop-blur-xl bg-white/5 border-white/10">
+              <Outlet />
+            </GlassCard>
+          </motion.div>
+        </motion.div>
       </div>
     </PageLayout>
   );

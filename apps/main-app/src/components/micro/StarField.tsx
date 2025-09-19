@@ -11,14 +11,29 @@ const draw = (ctx: CanvasRenderingContext2D, stars: Star[], progress: number, dp
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
   ctx.clearRect(0, 0, w, h);
+  
   for (let i = 0; i < stars.length; i++) {
     const s = stars[i];
     const threshold = (i / NUM) * 100;
     const step = 100 / NUM;
-    const t = clamp((progress - threshold) / step, 0, 1); // 0..1 per-star
+    const t = clamp((progress - threshold) / step, 0, 1);
+    
+    // ux: cosmic glow effect - softer stars with gradient
     const a = s.baseA * t;
+    const glowRadius = s.r * dpr * 3;
+    const gradient = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, glowRadius);
+    gradient.addColorStop(0, `rgba(255, 215, 0, ${(a * 0.8).toFixed(3)})`); // amber core
+    gradient.addColorStop(0.3, `rgba(255, 255, 255, ${(a * 0.4).toFixed(3)})`); // white middle
+    gradient.addColorStop(1, `rgba(255, 255, 255, 0)`); // fade to transparent
+    
     ctx.beginPath();
-    ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
+    ctx.fillStyle = gradient;
+    ctx.arc(s.x, s.y, glowRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // ux: bright star center
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(255, 215, 0, ${a.toFixed(3)})`;
     ctx.arc(s.x, s.y, s.r * dpr, 0, Math.PI * 2);
     ctx.fill();
   }

@@ -54,69 +54,99 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
   const circumference = 2 * Math.PI * 18; // for progress circle radius 18
 
   return (
-    <GlassCard className="w-full max-w-3xl mx-auto">
+    <GlassCard className="w-full max-w-4xl mx-auto backdrop-blur-2xl bg-white/5 border-white/10 shadow-2xl">
       {/* Desktop / large: pentagon mandala */}
-      <div className="relative w-full h-72 hidden lg:block" onKeyDown={handleKey} role="navigation" aria-label="Mandala navigation">
+      <div className="relative w-full h-80 hidden lg:block p-8" onKeyDown={handleKey} role="navigation" aria-label="Mandala navigation">
+        {/* ux: cosmic rings - multiple ethereal circles */}
         <motion.div
           aria-hidden
           animate={shouldReduce ? undefined : { rotate: 360 }}
-          transition={shouldReduce ? undefined : { repeat: Infinity, duration: 60, ease: 'linear' }}
-          className="absolute w-64 h-64 rounded-full border border-mystical-gold/10 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          transition={shouldReduce ? undefined : { repeat: Infinity, duration: 80, ease: 'linear' }}
+          className="absolute w-72 h-72 rounded-full border border-amber-400/20 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+        />
+        <motion.div
+          aria-hidden
+          animate={shouldReduce ? undefined : { rotate: -360 }}
+          transition={shouldReduce ? undefined : { repeat: Infinity, duration: 120, ease: 'linear' }}
+          className="absolute w-80 h-80 rounded-full border border-mystical-500/10 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
         />
 
-        {/* center */}
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-mystical-gold/10 to-mystical-purple/10 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-mystical-gold/10 flex items-center justify-center text-mystical-gold">
-              <Star className="w-6 h-6" />
+        {/* ux: sacred center - enhanced with glow */}
+        <NavLink 
+          to="/sanctuaire"
+          title="Vue d'ensemble"
+          className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center cursor-pointer group"
+        >
+          <motion.div 
+            className="w-28 h-28 rounded-full bg-gradient-to-br from-amber-400/20 via-mystical-600/10 to-mystical-800/20 flex items-center justify-center border border-amber-400/30 shadow-lg group-hover:shadow-amber-400/30 transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400/30 to-amber-500/20 flex items-center justify-center text-amber-400 group-hover:text-amber-300 transition-colors">
+              <Star className="w-8 h-8" />
             </div>
-          </div>
-          <div className="mt-2 text-sm font-inter text-white">{labels['spiritualPath']}</div>
-        </div>
+          </motion.div>
+          <div className="mt-3 text-sm font-inter text-white/80 group-hover:text-white transition-colors">{labels['spiritualPath']}</div>
+        </NavLink>
 
         {ORDER.map((key) => {
           const i = ORDER.indexOf(key);
           const isActive = active === key;
           const prog = Math.max(0, Math.min(100, progress[i] ?? 0));
           const dash = circumference - (circumference * prog) / 100;
+          const pos = positions[i];
 
           return (
-            <NavLink
-                to={`/sanctuaire/${key === 'spiritualPath' ? 'path' : key === 'rawDraws' ? 'draws' : key}`}
+            <motion.div
               key={key}
-              ref={(el: HTMLAnchorElement | null) => (refs.current[i] = el)}
-              onClick={() => {
-                setFocusIndex(i);
-                onSelect?.(key);
-              }}
-              aria-current={isActive ? 'page' : undefined}
-              tabIndex={focusIndex === i ? 0 : -1}
-              className={`absolute z-30 w-14 h-14 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-mystical-gold ${
-                isActive ? 'ring-2 ring-amber-400' : 'bg-mystical-gold/10'
-              }`}
-              style={{ left: positions[i].left, top: positions[i].top }}
+              className="absolute z-30 -translate-x-1/2 -translate-y-1/2"
+              style={{ left: pos.left, top: pos.top }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+              whileHover={{ scale: 1.1 }}
             >
-              {/* radial progress SVG */}
-              <svg className="absolute inset-0" width="44" height="44" viewBox="0 0 44 44" aria-hidden>
-                <circle cx="22" cy="22" r="18" strokeWidth="3" stroke="rgba(255,255,255,0.06)" fill="none" />
-                <circle
-                  cx="22"
-                  cy="22"
-                  r="18"
-                  strokeWidth="3"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeDasharray={`${circumference}`}
-                  strokeDashoffset={dash}
-                  style={{ color: isActive ? undefined : 'rgba(255,215,0,0.6)' }}
-                  className="text-mystical-gold"
-                />
-              </svg>
+              <NavLink
+                to={`/sanctuaire/${key === 'spiritualPath' ? 'path' : key === 'rawDraws' ? 'draws' : key}`}
+                ref={(el: HTMLAnchorElement | null) => (refs.current[i] = el)}
+                onClick={() => {
+                  setFocusIndex(i);
+                  onSelect?.(key);
+                }}
+                aria-current={isActive ? 'page' : undefined}
+                tabIndex={focusIndex === i ? 0 : -1}
+                className={`block w-16 h-16 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 ${
+                  isActive 
+                    ? 'ring-2 ring-amber-400 bg-amber-400/20 shadow-lg shadow-amber-400/30' 
+                    : 'bg-white/5 hover:bg-white/10 border border-white/20 hover:border-amber-400/40'
+                }`}
+              >
+                {/* ux: enhanced radial progress */}
+                <svg className="absolute inset-0" width="64" height="64" viewBox="0 0 64 64" aria-hidden>
+                  <circle cx="32" cy="32" r="26" strokeWidth="2" stroke="rgba(255,255,255,0.1)" fill="none" />
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="26"
+                    strokeWidth="2"
+                    stroke={isActive ? "rgb(251, 191, 36)" : "rgba(251, 191, 36, 0.6)"}
+                    strokeLinecap="round"
+                    strokeDasharray={`${circumference * 1.44}`}
+                    strokeDashoffset={dash * 1.44}
+                    fill="none"
+                    className="transition-all duration-500"
+                  />
+                </svg>
 
-              <span className="relative z-10 text-white">{ICONS[key]}</span>
+                <span className={`relative z-10 transition-colors duration-300 ${
+                  isActive ? 'text-amber-400' : 'text-white/70 group-hover:text-amber-400'
+                }`}>
+                  {ICONS[key]}
+                </span>
 
-              <span className="sr-only">{labels[key as SphereKey]}</span>
-            </NavLink>
+                <span className="sr-only">{labels[key as SphereKey]}</span>
+              </NavLink>
+            </motion.div>
           );
         })}
       </div>
