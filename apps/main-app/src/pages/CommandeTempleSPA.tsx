@@ -175,7 +175,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
         >
-          <div className="flex items-center justify-center mb-4 space-x-2 text-mystical-gold">
+          <div className="flex items-center justify-center mb-4 space-x-2 text-cosmic-gold">
             <Smartphone className="w-5 h-5" />
             <span className="text-sm font-medium">Paiement express</span>
           </div>
@@ -192,16 +192,16 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             }} 
           />
           <div className="mt-4 flex items-center">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-mystical-gold/30 to-transparent"></div>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-cosmic-gold/30 to-transparent"></div>
             <span className="px-4 text-sm text-gray-400">ou</span>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-mystical-gold/30 to-transparent"></div>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-cosmic-gold/30 to-transparent"></div>
           </div>
         </motion.div>
       )}
 
       {/* Traditional Payment Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="flex items-center space-x-2 text-mystical-gold mb-4">
+        <div className="flex items-center space-x-2 text-cosmic-gold mb-4">
           <CreditCard className="w-5 h-5" />
           <span className="font-medium">Informations de paiement</span>
         </div>
@@ -229,7 +229,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
         <button
           type="submit"
           disabled={!stripe || !elements || isLoading}
-          className="w-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-dark font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-mystical-gold/50 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          className="w-full bg-gradient-to-r from-cosmic-gold via-cosmic-gold-warm to-cosmic-gold text-cosmic-void font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-cosmic-gold/50 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 relative z-10"
         >
           {isLoading ? (
             <>

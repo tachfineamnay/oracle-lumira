@@ -65,7 +65,7 @@ const Hero: React.FC = () => {
           </motion.div>
           
           <motion.h1 
-            className="font-playfair italic text-7xl md:text-9xl font-bold mb-8 text-cosmic-divine leading-tight"
+            className="font-playfair italic text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-bold mb-8 text-cosmic-divine leading-tight"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.5, delay: 0.3 }}
@@ -77,7 +77,7 @@ const Hero: React.FC = () => {
           </motion.h1>
           
           <motion.h2 
-            className="font-inter font-medium text-2xl md:text-3xl text-cosmic-gold max-w-4xl mx-auto leading-relaxed mb-6"
+            className="font-inter font-medium text-xl sm:text-2xl md:text-3xl lg:text-4xl text-cosmic-gold max-w-4xl mx-auto leading-relaxed mb-6"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.6 }}
@@ -86,7 +86,7 @@ const Hero: React.FC = () => {
           </motion.h2>
           
           <motion.p 
-            className="font-inter font-light text-lg md:text-xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed mb-12"
+            className="font-inter font-light text-base sm:text-lg md:text-xl lg:text-2xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed mb-12"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.8 }}

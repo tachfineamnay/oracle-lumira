@@ -55,7 +55,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
       {/* Badge recommandé premium */}
       {level.recommended && (
         <motion.div 
-          className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void px-6 py-2 rounded-full text-sm font-bold shadow-stellar"
+          className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void px-6 py-2 rounded-full text-sm font-bold shadow-stellar z-20"
           animate={{ 
             y: [0, -2, 0],
             boxShadow: [
