@@ -1,15 +1,16 @@
 export function getApiBaseUrl() {
-  const v = (import.meta as any)?.env?.VITE_API_BASE_URL;
-  if (typeof v === 'string' && v.trim() !== '') return v;
+  // Prefer unified var VITE_API_URL; keep backward-compat with VITE_API_BASE_URL
+  const env = (import.meta as any)?.env ?? {};
+  const candidate = env.VITE_API_URL || env.VITE_API_BASE_URL;
+  if (typeof candidate === 'string' && candidate.trim() !== '') return candidate.trim();
 
-  // Production-safe fallback for Option A (API séparée)
+  // Production-safe fallback for oraclelumira.com
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    // If running on oraclelumira.com (prod), target api subdomain
     if (host.endsWith('oraclelumira.com')) {
       return 'https://api.oraclelumira.com/api';
     }
   }
-  // Local/dev fallback
+  // Default to same-origin proxy
   return '/api';
 }

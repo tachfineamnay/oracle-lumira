@@ -31,7 +31,8 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
       4: 'integrale'
     };
     
-    const productId = productIdMap[level.id] || level.productId;
+    // Prefer explicit productId from data; fallback to numeric mapping
+    const productId = level.productId || productIdMap[level.id];
     
     if (productId) {
       navigate(`/commande?product=${productId}`);
@@ -55,13 +56,13 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
       {/* Badge recommandé premium */}
       {level.recommended && (
         <motion.div 
-          className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void px-6 py-2 rounded-full text-sm font-bold shadow-stellar z-20"
+          className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void px-5 py-2 rounded-full text-sm font-bold shadow-stellar z-30"
           animate={{ 
-            y: [0, -2, 0],
+            y: [0, -1, 0],
             boxShadow: [
-              '0 0 20px rgba(255, 215, 0, 0.4)',
-              '0 0 30px rgba(255, 215, 0, 0.6)',
-              '0 0 20px rgba(255, 215, 0, 0.4)',
+              '0 0 15px rgba(255, 215, 0, 0.5)',
+              '0 0 25px rgba(255, 215, 0, 0.7)',
+              '0 0 15px rgba(255, 215, 0, 0.5)',
             ]
           }}
           transition={{ duration: 2, repeat: Infinity }}

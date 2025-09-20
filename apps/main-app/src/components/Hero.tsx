@@ -77,7 +77,7 @@ const Hero: React.FC = () => {
           </motion.h1>
           
           <motion.h2 
-            className="font-inter font-medium text-xl sm:text-2xl md:text-3xl lg:text-4xl text-cosmic-gold max-w-4xl mx-auto leading-relaxed mb-6"
+            className="font-inter font-medium text-xl sm:text-2xl md:text-3xl lg:text-4xl text-cosmic-gold max-w-4xl mx-auto leading-relaxed mb-8"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.6 }}
@@ -86,7 +86,7 @@ const Hero: React.FC = () => {
           </motion.h2>
           
           <motion.p 
-            className="font-inter font-light text-base sm:text-lg md:text-xl lg:text-2xl text-cosmic-ethereal max-w-4xl mx-auto leading-relaxed mb-12"
+            className="font-inter font-light text-base sm:text-lg md:text-xl lg:text-2xl text-cosmic-ethereal max-w-5xl mx-auto leading-relaxed mb-16 px-4"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.8 }}
@@ -102,7 +102,7 @@ const Hero: React.FC = () => {
           transition={{ duration: 1, delay: 0.9 }}
         >
           <motion.button
-            className="px-16 py-6 rounded-full bg-gradient-to-r from-cosmic-gold via-cosmic-gold-warm to-cosmic-gold text-cosmic-void font-inter font-semibold text-lg shadow-stellar hover:shadow-aurora transition-all duration-500 relative overflow-hidden group"
+            className="px-20 py-7 rounded-full bg-gradient-to-r from-cosmic-gold via-cosmic-gold-warm to-cosmic-gold text-cosmic-void font-inter font-semibold text-lg shadow-stellar hover:shadow-aurora transition-all duration-500 relative overflow-hidden group mx-auto"
             onClick={() => {
               const levelsSection = document.getElementById('levels');
               levelsSection?.scrollIntoView({ behavior: 'smooth' });
@@ -111,7 +111,7 @@ const Hero: React.FC = () => {
             whileTap={{ scale: 0.95 }}
           >
             {/* Effet de brillance premium au survol */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             <span className="relative z-10 flex items-center gap-3">
               <Star className="w-6 h-6" />
               Lancer mon exploration cosmique
@@ -120,7 +120,7 @@ const Hero: React.FC = () => {
           </motion.button>
 
           <motion.p 
-            className="font-inter font-light text-sm text-cosmic-silver"
+            className="font-inter font-light text-sm text-cosmic-silver text-center"
             animate={{ opacity: [0.7, 1, 0.7] }}
             transition={{ duration: 3, repeat: Infinity }}
           >

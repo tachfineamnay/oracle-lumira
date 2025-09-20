@@ -6,16 +6,17 @@ import { getProductById, validateProductId, PRODUCT_CATALOG, getAllProducts } fr
 import { 
   CreatePaymentIntentRequest,
   CreatePaymentIntentResponse,
-  OrderStatusResponse,
-  Order
+  OrderStatusResponse
 } from '../types/payments';
 import { validateRequest, createValidationChain, sanitizeError } from '../middleware/validation';
 import Stripe from 'stripe';
+import { ProductOrder } from '../models/ProductOrder';
+import { User } from '../models/User';
+import { Order } from '../models/Order';
 
 const router = Router();
 
-// Temporary in-memory storage for orders (replace with database)
-const productOrders: Map<string, Order> = new Map();
+// Orders are persisted in MongoDB (ProductOrder model)
 
 // Note: Custom manual validation is implemented in handler to return
 // specific error payloads expected by tests/clients.
@@ -148,9 +149,8 @@ router.post(
         currency: paymentData.currency,
       });
 
-      // Create pending order
-      const order: Order = {
-        id: paymentData.paymentIntentId,
+      // Persist pending order in MongoDB
+      await ProductOrder.create({
         productId,
         customerEmail,
         amount: paymentData.amount,
@@ -164,10 +164,7 @@ router.post(
           level: product.level,
           requestId,
         },
-      };
-
-      // Store order (temporary - replace with DB)
-      productOrders.set(order.id, order);
+      });
 
       const response: CreatePaymentIntentResponse = {
         clientSecret: paymentData.clientSecret,
@@ -281,9 +278,9 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
     try {
       const { orderId } = req.params;
 
-      // Get order from storage (replace with DB query)
-      const order = productOrders.get(orderId);
-      if (!order) {
+      // Load order from Mongo by paymentIntentId (keeps API compatibility)
+      const orderDoc = await ProductOrder.findOne({ paymentIntentId: orderId });
+      if (!orderDoc) {
         res.status(404).json({
           error: 'Order not found',
           orderId,
@@ -294,17 +291,19 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
 
       // Fallback without webhooks: check live status from Stripe
       try {
-        if (order.status === 'pending' && order.paymentIntentId) {
-          const pi = await StripeService.getPaymentIntent(order.paymentIntentId);
+        if (orderDoc.status === 'pending' && orderDoc.paymentIntentId) {
+          const pi = await StripeService.getPaymentIntent(orderDoc.paymentIntentId);
           if (pi.status === 'succeeded') {
-            order.status = 'completed';
-            order.completedAt = new Date();
-            order.updatedAt = new Date();
-            productOrders.set(order.id, order);
+            orderDoc.status = 'completed' as any;
+            orderDoc.completedAt = new Date();
+            orderDoc.updatedAt = new Date();
+            await orderDoc.save();
+            // Also ensure Expert Desk order exists when no webhook
+            await ensureDeskOrderForPayment(pi as any);
           } else if (pi.status === 'canceled' || pi.status === 'requires_payment_method') {
-            order.status = 'failed';
-            order.updatedAt = new Date();
-            productOrders.set(order.id, order);
+            orderDoc.status = 'failed' as any;
+            orderDoc.updatedAt = new Date();
+            await orderDoc.save();
           }
         }
       } catch (stripeCheckError) {
@@ -313,9 +312,9 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
       }
 
       // Get product details
-      const product = getProductById(order.productId);
+      const product = getProductById(orderDoc.productId);
       if (!product) {
-        console.error('Product configuration error for order:', orderId, 'productId:', order.productId);
+        console.error('Product configuration error for order:', orderId, 'productId:', orderDoc.productId);
         res.status(500).json({
           error: 'Product configuration error',
           timestamp: new Date().toISOString(),
@@ -324,11 +323,23 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
       }
 
       // Check if payment is completed and access should be granted
-      const accessGranted = order.status === 'completed';
+      const accessGranted = orderDoc.status === 'completed';
       const sanctuaryUrl = accessGranted ? '/sanctuaire' : undefined;
 
       const response: OrderStatusResponse = {
-        order,
+        order: {
+          id: orderDoc.paymentIntentId,
+          productId: orderDoc.productId,
+          customerEmail: orderDoc.customerEmail,
+          amount: orderDoc.amount,
+          currency: orderDoc.currency,
+          status: orderDoc.status as any,
+          paymentIntentId: orderDoc.paymentIntentId,
+          createdAt: orderDoc.createdAt as any,
+          updatedAt: orderDoc.updatedAt as any,
+          completedAt: orderDoc.completedAt as any,
+          metadata: orderDoc.metadata || {},
+        },
         product: {
           id: product.id,
           name: product.name,
@@ -449,21 +460,21 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
   });
 
   try {
-    // Update order status in memory store
-    const order = productOrders.get(paymentIntent.id);
-    if (order) {
-      order.status = 'completed';
-      order.completedAt = new Date();
-      order.updatedAt = new Date();
-      productOrders.set(order.id, order);
-      
-      console.log('Order updated to completed:', order.id);
+    // Update order status in DB
+    const orderDoc = await ProductOrder.findOne({ paymentIntentId: paymentIntent.id });
+    if (orderDoc) {
+      orderDoc.status = 'completed' as any;
+      orderDoc.completedAt = new Date();
+      orderDoc.updatedAt = new Date();
+      await orderDoc.save();
+      console.log('Order updated to completed:', orderDoc.paymentIntentId);
     } else {
-      console.warn('Order not found in memory store:', paymentIntent.id);
+      console.warn('Order not found in DB for paymentIntent:', paymentIntent.id);
     }
 
     // Grant access via Stripe service
     const completedOrder = await StripeService.handlePaymentSuccess(paymentIntent);
+    await ensureDeskOrderForPayment(paymentIntent);
     
     console.log('Product payment success fully processed:', {
       orderId: completedOrder.id,
@@ -473,6 +484,54 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
   } catch (error) {
     console.error('❌ Error processing product payment success:', error);
     throw error; // Re-throw to ensure webhook returns error status
+  }
+}
+
+// Create a minimal Order document for Expert Desk if none exists yet
+async function ensureDeskOrderForPayment(paymentIntent: Stripe.PaymentIntent) {
+  try {
+    const existing = await Order.findOne({ paymentIntentId: paymentIntent.id });
+    if (existing) return;
+
+    const email = (paymentIntent.metadata?.customerEmail || '').toLowerCase() || `client+${paymentIntent.id}@noemail.local`;
+    const levelKey = (paymentIntent.metadata?.level || '').toLowerCase();
+
+    const levelMap: Record<string, { num: 1|2|3|4; name: 'Simple'|'Intuitive'|'Alchimique'|'Intégrale' }> = {
+      initie: { num: 1, name: 'Simple' },
+      mystique: { num: 2, name: 'Intuitive' },
+      profond: { num: 3, name: 'Alchimique' },
+      integrale: { num: 4, name: 'Intégrale' },
+    };
+    const levelInfo = levelMap[levelKey] || { num: 1 as 1, name: 'Simple' as const };
+
+    // Find or create a basic user
+    let user = await User.findOne({ email });
+    if (!user) {
+      const local = email.split('@')[0] || 'Client';
+      user = await User.create({
+        email,
+        firstName: local.substring(0, 1).toUpperCase() + local.substring(1, Math.min(local.length, 20)) || 'Client',
+        lastName: 'Stripe',
+      });
+    }
+
+    await Order.create({
+      userId: user._id,
+      userEmail: user.email,
+      level: levelInfo.num,
+      levelName: levelInfo.name,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      status: 'paid',
+      paymentIntentId: paymentIntent.id,
+      formData: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    console.error('ensureDeskOrderForPayment error:', err);
   }
 }
 
@@ -491,13 +550,12 @@ async function handleProductPaymentFailure(paymentIntent: Stripe.PaymentIntent):
   });
 
   try {
-    const order = productOrders.get(paymentIntent.id);
-    if (order) {
-      order.status = 'failed';
-      order.updatedAt = new Date();
-      productOrders.set(order.id, order);
-      
-      console.log('Order updated to failed:', order.id);
+    const orderDocFail = await ProductOrder.findOne({ paymentIntentId: paymentIntent.id });
+    if (orderDocFail) {
+      orderDocFail.status = 'failed' as any;
+      orderDocFail.updatedAt = new Date();
+      await orderDocFail.save();
+      console.log('Order updated to failed:', orderDocFail.paymentIntentId);
     }
 
     // TODO: Send customer notification about payment failure
@@ -522,13 +580,12 @@ async function handleProductPaymentCancellation(paymentIntent: Stripe.PaymentInt
   });
 
   try {
-    const order = productOrders.get(paymentIntent.id);
-    if (order) {
-      order.status = 'cancelled';
-      order.updatedAt = new Date();
-      productOrders.set(order.id, order);
-      
-      console.log('Order updated to cancelled:', order.id);
+    const orderDocCancel = await ProductOrder.findOne({ paymentIntentId: paymentIntent.id });
+    if (orderDocCancel) {
+      orderDocCancel.status = 'cancelled' as any;
+      orderDocCancel.updatedAt = new Date();
+      await orderDocCancel.save();
+      console.log('Order updated to cancelled:', orderDocCancel.paymentIntentId);
     }
 
     // TODO: Clean up any reserved inventory or resources
