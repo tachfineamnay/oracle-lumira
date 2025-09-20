@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Loader, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import LevelCard from './LevelCard';
-import type { Product } from '../types/products';
-import ProductOrderService from '../services/productOrder';
+import { useProducts } from '../hooks/useProductsSimple';
+import type { ProductWithUpload } from '../hooks/useProductsSimple';
 
 interface LevelCardData {
   id: number;
@@ -18,13 +18,10 @@ interface LevelCardData {
   productId?: string;
 }
 
-const levelOrder = ['initie', 'mystique', 'profond', 'integrale'] as const;
+// Suppression de la variable levelOrder non utilisée
+// const levelOrder = ['initie', 'mystique', 'profond', 'integrale'] as const;
 
-function mapProductsToLevels(products: Product[]): LevelCardData[] {
-  const sorted = [...products].sort(
-    (a, b) => levelOrder.indexOf(a.level) - levelOrder.indexOf(b.level)
-  );
-
+function mapProductsToLevels(products: ProductWithUpload[]): LevelCardData[] {
   const gradients = [
     'from-cosmic-deep/80 via-cosmic-nebula/60 to-cosmic-galaxy/40',
     'from-cosmic-violet/60 via-cosmic-aurora/40 to-cosmic-nebula/60',
@@ -32,41 +29,28 @@ function mapProductsToLevels(products: Product[]): LevelCardData[] {
     'from-cosmic-aurora/80 via-cosmic-violet/60 to-cosmic-magenta/40',
   ];
 
-  return sorted.map((p, idx) => ({
+  return products.map((product, idx) => ({
     id: idx + 1,
-    title: p.name,
-    subtitle: p.level,
-    price: ProductOrderService.formatPrice(p.amountCents, p.currency),
-    duration: p.metadata?.duration || '',
-    description: p.description,
-    includes: p.features || [],
+    title: product.title,
+    subtitle: product.id,
+    price: new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(product.price),
+    duration: `${product.uploadConfig.maxFiles} documents max`,
+    description: `Analyse karmique ${product.title.toLowerCase()}`,
+    includes: product.features || [],
     gradient: gradients[idx % gradients.length],
-    recommended: p.level === 'mystique' || idx === 1,
-    productId: p.id,
+    recommended: product.badge === 'Populaire',
+    productId: product.id,
   }));
 }
 
 const LevelsSection: React.FC = () => {
-  const [levels, setLevels] = useState<LevelCardData[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { products, isLoading, error } = useProducts();
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const catalog = await ProductOrderService.getCatalog();
-        if (!mounted) return;
-        setLevels(mapProductsToLevels(catalog));
-      } catch (e) {
-        console.error('Failed to load product catalog:', e);
-        if (!mounted) return;
-        setError('Impossible de charger le catalogue produits');
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  // Transformation pour compatibilité avec LevelCard existant
+  const levels = products ? mapProductsToLevels(products) : null;
 
   return (
     <section id="levels" className="py-12 sm:py-16 lg:py-24 xl:py-32 relative overflow-hidden">
@@ -110,7 +94,7 @@ const LevelsSection: React.FC = () => {
         </motion.div>
 
         {/* Loading */}
-        {!levels && !error && (
+        {isLoading && (
           <motion.div 
             className="text-center text-cosmic-ethereal py-16"
             initial={{ opacity: 0 }}
@@ -122,7 +106,7 @@ const LevelsSection: React.FC = () => {
             >
               <Loader className="w-8 h-8 mx-auto mb-4 text-cosmic-gold" />
             </motion.div>
-            <p className="font-inter font-light">Chargement du catalogue cosmique...</p>
+            <p className="font-inter font-light">Synchronisation des niveaux cosmiques...</p>
           </motion.div>
         )}
 
@@ -134,7 +118,9 @@ const LevelsSection: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
           >
             <AlertCircle className="w-8 h-8 mx-auto mb-3" />
-            <p className="font-inter font-light">{error}</p>
+            <p className="font-inter font-light">
+              {error instanceof Error ? error.message : 'Impossible de charger le catalogue produits'}
+            </p>
           </motion.div>
         )}
 

@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import LandingTemple from './pages/LandingTemple';
 import CommandeTempleSPA from './pages/CommandeTempleSPA';
 import ConfirmationTempleSPA from './pages/ConfirmationTempleSPA';
+import ConfirmationPage from './pages/ConfirmationPage';
+import SanctuairePage from './pages/SanctuairePage';
 import CommandeTemple from './pages/CommandeTemple';
 import ConfirmationTemple from './pages/ConfirmationTemple';
 import DashboardSanctuaire from './pages/DashboardSanctuaire';
@@ -23,6 +25,8 @@ const AppRoutes: React.FC = () => (
     <Route path="/" element={<LandingTemple />} />
     <Route path="/commande" element={<CommandeTempleSPA />} />
     <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
+    <Route path="/payment-confirmation" element={<ConfirmationPage />} />
+    <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     <Route path="/commande-legacy" element={<CommandeTemple />} />
     <Route path="/confirmation-legacy" element={<ConfirmationTemple />} />
     <Route path="/sanctuaire" element={<Sanctuaire />}>
