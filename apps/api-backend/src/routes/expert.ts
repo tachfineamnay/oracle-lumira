@@ -44,18 +44,18 @@ router.post('/create-debug', async (req, res) => {
     
     if (existingExpert) {
       console.log('🔍 Expert already exists, updating password');
-      const hashedPassword = await bcrypt.hash('Lumira2025L', 12);
-      existingExpert.password = hashedPassword;
+      // set plain password; schema pre-save will hash it
+      existingExpert.password = 'Lumira2025L';
       existingExpert.isActive = true;
       await existingExpert.save();
       res.json({ message: 'Expert password updated', exists: true });
     } else {
       console.log('🆕 Creating new expert');
-      const hashedPassword = await bcrypt.hash('Lumira2025L', 12);
+      // use pre-save hashing for default password
       
       const expert = new Expert({
         email: 'expert@oraclelumira.com',
-        password: hashedPassword,
+        password: 'Lumira2025L',
         name: 'Oracle Expert',
         expertise: ['tarot', 'oracle', 'spiritualité'],
         isActive: true
