@@ -15,7 +15,7 @@ import { userRoutes } from './routes/users';
 import { healthRoutes } from './routes/health';
 import readyRoutes from './routes/ready';
 import expertTestRoutes from './routes/expert-test';
-import expertRoutes from './routes/expert';
+import { expertRoutes } from './routes/expert';
 import paymentRoutes from './routes/payments';
 import productRoutes from './routes/products';
 import envDebugRoutes from './routes/env-debug';
