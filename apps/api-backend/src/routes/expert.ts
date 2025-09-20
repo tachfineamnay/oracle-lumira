@@ -46,6 +46,7 @@ router.post('/create-debug', async (req, res) => {
       console.log('🔍 Expert already exists, updating password');
       const hashedPassword = await bcrypt.hash('Lumira2025L', 12);
       existingExpert.password = hashedPassword;
+      existingExpert.isActive = true;
       await existingExpert.save();
       res.json({ message: 'Expert password updated', exists: true });
     } else {

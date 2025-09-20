@@ -291,16 +291,15 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
 
       // Fallback without webhooks: check live status from Stripe
       try {
-        if (orderDoc.status === 'pending' && orderDoc.paymentIntentId) {
+        if (orderDoc.paymentIntentId) {
           const pi = await StripeService.getPaymentIntent(orderDoc.paymentIntentId);
-          if (pi.status === 'succeeded') {
+          if (pi.status === 'succeeded' && orderDoc.status !== 'completed') {
             orderDoc.status = 'completed' as any;
             orderDoc.completedAt = new Date();
             orderDoc.updatedAt = new Date();
             await orderDoc.save();
-            // Also ensure Expert Desk order exists when no webhook
             await ensureDeskOrderForPayment(pi as any);
-          } else if (pi.status === 'canceled' || pi.status === 'requires_payment_method') {
+          } else if ((pi.status === 'canceled' || pi.status === 'requires_payment_method') && orderDoc.status !== 'completed') {
             orderDoc.status = 'failed' as any;
             orderDoc.updatedAt = new Date();
             await orderDoc.save();
