@@ -202,11 +202,11 @@ router.post('/login', authLimiter, async (req: any, res: any) => {
     // AUTO-CREATE EXPERT IF NOT EXISTS (for expert@oraclelumira.com only)
     if (!expert && email.toLowerCase() === 'expert@oraclelumira.com') {
       console.log('🆕 Auto-creating expert for first login');
-      const hashedPassword = await bcrypt.hash('Lumira2025L', 12);
+      // default password will be hashed by schema pre-save
       
       expert = new Expert({
         email: 'expert@oraclelumira.com',
-        password: hashedPassword,
+        password: 'Lumira2025L',
         name: 'Oracle Expert',
         expertise: ['tarot', 'oracle', 'spiritualité'],
         isActive: true
