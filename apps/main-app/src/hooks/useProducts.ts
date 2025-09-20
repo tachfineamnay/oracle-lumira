@@ -1,5 +1,5 @@
-// Oracle Lumira - Hook pour produits dynamiques synchronisés
-import { useQuery } from '@tanstack/react-query';
+// Oracle Lumira - Hook pour produits dynamiques (sans react-query)
+import { useEffect, useMemo, useState } from 'react';
 import ProductOrderService from '../services/productOrder';
 import type { Product } from '../types/products';
 
@@ -13,73 +13,76 @@ export interface ProductWithLevel extends Product {
   };
 }
 
-// Configuration upload par niveau
 const getLevelUploadConfig = (level: string) => {
   const configs = {
-    'initie': {
+    initie: {
       maxFiles: 1,
       allowedTypes: ['image/jpeg', 'image/png'],
       requiredFields: ['photo'],
-      maxSizeBytes: 5 * 1024 * 1024, // 5MB
+      maxSizeBytes: 5 * 1024 * 1024,
     },
-    'mystique': {
+    mystique: {
       maxFiles: 2,
       allowedTypes: ['image/jpeg', 'image/png', 'application/pdf'],
       requiredFields: ['photo', 'document'],
-      maxSizeBytes: 10 * 1024 * 1024, // 10MB
+      maxSizeBytes: 10 * 1024 * 1024,
     },
-    'profond': {
+    profond: {
       maxFiles: 3,
       allowedTypes: ['image/jpeg', 'image/png', 'application/pdf', 'audio/mpeg', 'audio/wav'],
       requiredFields: ['photo', 'document', 'audio'],
-      maxSizeBytes: 20 * 1024 * 1024, // 20MB
+      maxSizeBytes: 20 * 1024 * 1024,
     },
-    'integrale': {
+    integrale: {
       maxFiles: 5,
       allowedTypes: ['image/jpeg', 'image/png', 'application/pdf', 'audio/mpeg', 'audio/wav', 'video/mp4'],
       requiredFields: ['photo', 'document', 'audio', 'video'],
-      maxSizeBytes: 50 * 1024 * 1024, // 50MB
+      maxSizeBytes: 50 * 1024 * 1024,
     },
-  };
-  
-  return configs[level as keyof typeof configs] || configs.initie;
+  } as const;
+  return (configs as any)[level] || configs.initie;
 };
 
-// Ordre d'affichage des niveaux
 const levelOrder = ['initie', 'mystique', 'profond', 'integrale'] as const;
 
 export const useProducts = () => {
-  return useQuery({
-    queryKey: ['products'],
-    queryFn: async (): Promise<ProductWithLevel[]> => {
-      const products = await ProductOrderService.getCatalog();
-      
-      // Enrichissement avec config upload et ordre d'affichage
-      return products
-        .map((product, index) => ({
-          ...product,
-          displayOrder: levelOrder.indexOf(product.level),
-          uploadConfig: getLevelUploadConfig(product.level),
-        }))
-        .sort((a, b) => a.displayOrder - b.displayOrder);
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-  });
+  const [data, setData] = useState<ProductWithLevel[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const products = await ProductOrderService.getCatalog();
+        const enriched = products
+          .map((p) => ({
+            ...p,
+            displayOrder: levelOrder.indexOf(p.level as any),
+            uploadConfig: getLevelUploadConfig(p.level),
+          }))
+          .sort((a, b) => a.displayOrder - b.displayOrder);
+        if (mounted) setData(enriched);
+      } catch (e: any) {
+        if (mounted) setError(e instanceof Error ? e : new Error('Failed to load products'));
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return { data, isLoading, error };
 };
 
-// Hook pour un produit spécifique par niveau
 export const useProductByLevel = (level: string) => {
-  const { data: products, ...rest } = useProducts();
-  
-  return {
-    ...rest,
-    data: products?.find(product => product.level === level),
-  };
+  const { data, isLoading, error } = useProducts();
+  const product = useMemo(() => data?.find((p) => p.level === level) || null, [data, level]);
+  return { data: product, isLoading, error };
 };
 
-// Hook pour configuration upload d'un niveau
 export const useUploadConfig = (level: string) => {
   const { data: product } = useProductByLevel(level);
   return product?.uploadConfig || null;

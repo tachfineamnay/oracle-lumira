@@ -31,7 +31,8 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
       4: 'integrale'
     };
     
-    const productId = productIdMap[level.id] || level.productId;
+    // Prefer explicit productId from data; fallback to numeric mapping
+    const productId = level.productId || productIdMap[level.id];
     
     if (productId) {
       navigate(`/commande?product=${productId}`);

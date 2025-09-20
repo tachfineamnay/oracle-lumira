@@ -8,7 +8,7 @@ export interface UploadConfig {
 }
 
 export interface ProductWithUpload {
-  id: string;
+  id: 'initie' | 'mystique' | 'profond' | 'integrale';
   title: string;
   price: number;
   originalPrice?: number;
@@ -18,39 +18,27 @@ export interface ProductWithUpload {
   uploadConfig: UploadConfig;
 }
 
-// Map new canonical backend levels -> local mock IDs
-// Allows passing either backend level (initie, mystique, ...) or mock id (explorer, ...)
-const normalizeLevelId = (levelId: string): string => {
-  const map: Record<string, string> = {
-    initie: 'explorer',
-    mystique: 'seeker',
-    profond: 'mystic',
-    integrale: 'oracle',
-  };
-  return map[levelId] || levelId;
-};
-
-// Configuration centralisée des uploads par niveau
-const LEVEL_UPLOAD_CONFIGS: Record<string, UploadConfig> = {
-  explorer: {
+// Configuration centralisée des uploads par niveau (IDs canoniques backend)
+const LEVEL_UPLOAD_CONFIGS: Record<ProductWithUpload['id'], UploadConfig> = {
+  initie: {
     maxFiles: 3,
     allowedTypes: ['image/*', '.pdf'],
     maxSizeBytes: 5 * 1024 * 1024, // 5MB
     categories: ['Document Personnel', 'Photo Guidance'],
   },
-  seeker: {
+  mystique: {
     maxFiles: 5,
     allowedTypes: ['image/*', '.pdf', '.doc', '.docx'],
     maxSizeBytes: 10 * 1024 * 1024, // 10MB
     categories: ['Document Personnel', 'Photo Guidance', 'Manuscrit'],
   },
-  mystic: {
+  profond: {
     maxFiles: 8,
     allowedTypes: ['image/*', '.pdf', '.doc', '.docx', '.txt'],
     maxSizeBytes: 15 * 1024 * 1024, // 15MB
     categories: ['Document Personnel', 'Photo Guidance', 'Manuscrit', 'Carte Personnelle'],
   },
-  oracle: {
+  integrale: {
     maxFiles: 15,
     allowedTypes: ['image/*', '.pdf', '.doc', '.docx', '.txt', 'audio/*'],
     maxSizeBytes: 25 * 1024 * 1024, // 25MB
@@ -65,11 +53,11 @@ const LEVEL_UPLOAD_CONFIGS: Record<string, UploadConfig> = {
   },
 };
 
-// Données simulées des produits
+// Données simulées des produits (IDs canoniques backend)
 const MOCK_PRODUCTS: ProductWithUpload[] = [
   {
-    id: 'explorer',
-    title: 'Explorer',
+    id: 'initie',
+    title: 'Initié',
     price: 29,
     features: [
       'Analyse karmique de base',
@@ -78,11 +66,11 @@ const MOCK_PRODUCTS: ProductWithUpload[] = [
       'Upload de 3 documents max'
     ],
     order: 1,
-    uploadConfig: LEVEL_UPLOAD_CONFIGS.explorer,
+    uploadConfig: LEVEL_UPLOAD_CONFIGS.initie,
   },
   {
-    id: 'seeker',
-    title: 'Seeker',
+    id: 'mystique',
+    title: 'Mystique',
     price: 59,
     originalPrice: 79,
     badge: 'Populaire',
@@ -94,11 +82,11 @@ const MOCK_PRODUCTS: ProductWithUpload[] = [
       'Interprétation de manuscrits'
     ],
     order: 2,
-    uploadConfig: LEVEL_UPLOAD_CONFIGS.seeker,
+    uploadConfig: LEVEL_UPLOAD_CONFIGS.mystique,
   },
   {
-    id: 'mystic',
-    title: 'Mystic',
+    id: 'profond',
+    title: 'Profond',
     price: 99,
     originalPrice: 129,
     features: [
@@ -109,11 +97,11 @@ const MOCK_PRODUCTS: ProductWithUpload[] = [
       'Lecture de cartes personnelles'
     ],
     order: 3,
-    uploadConfig: LEVEL_UPLOAD_CONFIGS.mystic,
+    uploadConfig: LEVEL_UPLOAD_CONFIGS.profond,
   },
   {
-    id: 'oracle',
-    title: 'Oracle',
+    id: 'integrale',
+    title: 'Intégral',
     price: 199,
     originalPrice: 249,
     badge: 'Premium',
@@ -126,7 +114,7 @@ const MOCK_PRODUCTS: ProductWithUpload[] = [
       'Guidance oracle exclusive'
     ],
     order: 4,
-    uploadConfig: LEVEL_UPLOAD_CONFIGS.oracle,
+    uploadConfig: LEVEL_UPLOAD_CONFIGS.integrale,
   }
 ];
 
@@ -164,8 +152,7 @@ export const useProducts = () => {
 
 export const useProductByLevel = (levelId: string) => {
   const { products, isLoading, error } = useProducts();
-  const normalized = normalizeLevelId(levelId);
-  const product = products.find(p => p.id === normalized);
+  const product = products.find(p => p.id === levelId);
   
   return {
     product,
@@ -175,14 +162,12 @@ export const useProductByLevel = (levelId: string) => {
 };
 
 export const useUploadConfig = (levelId: string) => {
-  const normalized = normalizeLevelId(levelId);
   // Prefer product config if available, otherwise fall back to static config
   const { products } = useProducts();
-  const product = products.find(p => p.id === normalized);
-  return product?.uploadConfig || LEVEL_UPLOAD_CONFIGS[normalized] || null;
+  const product = products.find(p => p.id === levelId);
+  return product?.uploadConfig || LEVEL_UPLOAD_CONFIGS[levelId as ProductWithUpload['id']] || null;
 };
 
 export const getLevelUploadConfig = (levelId: string): UploadConfig | null => {
-  const normalized = normalizeLevelId(levelId);
-  return LEVEL_UPLOAD_CONFIGS[normalized] || null;
+  return LEVEL_UPLOAD_CONFIGS[levelId as ProductWithUpload['id']] || null;
 };

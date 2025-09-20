@@ -15,6 +15,7 @@ import { userRoutes } from './routes/users';
 import { healthRoutes } from './routes/health';
 import readyRoutes from './routes/ready';
 import expertTestRoutes from './routes/expert-test';
+import expertRoutes from './routes/expert';
 import paymentRoutes from './routes/payments';
 import productRoutes from './routes/products';
 import envDebugRoutes from './routes/env-debug';
@@ -133,11 +134,14 @@ app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/debug', envDebugRoutes);
+// Mount real expert routes (production-ready)
+app.use('/api/expert', expertRoutes);
 
 // Test/debug routes only in non-production environments
 if (process.env.NODE_ENV !== 'production') {
-  app.use('/api/expert', expertTestRoutes);
-  logger.info('Expert test routes mounted (non-production environment)');
+  // Mount test endpoints under separate path to avoid conflicts
+  app.use('/api/expert-test', expertTestRoutes);
+  logger.info('Expert test routes mounted under /api/expert-test (non-production environment)');
 } else {
   logger.info('Expert test routes disabled in production environment');
 }
