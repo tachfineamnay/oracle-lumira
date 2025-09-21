@@ -60,10 +60,10 @@ export const useAuth = () => {
       const response = await api.post('/expert/login', { email, password });
       console.log('📥 API response:', response.data);
       
-      // L'API retourne { message, expert, token } au lieu de { success, expert, token }
+      // L'API retourne { success, token, expert: { id, name, email } }
       if (response.data.token && response.data.expert) {
         console.log('✅ API call successful, processing...');
-        const { token, expert } = response.data;
+        const { token, expert: serverExpert } = response.data;
         
         // Store token
         console.log('💾 Storing token in localStorage');
@@ -75,9 +75,7 @@ export const useAuth = () => {
           isAuthenticated: true, 
           loading: false, 
           expert: {
-            id: expert._id,
-            name: expert.name,
-            email: expert.email
+            id: (serverExpert.id || serverExpert._id),\n            name: serverExpert.name,\n            email: serverExpert.email
           }
         });
         
@@ -119,3 +117,4 @@ export const useAuth = () => {
     logout 
   };
 };
+
