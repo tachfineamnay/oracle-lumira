@@ -53,10 +53,13 @@ RUN echo 'server { \
         } \
     } \
     \
-    # API proxy to main backend \
+    # API proxy to backend (dedicated API domain) \
+    # Note: ensure the target matches your deployed API. \
+    # If your API is served under the main domain (https://oraclelumira.com/api), \
+    # change the proxy_pass and Host accordingly. \
     location /api/ { \
-        proxy_pass https://oraclelumira.com/api/; \
-        proxy_set_header Host oraclelumira.com; \
+        proxy_pass https://api.oraclelumira.com/api/; \
+        proxy_set_header Host api.oraclelumira.com; \
         proxy_set_header X-Real-IP $remote_addr; \
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
         proxy_set_header X-Forwarded-Proto $scheme; \
