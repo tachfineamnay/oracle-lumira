@@ -15,6 +15,7 @@ interface AuthState {
 }
 
 export const useAuth = () => {
+  const AUTH_EVENT = 'expert-auth-changed';
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     loading: true,
@@ -30,6 +31,19 @@ export const useAuth = () => {
     } else {
       setAuthState({ isAuthenticated: false, loading: false, expert: null });
     }
+    
+    // Listen for auth changes from other hook instances (login/logout)
+    const onAuthChanged = () => {
+      const t = localStorage.getItem('expert_token');
+      if (t) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${t}`;
+        verifyToken();
+      } else {
+        setAuthState({ isAuthenticated: false, loading: false, expert: null });
+      }
+    };
+    window.addEventListener(AUTH_EVENT, onAuthChanged);
+    return () => window.removeEventListener(AUTH_EVENT, onAuthChanged);
   }, []);
 
   const verifyToken = async () => {
@@ -74,19 +88,21 @@ export const useAuth = () => {
           localStorage.setItem('expert_token', token);
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-          console.log('? Setting auth state to authenticated');
-          setAuthState({
-            isAuthenticated: true,
-            loading: false,
-            expert: {
-              id: serverExpert.id || serverExpert._id,
-              name: serverExpert.name,
-              email: serverExpert.email
-            }
-          });
+        console.log('? Setting auth state to authenticated');
+        setAuthState({
+          isAuthenticated: true,
+          loading: false,
+          expert: {
+            id: serverExpert.id || serverExpert._id,
+            name: serverExpert.name,
+            email: serverExpert.email
+          }
+        });
+        // Notify other hook instances (e.g., App) to refresh auth state
+        window.dispatchEvent(new Event(AUTH_EVENT));
 
-          console.log('?? Login process completed successfully');
-          return { success: true };
+        console.log('?? Login process completed successfully');
+        return { success: true };
         } else {
           console.log('? API call failed - missing token or expert data');
           setAuthState(prev => ({ ...prev, loading: false }));
@@ -117,6 +133,7 @@ export const useAuth = () => {
       loading: false,
       expert: null
     });
+    window.dispatchEvent(new Event(AUTH_EVENT));
   }, []);
 
   return {
@@ -125,4 +142,3 @@ export const useAuth = () => {
     logout
   };
 };
-
