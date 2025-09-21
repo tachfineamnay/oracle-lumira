@@ -60,7 +60,7 @@ export const useAuth = () => {
       const response = await api.post('/expert/login', { email, password });
       console.log('📥 API response:', response.data);
       
-      // L'API retourne { success, token, expert: { id, name, email } }
+      // API retourne { success, token, expert: { id, name, email } }
       if (response.data.token && response.data.expert) {
         console.log('✅ API call successful, processing...');
         const { token, expert: serverExpert } = response.data;
