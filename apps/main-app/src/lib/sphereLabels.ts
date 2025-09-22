@@ -13,7 +13,7 @@ export const labels = {
   path: 'Cheminement Spirituel',
   draws: 'Tirages Bruts',
   synthesis: 'Synthèse par Catégories',
-  chat: 'Conversations avec l’Oracle',
+  chat: "Conversations avec l'Oracle",
   tools: 'Outils Thérapeutiques',
   ctaNext: 'Explorer le prochain portail',
   emptyPath: 'Aucun enseignement pour l’instant',

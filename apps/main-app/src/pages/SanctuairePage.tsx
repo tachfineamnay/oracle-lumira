@@ -9,11 +9,10 @@ import { LevelUpload } from '../components/sanctuaire/LevelUpload';
 const SanctuairePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { userLevel, checkAccess } = useUserLevel();
+  const { userLevel } = useUserLevel();
   const [activeTab, setActiveTab] = useState<'upload' | 'content' | 'progress'>('upload');
 
   const levelFromUrl = searchParams.get('level');
-  const orderId = searchParams.get('order_id');
 
   useEffect(() => {
     // Vérification d'accès
@@ -138,16 +137,19 @@ const SanctuairePage: React.FC = () => {
           transition={{ delay: 0.2 }}
           className="flex justify-center space-x-1 bg-cosmic-deep/40 rounded-xl p-1"
         >
-          {[
+        {(() => {
+          const tabs: Array<{ id: 'upload' | 'content' | 'progress'; label: string; icon: React.ElementType }> = [
             { id: 'upload', label: 'Upload Fichiers', icon: Upload },
             { id: 'content', label: 'Contenu Niveau', icon: Star },
             { id: 'progress', label: 'Progression', icon: CheckCircle },
-          ].map((tab) => {
+          ];
+
+          return tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
                   activeTab === tab.id
                     ? 'bg-cosmic-gold text-cosmic-void'
@@ -158,7 +160,8 @@ const SanctuairePage: React.FC = () => {
                 <span>{tab.label}</span>
               </button>
             );
-          })}
+          });
+        })()}
         </motion.div>
       </div>
 
@@ -275,7 +278,7 @@ const SanctuairePage: React.FC = () => {
                   {userLevel.uploadedFiles.length > 0 && (
                     <div className="space-y-3">
                       <h4 className="font-bold text-cosmic-gold">Fichiers uploadés :</h4>
-                      {userLevel.uploadedFiles.map((file, index) => (
+                      {userLevel.uploadedFiles.map((file) => (
                         <div key={file.id} className="flex items-center space-x-3 p-3 bg-cosmic-deep/40 rounded-lg">
                           <CheckCircle className="w-5 h-5 text-green-400" />
                           <div className="flex-1">

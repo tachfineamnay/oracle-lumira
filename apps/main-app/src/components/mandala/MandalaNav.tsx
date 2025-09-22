@@ -245,7 +245,15 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
               onHoverEnd={() => setHoveredIndex(null)}
             >
               <NavLink
-                to={`/sanctuaire/${key === 'spiritualPath' ? 'path' : key === 'rawDraws' ? 'draws' : key}`}
+                to={`/sanctuaire/${
+                  key === 'spiritualPath'
+                    ? 'path'
+                    : key === 'rawDraws'
+                    ? 'draws'
+                    : key === 'conversations'
+                    ? 'chat'
+                    : key
+                }`}
                 ref={(el: HTMLAnchorElement | null) => (refs.current[i] = el)}
                 onClick={() => {
                   setFocusIndex(i);
@@ -421,7 +429,15 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
               return (
                 <NavLink
                   key={key}
-                  to={`/sanctuaire/${key === 'spiritualPath' ? 'path' : key === 'rawDraws' ? 'draws' : key}`}
+                  to={`/sanctuaire/${
+                    key === 'spiritualPath'
+                      ? 'path'
+                      : key === 'rawDraws'
+                      ? 'draws'
+                      : key === 'conversations'
+                      ? 'chat'
+                      : key
+                  }`}
                   onClick={() => onSelect?.(key)}
                   aria-current={isActive ? 'page' : undefined}
                   className="flex-1 flex flex-col items-center justify-center py-3 px-2 rounded-2xl transition-all duration-300 group relative"

@@ -7,6 +7,7 @@ import StarField from '../components/micro/StarField';
 import GlassCard from '../components/ui/GlassCard';
 import { useAuth } from '../hooks/useAuth';
 import { labels } from '../lib/sphereLabels';
+import { useUserLevel } from '../contexts/UserLevelContext';
 
 const ContextualHint: React.FC = () => {
   const location = useLocation();
@@ -36,8 +37,23 @@ const ContextualHint: React.FC = () => {
 const Sanctuaire: React.FC = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const { userLevel } = useUserLevel();
 
   const progress = Math.round(((user?.level || 1) / 4) * 100);
+
+  // Compute upload progress from UserLevel context to surface in UI + mandala
+  const uploadProgress = (() => {
+    if (!userLevel?.currentLevel) return 0;
+    const requiredFilesMap: Record<string, number> = {
+      initie: 1,
+      mystique: 2,
+      profond: 3,
+      integrale: 4,
+    };
+    const required = requiredFilesMap[userLevel.currentLevel] ?? 1;
+    const uploaded = userLevel.uploadedFiles?.length ?? 0;
+    return Math.min(Math.round((uploaded / required) * 100), 100);
+  })();
 
   // ux: cosmic breath - generous spacing for premium feel
   return (
@@ -96,8 +112,40 @@ const Sanctuaire: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <MandalaNav />
+            <MandalaNav progress={[uploadProgress, 0, 0, 0, 0]} />
           </motion.div>
+
+          {/* Upload Callout (integrates new Sanctuaire upload flow) */}
+          {userLevel?.hasAccess && userLevel?.uploadStatus !== 'completed' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.25 }}
+            >
+              <GlassCard className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/5 border-white/10">
+                <div>
+                  <div className="text-sm text-white/80 mb-1">Progression d'upload</div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-40 h-2 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-amber-400 to-amber-500"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${uploadProgress}%` }}
+                        transition={{ duration: 0.6 }}
+                      />
+                    </div>
+                    <span className="text-amber-400 text-sm font-medium">{uploadProgress}%</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate(`/upload-sanctuaire?level=${userLevel.currentLevel ?? ''}`)}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-medium hover:from-amber-500 hover:to-amber-600 transition-colors"
+                >
+                  Compléter mes fichiers
+                </button>
+              </GlassCard>
+            </motion.div>
+          )}
 
           {/* Contextual Hint */}
           <ContextualHint />
