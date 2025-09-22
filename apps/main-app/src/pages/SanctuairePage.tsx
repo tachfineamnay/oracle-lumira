@@ -5,6 +5,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Star, Upload, Lock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useUserLevel } from '../contexts/UserLevelContext';
 import { LevelUpload } from '../components/sanctuaire/LevelUpload';
+import MandalaNav from '../components/mandala/MandalaNav';
 
 const SanctuairePage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -162,6 +163,20 @@ const SanctuairePage: React.FC = () => {
             );
           });
         })()}
+        </motion.div>
+      </div>
+
+      {/* Mandala Navigation for consistency with Sanctuaire */}
+      <div className="container mx-auto px-6 mt-6 mb-2">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <MandalaNav
+            progress={[getUploadProgress(), 0, 0, 0, 0]}
+            onSelect={() => {/* route change handled by NavLink inside MandalaNav */}}
+          />
         </motion.div>
       </div>
 
