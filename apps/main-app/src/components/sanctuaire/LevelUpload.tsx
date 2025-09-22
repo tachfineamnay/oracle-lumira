@@ -23,7 +23,7 @@ interface FileUploadState {
   file: File;
   progress: number;
   status: 'uploading' | 'completed' | 'error';
-  category: 'photo' | 'document' | 'audio' | 'video' | 'other';
+  category: 'face' | 'palm' | 'photo' | 'document' | 'audio' | 'video' | 'other';
   previewUrl?: string;
 }
 
@@ -33,17 +33,22 @@ export const LevelUpload: React.FC = () => {
   const [uploadFiles, setUploadFiles] = useState<FileUploadState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const faceInputRef = useRef<HTMLInputElement>(null);
+  const palmInputRef = useRef<HTMLInputElement>(null);
   const [searchParams] = useSearchParams();
 
   // Informations complémentaires
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [objective, setObjective] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  const getFileCategory = (file: File): FileUploadState['category'] => {
+  const getFileCategory = (file: File, override?: FileUploadState['category']): FileUploadState['category'] => {
+    if (override) return override;
     if (file.type.startsWith('image/')) return 'photo';
     if (file.type.startsWith('audio/')) return 'audio';
     if (file.type.startsWith('video/')) return 'video';
@@ -100,13 +105,13 @@ export const LevelUpload: React.FC = () => {
     return null;
   };
 
-  const simulateUpload = async (file: File): Promise<void> => {
+  const simulateUpload = async (file: File, categoryOverride?: FileUploadState['category']): Promise<void> => {
     return new Promise((resolve, reject) => {
       const fileState: FileUploadState = {
         file,
         progress: 0,
         status: 'uploading',
-        category: getFileCategory(file),
+        category: getFileCategory(file, categoryOverride),
         previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
       };
 
@@ -137,7 +142,7 @@ export const LevelUpload: React.FC = () => {
           type: file.type,
           size: file.size,
           uploadedAt: new Date(),
-          category: getFileCategory(file),
+          category: getFileCategory(file, categoryOverride) as any,
           url: `https://storage.oraclelumira.com/${userLevel.currentLevel}/${file.name}`,
         });
 
@@ -146,7 +151,7 @@ export const LevelUpload: React.FC = () => {
     });
   };
 
-  const handleFiles = useCallback(async (files: FileList) => {
+  const handleFiles = useCallback(async (files: FileList, categoryOverride?: FileUploadState['category']) => {
     const fileArray = Array.from(files);
     
     for (const file of fileArray) {
@@ -158,7 +163,7 @@ export const LevelUpload: React.FC = () => {
       }
       
       try {
-        await simulateUpload(file);
+        await simulateUpload(file, categoryOverride);
       } catch (error) {
         console.error('Upload failed:', error);
         setUploadFiles(prev => prev.map(f => 
@@ -173,17 +178,17 @@ export const LevelUpload: React.FC = () => {
     updateUploadStatus('in-progress');
   }, [uploadConfig, uploadFiles.length, addUploadedFile, updateUploadStatus, userLevel.currentLevel]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent, categoryOverride?: FileUploadState['category']) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files) {
-      handleFiles(e.dataTransfer.files);
+      handleFiles(e.dataTransfer.files, categoryOverride);
     }
   }, [handleFiles]);
 
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>, categoryOverride?: FileUploadState['category']) => {
     if (e.target.files) {
-      handleFiles(e.target.files);
+      handleFiles(e.target.files, categoryOverride);
     }
   }, [handleFiles]);
 
@@ -211,149 +216,154 @@ export const LevelUpload: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <motion.div 
-        className="text-center mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h2 className="font-playfair italic text-3xl md:text-4xl font-bold text-cosmic-divine mb-4">
-          Upload Niveau {userLevel.currentLevel}
-        </h2>
-        <p className="text-cosmic-ethereal font-inter">
-          Envoyez vos fichiers selon votre niveau acheté ({uploadConfig.maxFiles} fichiers maximum)
-        </p>
-      </motion.div>
+      {/* Stepper */}
+      <div className="flex items-center justify-center gap-4 mb-6">
+        {[1,2,3].map((i) => (
+          <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step===i ? 'bg-cosmic-gold text-cosmic-void' : 'bg-white/10 text-white/70'}`}>{i}</div>
+        ))}
+      </div>
 
-      {/* Zone de Drop */}
-      <motion.div
-        className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
-          isDragging 
-            ? 'border-cosmic-gold bg-cosmic-gold/10' 
-            : 'border-cosmic-gold/40 hover:border-cosmic-gold/60'
-        }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        whileHover={{ scale: 1.02 }}
-      >
-        <Cloud className="w-16 h-16 text-cosmic-gold mx-auto mb-4" />
-        <h3 className="text-xl font-bold text-cosmic-divine mb-2">
-          Glissez vos fichiers ici
-        </h3>
-        <p className="text-cosmic-ethereal mb-6">
-          ou cliquez pour sélectionner
-        </p>
-        
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="px-8 py-3 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void font-bold rounded-xl hover:shadow-stellar transition-all duration-300"
+      {step === 1 && (
+        <motion.div
+          className="p-6 bg-cosmic-deep/60 rounded-2xl border border-cosmic-gold/30"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
         >
-          <Upload className="w-5 h-5 inline mr-2" />
-          Sélectionner fichiers
-        </button>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept={uploadConfig.allowedTypes.join(',')}
-          onChange={handleFileInput}
-          className="hidden"
-        />
-      </motion.div>
+          <h3 className="text-xl font-bold text-cosmic-divine mb-4">Coordonnées</h3>
+          <p className="text-sm text-cosmic-ethereal mb-4">Votre email et téléphone (pour vous notifier par SMS)</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-cosmic-ethereal mb-1">Email</label>
+              <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" placeholder="vous@exemple.com" />
+            </div>
+            <div>
+              <label className="block text-sm text-cosmic-ethereal mb-1">Téléphone (SMS)</label>
+              <input value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" placeholder="+33 6 12 34 56 78" />
+            </div>
+          </div>
+          <div className="mt-6 text-right">
+            <button disabled={!email || !phone} onClick={()=>setStep(2)} className={`px-6 py-2 rounded-xl font-semibold ${email && phone ? 'bg-cosmic-gold text-cosmic-void' : 'bg-white/10 text-white/50 cursor-not-allowed'}`}>Continuer</button>
+          </div>
+        </motion.div>
+      )}
 
-      {/* Configuration du niveau */}
-      <motion.div 
-        className="mt-6 p-4 bg-cosmic-deep/60 rounded-xl border border-cosmic-gold/30"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <h4 className="font-bold text-cosmic-gold mb-2">Configuration niveau {userLevel.currentLevel}</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-cosmic-ethereal">
-          <div>
-            <span className="font-medium">Fichiers max:</span> {uploadConfig.maxFiles}
-          </div>
-          <div>
-            <span className="font-medium">Taille max:</span> {(uploadConfig.maxSizeBytes / (1024 * 1024)).toFixed(0)}MB
-          </div>
-          <div>
-            <span className="font-medium">Types:</span> {uploadConfig.allowedTypes.length} formats
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Liste des fichiers uploadés */}
-      <AnimatePresence>
-        {uploadFiles.map((fileState, index) => {
-          const Icon = getFileIcon(fileState.category);
-          return (
-            <motion.div
-              key={fileState.file.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mt-4 p-4 bg-cosmic-deep/40 rounded-xl border border-cosmic-gold/20"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Icon className="w-8 h-8 text-cosmic-gold" />
-                  <div>
-                    <p className="font-medium text-cosmic-divine">{fileState.file.name}</p>
-                    <p className="text-sm text-cosmic-ethereal">
-                      {(fileState.file.size / (1024 * 1024)).toFixed(2)} MB
-                    </p>
+      {step === 2 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${isDragging ? 'border-cosmic-gold bg-cosmic-gold/10' : 'border-cosmic-gold/40 hover:border-cosmic-gold/60'}`}
+          onDragOver={(e)=>{e.preventDefault(); setIsDragging(true);}}
+          onDragLeave={()=>setIsDragging(false)}
+          onDrop={(e)=>handleDrop(e, 'face')}
+        >
+          <Cloud className="w-16 h-16 text-cosmic-gold mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-cosmic-divine mb-2">Photo fractale (de face)</h3>
+          <p className="text-cosmic-ethereal mb-6">Glissez la photo ou cliquez pour sélectionner</p>
+          <button onClick={()=>faceInputRef.current?.click()} className="px-8 py-3 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void font-bold rounded-xl hover:shadow-stellar transition-all duration-300"><Upload className="w-5 h-5 inline mr-2" />Sélectionner la photo</button>
+          <input ref={faceInputRef} type="file" accept="image/*" onChange={(e)=>handleFileInput(e,'face')} className="hidden" />
+          <div className="mt-6">
+            <AnimatePresence>
+              {uploadFiles.filter(f=>f.category==='face').map((fileState)=> (
+                <motion.div key={fileState.file.name} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="p-4 bg-cosmic-deep/40 rounded-xl border border-cosmic-gold/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Image className="w-6 h-6 text-cosmic-gold" />
+                      <span className="text-cosmic-divine">{fileState.file.name}</span>
+                    </div>
+                    {fileState.status === 'uploading' ? <span className="text-sm text-cosmic-ethereal">{Math.round(fileState.progress)}%</span> : <CheckCircle className="w-5 h-5 text-green-400" />}
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  {fileState.status === 'uploading' && (
-                    <div className="w-24">
-                      <div className="h-2 bg-cosmic-deep rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm"
-                          style={{ width: `${fileState.progress}%` }}
-                          transition={{ duration: 0.3 }}
-                        />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+          <div className="mt-6 flex justify-between">
+            <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl bg-white/10 text-white/80">Retour</button>
+            <button onClick={()=>setStep(3)} disabled={!uploadFiles.some(f=>f.category==='face' && f.status==='completed')} className={`px-6 py-2 rounded-xl font-semibold ${uploadFiles.some(f=>f.category==='face' && f.status==='completed') ? 'bg-cosmic-gold text-cosmic-void' : 'bg-white/10 text-white/50 cursor-not-allowed'}`}>Continuer</button>
+          </div>
+        </motion.div>
+      )}
+
+      {step === 3 && (
+        <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}}>
+          <div
+            className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${isDragging ? 'border-cosmic-gold bg-cosmic-gold/10' : 'border-cosmic-gold/40 hover:border-cosmic-gold/60'}`}
+            onDragOver={(e)=>{e.preventDefault(); setIsDragging(true);}}
+            onDragLeave={()=>setIsDragging(false)}
+            onDrop={(e)=>handleDrop(e, 'palm')}
+          >
+            <Cloud className="w-16 h-16 text-cosmic-gold mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-cosmic-divine mb-2">Photo de la paume</h3>
+            <p className="text-cosmic-ethereal mb-6">Glissez la photo ou cliquez pour sélectionner</p>
+            <button onClick={()=>palmInputRef.current?.click()} className="px-8 py-3 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void font-bold rounded-xl hover:shadow-stellar transition-all duration-300"><Upload className="w-5 h-5 inline mr-2" />Sélectionner la photo</button>
+            <input ref={palmInputRef} type="file" accept="image/*" onChange={(e)=>handleFileInput(e,'palm')} className="hidden" />
+            <div className="mt-6">
+              <AnimatePresence>
+                {uploadFiles.filter(f=>f.category==='palm').map((fileState)=> (
+                  <motion.div key={fileState.file.name} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="p-4 bg-cosmic-deep/40 rounded-xl border border-cosmic-gold/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Image className="w-6 h-6 text-cosmic-gold" />
+                        <span className="text-cosmic-divine">{fileState.file.name}</span>
                       </div>
-                      <p className="text-xs text-cosmic-ethereal mt-1">
-                        {Math.round(fileState.progress)}%
-                      </p>
+                      {fileState.status === 'uploading' ? <span className="text-sm text-cosmic-ethereal">{Math.round(fileState.progress)}%</span> : <CheckCircle className="w-5 h-5 text-green-400" />}
                     </div>
-                  )}
-                  
-                  {fileState.status === 'completed' && (
-                    <CheckCircle className="w-6 h-6 text-green-400" />
-                  )}
-                  
-                  {fileState.status === 'error' && (
-                    <div className="flex space-x-2">
-                      <AlertCircle className="w-6 h-6 text-red-400" />
-                      <button
-                        onClick={() => retryUpload(fileState.file.name)}
-                        className="text-cosmic-gold hover:text-cosmic-gold-warm"
-                      >
-                        <RotateCcw className="w-5 h-5" />
-                      </button>
-                    </div>
-                  )}
-                  
-                  <button
-                    onClick={() => removeFile(fileState.file.name)}
-                    className="text-cosmic-silver hover:text-red-400 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-cosmic-deep/60 rounded-xl border border-cosmic-gold/30">
+            <label className="block text-sm text-cosmic-ethereal mb-1">Note de votre objectif</label>
+            <textarea value={objective} onChange={(e)=>setObjective(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" placeholder="Décrivez votre intention..." />
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-cosmic-ethereal mb-1">Date (optionnel)</label>
+              <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
+            </div>
+            <div>
+              <label className="block text-sm text-cosmic-ethereal mb-1">Heure (optionnel)</label>
+              <input type="time" value={time} onChange={(e)=>setTime(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-between">
+            <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl bg-white/10 text-white/80">Retour</button>
+            <button
+              onClick={async ()=>{
+                const orderId = searchParams.get('order_id');
+                if (!orderId) { setSubmitMessage("Identifiant de commande manquant"); return; }
+                const hasFace = uploadFiles.some(f=>f.category==='face' && f.status==='completed');
+                const hasPalm = uploadFiles.some(f=>f.category==='palm' && f.status==='completed');
+                if (!hasFace || !hasPalm || !objective) { setSubmitMessage('Veuillez compléter les étapes: photos et objectif.'); return; }
+                try {
+                  setIsSubmitting(true); setSubmitMessage(null);
+                  const filesPayload = (userLevel.uploadedFiles || []).map(f=>({ name: f.name, originalName: f.name, url: f.url, type: f.type, size: f.size }));
+                  const face = (userLevel.uploadedFiles || []).find(f=> (f as any).category==='face');
+                  const palm = (userLevel.uploadedFiles || []).find(f=> (f as any).category==='palm');
+                  const payload = {
+                    files: filesPayload,
+                    formData: { email, phone, objective, dateOfBirth: date ? new Date(date).toISOString() : undefined },
+                    clientInputs: { birthTime: time || undefined, specificContext: objective || undefined, facePhotoUrl: face?.url, palmPhotoUrl: palm?.url }
+                  };
+                  await apiRequest(`/orders/by-payment-intent/${orderId}/client-submit`, { method: 'POST', body: JSON.stringify(payload) });
+                  updateUploadStatus('completed');
+                  setSubmitMessage('Informations transmises au Desk. Merci.');
+                } catch(e:any) {
+                  console.error(e); setSubmitMessage(e?.message || 'Échec de transmission au Desk');
+                } finally { setIsSubmitting(false); }
+              }}
+              disabled={isSubmitting}
+              className={`px-6 py-3 rounded-xl font-semibold ${!isSubmitting ? 'bg-cosmic-gold text-cosmic-void hover:shadow-stellar' : 'bg-white/10 text-white/50'}`}
+            >
+              {isSubmitting ? 'Transmission...' : 'Valider et envoyer'}
+            </button>
+          </div>
+          {submitMessage && <div className="mt-3 text-sm text-cosmic-ethereal">{submitMessage}</div>}
+        </motion.div>
+      )}
 
       {/* Informations complémentaires */}
       <motion.div 
