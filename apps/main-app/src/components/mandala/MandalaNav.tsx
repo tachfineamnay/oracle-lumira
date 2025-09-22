@@ -10,6 +10,7 @@ type Props = {
   active?: string;
   onSelect?: (k: string) => void;
   progress?: number[]; // length 5
+  effects?: 'minimal' | 'none';
 };
 
 const ORDER: string[] = ['spiritualPath', 'rawDraws', 'synthesis', 'conversations', 'tools'];
@@ -58,7 +59,7 @@ const SPHERE_DESCRIPTIONS: Record<string, string> = {
   tools: "Accédez à vos outils de développement personnel",
 };
 
-const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0, 0] }) => {
+const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0, 0], effects = 'minimal' }) => {
   const shouldReduce = useReducedMotion();
   const [focusIndex, setFocusIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -106,7 +107,7 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
   // Enhanced pentagon positions with better spacing
   const positions = ORDER.map((_, i) => {
     const angle = (i / ORDER.length) * Math.PI * 2 - Math.PI / 2;
-    const r = 110; // increased radius for better spacing
+    const r = 150; // loosen nodes to avoid crowding
     return { 
       left: `calc(50% + ${Math.round(Math.cos(angle) * r)}px)`, 
       top: `calc(50% + ${Math.round(Math.sin(angle) * r)}px)` 
@@ -118,51 +119,15 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
   return (
     <GlassCard className="w-full max-w-5xl mx-auto backdrop-blur-2xl bg-gradient-to-br from-white/10 via-white/5 to-white/10 border border-white/20 shadow-2xl">
       {/* Desktop / large: enhanced pentagon mandala */}
-      <div className="relative w-full h-96 hidden lg:block p-8" onKeyDown={handleKey} role="navigation" aria-label="Mandala navigation cosmique">
+      <div className="relative w-full h-[28rem] hidden lg:block p-8" onKeyDown={handleKey} role="navigation" aria-label="Mandala navigation cosmique">
         
-        {/* Enhanced cosmic background with multiple layers */}
-        <div className="absolute inset-0 overflow-hidden rounded-3xl">
-          {/* Animated cosmic rings */}
-          <motion.div
-            aria-hidden
-            animate={shouldReduce ? undefined : { rotate: 360 }}
-            transition={shouldReduce ? undefined : { repeat: Infinity, duration: 100, ease: 'linear' }}
-            className="absolute w-80 h-80 rounded-full border border-amber-400/15 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
-          />
-          <motion.div
-            aria-hidden
-            animate={shouldReduce ? undefined : { rotate: -360 }}
-            transition={shouldReduce ? undefined : { repeat: Infinity, duration: 150, ease: 'linear' }}
-            className="absolute w-96 h-96 rounded-full border border-mystical-400/10 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
-          />
-          <motion.div
-            aria-hidden
-            animate={shouldReduce ? undefined : { rotate: 360 }}
-            transition={shouldReduce ? undefined : { repeat: Infinity, duration: 200, ease: 'linear' }}
-            className="absolute w-72 h-72 rounded-full border border-purple-400/8 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
-          />
-          
-          {/* Mystical particles */}
-          {Array.from({ length: 12 }).map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-white/40 rounded-full"
-              style={{
-                left: `${20 + Math.random() * 60}%`,
-                top: `${20 + Math.random() * 60}%`,
-              }}
-              animate={{
-                opacity: [0.2, 1, 0.2],
-                scale: [1, 1.5, 1],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 3,
-              }}
-            />
-          ))}
-        </div>
+        {/* Background minimal (remove fast stellar animations) */}
+        {effects !== 'none' && (
+          <div className="absolute inset-0 overflow-hidden rounded-3xl" aria-hidden>
+            <div className="absolute w-[32rem] h-[32rem] rounded-full border border-white/10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute w-[24rem] h-[24rem] rounded-full border border-white/5 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+        )}
 
         {/* Central sacred hub with enhanced design */}
         <motion.div
@@ -178,16 +143,16 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
           >
             <motion.div 
               className="relative w-32 h-32 rounded-full bg-gradient-to-br from-amber-400/30 via-mystical-600/20 to-mystical-800/30 flex items-center justify-center border-2 border-amber-400/40 shadow-lg group-hover:shadow-amber-400/40 transition-all duration-500"
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.95 }}
-              animate={{
+              animate={effects === 'none' ? undefined : {
                 boxShadow: [
-                  '0 0 20px rgba(251, 191, 36, 0.3)',
-                  '0 0 40px rgba(251, 191, 36, 0.5)',
-                  '0 0 20px rgba(251, 191, 36, 0.3)',
+                  '0 0 16px rgba(251, 191, 36, 0.25)',
+                  '0 0 28px rgba(251, 191, 36, 0.35)',
+                  '0 0 16px rgba(251, 191, 36, 0.25)',
                 ]
               }}
-              transition={{ duration: 3, repeat: Infinity }}
+              transition={effects === 'none' ? undefined : { duration: 6, repeat: Infinity }}
             >
               {/* Inner sacred circle */}
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400/40 to-amber-500/30 flex items-center justify-center text-amber-400 group-hover:text-amber-300 transition-colors">
@@ -197,15 +162,15 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
               {/* Orbiting sparkles */}
               <motion.div
                 className="absolute"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                animate={effects === 'none' ? undefined : { rotate: 360 }}
+                transition={effects === 'none' ? undefined : { duration: 30, repeat: Infinity, ease: 'linear' }}
               >
                 <Sparkles className="w-4 h-4 text-amber-300/60 absolute -top-2 left-1/2 transform -translate-x-1/2" />
               </motion.div>
               <motion.div
                 className="absolute"
-                animate={{ rotate: -360 }}
-                transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+                animate={effects === 'none' ? undefined : { rotate: -360 }}
+                transition={effects === 'none' ? undefined : { duration: 42, repeat: Infinity, ease: 'linear' }}
               >
                 <Sparkles className="w-3 h-3 text-amber-400/40 absolute -bottom-1 left-1/2 transform -translate-x-1/2" />
               </motion.div>
@@ -239,8 +204,8 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
               style={{ left: pos.left, top: pos.top }}
               initial={{ opacity: 0, scale: 0.5, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: i * 0.15, type: "spring", stiffness: 120 }}
-              whileHover={{ scale: 1.15, y: -5 }}
+              transition={{ duration: 0.6, delay: i * 0.12, type: "spring", stiffness: 110 }}
+              whileHover={{ scale: 1.08, y: -3 }}
               onHoverStart={() => setHoveredIndex(i)}
               onHoverEnd={() => setHoveredIndex(null)}
             >
@@ -308,11 +273,8 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                   {isActive && (
                     <motion.div
                       className="absolute -inset-2 rounded-full bg-amber-400/20 blur-xl -z-10"
-                      animate={{ 
-                        scale: [1, 1.2, 1],
-                        opacity: [0.3, 0.6, 0.3]
-                      }}
-                      transition={{ duration: 3, repeat: Infinity }}
+                      animate={effects === 'none' ? undefined : { scale: [1, 1.08, 1], opacity: [0.35, 0.55, 0.35] }}
+                      transition={effects === 'none' ? undefined : { duration: 4, repeat: Infinity }}
                     />
                   )}
 
@@ -365,11 +327,11 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
 
                 {/* Tooltip on hover */}
                 {hoveredIndex === i && (
-                  <motion.div
+                 <motion.div
                     initial={{ opacity: 0, scale: 0.9, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-16 z-50"
+                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-20 z-50"
                   >
                     <div className="bg-black/90 backdrop-blur-xl text-white text-xs px-3 py-2 rounded-xl border border-white/20 max-w-48 text-center">
                       {SPHERE_DESCRIPTIONS[key]}
