@@ -314,7 +314,7 @@ export const LevelUpload: React.FC = () => {
           </div>
 
           <div className="mt-6 p-4 bg-cosmic-deep/60 rounded-xl border border-cosmic-gold/30">
-            <label className="block text-sm text-cosmic-ethereal mb-1">Note de votre objectif</label>
+            <label className="block text-sm text-cosmic-ethereal mb-1">Dites ce que vous désirez à l'oracle...</label>
             <textarea value={objective} onChange={(e)=>setObjective(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" placeholder="Décrivez votre intention..." />
           </div>
 
