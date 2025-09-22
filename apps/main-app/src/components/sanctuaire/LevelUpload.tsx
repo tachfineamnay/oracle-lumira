@@ -15,6 +15,8 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useUserLevel } from '../../contexts/UserLevelContext';
+import { useSearchParams } from 'react-router-dom';
+import { apiRequest } from '../../utils/api';
 import { useUploadConfig } from '../../hooks/useProductsSimple';
 
 interface FileUploadState {
@@ -31,6 +33,15 @@ export const LevelUpload: React.FC = () => {
   const [uploadFiles, setUploadFiles] = useState<FileUploadState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
+
+  // Informations complémentaires
+  const [phone, setPhone] = useState('');
+  const [objective, setObjective] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
   const getFileCategory = (file: File): FileUploadState['category'] => {
     if (file.type.startsWith('image/')) return 'photo';
@@ -343,6 +354,80 @@ export const LevelUpload: React.FC = () => {
           );
         })}
       </AnimatePresence>
+
+      {/* Informations complémentaires */}
+      <motion.div 
+        className="mt-8 p-4 bg-cosmic-deep/60 rounded-xl border border-cosmic-gold/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        <h4 className="font-bold text-cosmic-gold mb-4">Informations complémentaires</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-cosmic-ethereal mb-1">Téléphone</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="ex: +33 6 12 34 56 78" className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
+          </div>
+          <div>
+            <label className="block text-sm text-cosmic-ethereal mb-1">Objectif</label>
+            <input value={objective} onChange={e => setObjective(e.target.value)} placeholder="Votre intention/objectif" className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
+          </div>
+          <div>
+            <label className="block text-sm text-cosmic-ethereal mb-1">Date</label>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
+          </div>
+          <div>
+            <label className="block text-sm text-cosmic-ethereal mb-1">Heure</label>
+            <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-4">
+          <button
+            onClick={async () => {
+              const orderId = searchParams.get('order_id');
+              if (!orderId) { setSubmitMessage("Identifiant de commande manquant"); return; }
+              if (!(uploadFiles.length > 0 && uploadFiles.every(f => f.status === 'completed'))) { setSubmitMessage('Veuillez compléter vos uploads.'); return; }
+              try {
+                setIsSubmitting(true);
+                setSubmitMessage(null);
+                const filesPayload = (userLevel.uploadedFiles || []).map(f => ({
+                  name: f.name,
+                  originalName: f.name,
+                  url: f.url,
+                  type: f.type,
+                  size: f.size,
+                }));
+                const payload = {
+                  files: filesPayload,
+                  formData: {
+                    phone,
+                    objective,
+                    dateOfBirth: date ? new Date(date).toISOString() : undefined,
+                  },
+                  clientInputs: {
+                    birthTime: time || undefined,
+                    specificContext: objective || undefined,
+                  }
+                };
+                await apiRequest(`/orders/by-payment-intent/${orderId}/client-submit`, { method: 'POST', body: JSON.stringify(payload) });
+                updateUploadStatus('completed');
+                setSubmitMessage('Informations transmises au Desk. Merci.');
+              } catch (e: any) {
+                console.error(e);
+                setSubmitMessage(e?.message || 'Échec de transmission au Desk');
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            disabled={!(uploadFiles.length > 0 && uploadFiles.every(f => f.status === 'completed')) || isSubmitting}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all ${ (uploadFiles.length > 0 && uploadFiles.every(f => f.status === 'completed')) && !isSubmitting ? 'bg-cosmic-gold text-cosmic-void hover:shadow-stellar' : 'bg-white/10 text-white/50 cursor-not-allowed'}`}
+          >
+            {isSubmitting ? 'Transmission...' : 'Valider et envoyer'}
+          </button>
+          {submitMessage && <span className="text-sm text-cosmic-ethereal">{submitMessage}</span>}
+        </div>
+      </motion.div>
     </div>
   );
 };

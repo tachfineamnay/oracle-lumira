@@ -4,6 +4,75 @@ import { User } from '../models/User';
 
 const router = express.Router();
 
+// Client submission: attach uploaded files + form data by paymentIntentId
+router.post('/by-payment-intent/:paymentIntentId/client-submit', async (req: any, res: any) => {
+  try {
+    const { paymentIntentId } = req.params;
+    if (!paymentIntentId || typeof paymentIntentId !== 'string') {
+      return res.status(400).json({ error: 'paymentIntentId invalid' });
+    }
+
+    const order = await Order.findOne({ paymentIntentId });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found for paymentIntentId', paymentIntentId });
+    }
+
+    const { files = [], formData = {}, clientInputs = {} } = req.body || {};
+
+    // Normalize and merge files; treat path as remote URL if provided
+    const normalized = Array.isArray(files) ? files.map((f: any) => ({
+      filename: String(f.name || f.filename || 'file'),
+      originalName: String(f.originalName || f.name || 'file'),
+      path: String(f.url || f.path || ''),
+      mimetype: String(f.type || f.mimetype || ''),
+      size: Number(f.size || 0),
+      uploadedAt: new Date()
+    })) : [];
+
+    // De-duplicate by originalName+size
+    const existing = order.files || [];
+    const combined = [...existing];
+    normalized.forEach((nf: any) => {
+      const dup = existing.find((ef: any) => ef.originalName === nf.originalName && ef.size === nf.size);
+      if (!dup) combined.push(nf);
+    });
+
+    order.files = combined as any;
+
+    // Merge formData if provided; only overwrite defined fields
+    order.formData = {
+      ...order.formData,
+      phone: formData.phone ?? order.formData?.phone,
+      email: formData.email ?? order.formData?.email,
+      firstName: formData.firstName ?? order.formData?.firstName,
+      lastName: formData.lastName ?? order.formData?.lastName,
+      specificQuestion: formData.objective ?? formData.specificQuestion ?? order.formData?.specificQuestion,
+      dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : order.formData?.dateOfBirth,
+      preferences: {
+        ...order.formData?.preferences,
+        deliveryFormat: formData.deliveryFormat ?? order.formData?.preferences?.deliveryFormat,
+        audioVoice: formData.audioVoice ?? order.formData?.preferences?.audioVoice,
+      }
+    } as any;
+
+    order.clientInputs = {
+      ...order.clientInputs,
+      birthTime: clientInputs.birthTime ?? order.clientInputs?.birthTime,
+      birthPlace: clientInputs.birthPlace ?? order.clientInputs?.birthPlace,
+      specificContext: clientInputs.specificContext ?? order.clientInputs?.specificContext,
+      lifeQuestion: clientInputs.lifeQuestion ?? order.clientInputs?.lifeQuestion,
+    } as any;
+
+    order.updatedAt = new Date();
+    await order.save();
+
+    res.json({ success: true, order });
+  } catch (error) {
+    console.error('Client submit error:', error);
+    res.status(500).json({ error: 'Failed to attach client submission' });
+  }
+});
+
 // Get all orders (with pagination and filtering)
 router.get('/', async (req: any, res: any) => {
   try {
