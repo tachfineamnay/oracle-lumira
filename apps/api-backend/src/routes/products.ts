@@ -604,3 +604,118 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 export default router;
+
+/**
+ * POST /api/products/create-order
+ * Créer une commande directe pour les tests (bypasse Stripe)
+ */
+router.post('/create-order', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { level, amount, formData, metadata } = req.body;
+    
+    if (!level || !amount || !formData) {
+      res.status(400).json({ error: 'level, amount, and formData are required' });
+      return;
+    }
+
+    // Générer un ID de commande unique
+    const orderId = `test_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Trouver ou créer l'utilisateur
+    let user = await User.findOne({ email: formData.email });
+    if (!user) {
+      user = await User.create({
+        email: formData.email,
+        firstName: formData.firstName || 'Test',
+        lastName: formData.lastName || 'User'
+      });
+    }
+
+    // Mapping des niveaux
+    const levelNames = {
+      1: 'Simple',
+      2: 'Intuitive', 
+      3: 'Alchimique',
+      4: 'Intégrale'
+    };
+
+    // Créer la commande pour Expert Desk
+    const order = await Order.create({
+      userId: user._id,
+      userEmail: user.email,
+      level: level,
+      levelName: levelNames[level as keyof typeof levelNames] || 'Simple',
+      amount: amount,
+      currency: 'eur',
+      status: 'pending',
+      paymentIntentId: orderId,
+      orderNumber: `ORD-${Date.now()}`,
+      formData: formData,
+      metadata: metadata || {}
+    });
+
+    console.log('✅ Test order created:', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      level: order.level,
+      client: `${formData.firstName} ${formData.lastName}`
+    });
+
+    res.json({
+      success: true,
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      message: 'Test order created successfully'
+    });
+
+  } catch (error) {
+    console.error('Create order error:', error);
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
+/**
+ * POST /api/products/simulate-payment
+ * Simuler un paiement réussi pour les tests
+ */
+router.post('/simulate-payment', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { orderId, status = 'paid' } = req.body;
+    
+    if (!orderId) {
+      res.status(400).json({ error: 'orderId is required' });
+      return;
+    }
+
+    // Mettre à jour le statut de la commande
+    const order = await Order.findById(orderId);
+    if (!order) {
+      res.status(404).json({ error: 'Order not found' });
+      return;
+    }
+
+    order.status = status;
+    if (status === 'paid') {
+      order.paidAt = new Date();
+    }
+    await order.save();
+
+    console.log('✅ Payment simulated:', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      status: order.status
+    });
+
+    res.json({
+      success: true,
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      message: `Payment ${status} simulated successfully`
+    });
+
+  } catch (error) {
+    console.error('Simulate payment error:', error);
+    res.status(500).json({ error: 'Failed to simulate payment' });
+  }
+});
