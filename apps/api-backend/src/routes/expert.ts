@@ -646,6 +646,7 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
       Order.countDocuments({ status: 'pending' }),
       Order.countDocuments({ status: 'paid' }),
       Order.countDocuments({ status: 'processing' }),
+      Order.countDocuments({ status: 'awaiting_validation' }),
       Order.countDocuments({ status: 'completed' }),
       Order.countDocuments({
         'expertReview.expertId': req.expert._id.toString(),
@@ -660,9 +661,10 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
       pending: stats[0],
       paid: stats[1],
       processing: stats[2],
-      completed: stats[3],
-      treatedToday: stats[4],
-      totalTreated: stats[5]
+      awaitingValidation: stats[3],
+      completed: stats[4],
+      treatedToday: stats[5],
+      totalTreated: stats[6]
     });
 
   } catch (error) {

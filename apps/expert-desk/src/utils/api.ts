@@ -54,6 +54,8 @@ export const endpoints = {
     verify: '/expert/verify',
     stats: '/expert/stats',
     orders: '/expert/orders/pending',
+    validationQueue: '/expert/orders/validation-queue',
+    validateContent: '/expert/validate-content',
     orderDetails: (id: string) => `/expert/orders/${id}`,
     processOrder: '/expert/process-order'
   }

@@ -1,3 +1,4 @@
+import { Order } from '../types/Order';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -11,42 +12,6 @@ import {
   Phone,
   CheckCircle
 } from 'lucide-react';
-
-interface Order {
-  _id: string;
-  orderNumber: string;
-  level: number;
-  levelName: string;
-  amount: number;
-  status: string;
-  formData: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-    dateOfBirth?: string;
-    specificQuestion?: string;
-  };
-  files?: Array<{
-    filename: string;
-    originalName: string;
-    mimetype: string;
-    size: number;
-  }>;
-  clientInputs?: {
-    birthTime?: string;
-    birthPlace?: string;
-    specificContext?: string;
-    lifeQuestion?: string;
-  };
-  createdAt: string;
-  userId: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-  };
-}
 
 interface OrdersQueueProps {
   orders: Order[];

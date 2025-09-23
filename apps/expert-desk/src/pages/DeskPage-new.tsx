@@ -11,7 +11,6 @@ import {
   AlertCircle,
   Eye
 } from 'lucide-react';
-import { Order, Stats } from '../types/Order';
 import { useAuth } from '../hooks/useAuth';
 import LoadingSpinner from '../components/LoadingSpinner';
 import OrdersQueue from '../components/OrdersQueue';
@@ -20,6 +19,72 @@ import ContentGenerator from '../components/ContentGenerator';
 import ContentValidator from '../components/ContentValidator';
 import { api } from '../utils/api';
 import toast from 'react-hot-toast';
+
+interface Order {
+  _id: string;
+  orderNumber: string;
+  level: number;
+  levelName: string;
+  amount: number;
+  status: string;
+  formData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    dateOfBirth?: string;
+    specificQuestion?: string;
+  };
+  generatedContent?: {
+    archetype?: string;
+    reading?: string;
+    audioUrl?: string;
+    pdfUrl?: string;
+    mandalaSvg?: string;
+    ritual?: string;
+    blockagesAnalysis?: string;
+    soulProfile?: string;
+  };
+  expertValidation?: {
+    validatorId?: string;
+    validatorName?: string;
+    validationStatus: 'pending' | 'approved' | 'rejected';
+    validationNotes?: string;
+    validatedAt?: string;
+    rejectionReason?: string;
+  };
+  revisionCount?: number;
+  files?: Array<{
+    filename: string;
+    originalName: string;
+    mimetype: string;
+    size: number;
+  }>;
+  clientInputs?: {
+    birthTime?: string;
+    birthPlace?: string;
+    specificContext?: string;
+    lifeQuestion?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  userId: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
+}
+
+interface Stats {
+  pending: number;
+  paid: number;
+  processing: number;
+  completed: number;
+  awaitingValidation: number;
+  treatedToday: number;
+  totalTreated: number;
+}
 
 const DeskPage: React.FC = () => {
   const { expert, logout } = useAuth();
@@ -350,10 +415,10 @@ const DeskPage: React.FC = () => {
               <OrdersQueue 
                 orders={orders}
                 selectedOrder={selectedOrder}
-                onSelectOrder={(order: Order) => setSelectedOrder(order)}
+                onSelectOrder={setSelectedOrder}
                 onRefresh={refreshOrders}
                 refreshing={refreshing}
-                onTakeOrder={(order: Order) => handleTakeOrder(order)}
+                onTakeOrder={handleTakeOrder}
               />
             ) : (
               <ValidationQueue
