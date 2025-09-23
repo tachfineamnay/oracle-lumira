@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -52,8 +53,8 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white/10 backdrop-blur-md rounded-xl shadow-2xl border border-white/20">
+    <div className="min-h-screen flex items-center justify-center gradient-bg">
+      <div className="max-w-md w-full space-y-8 p-8 card">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
             Inscription Expert
@@ -80,7 +81,7 @@ export const RegisterPage: React.FC = () => {
                 name="name"
                 type="text"
                 required
-                className="w-full px-3 py-2 bg-white/10 border border-white/30 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="input"
                 placeholder="Votre nom complet"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -97,7 +98,7 @@ export const RegisterPage: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-3 py-2 bg-white/10 border border-white/30 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="input"
                 placeholder="votre.email@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -114,7 +115,7 @@ export const RegisterPage: React.FC = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="w-full px-3 py-2 bg-white/10 border border-white/30 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="input"
                 placeholder="Votre mot de passe (min. 6 caractères)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -126,12 +127,12 @@ export const RegisterPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="btn-primary w-full py-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Création...
+                <div className="flex items-center justify-center gap-2">
+                  <LoadingSpinner size="small" />
+                  <span>Création...</span>
                 </div>
               ) : (
                 'Créer mon compte'
@@ -142,7 +143,7 @@ export const RegisterPage: React.FC = () => {
           <div className="text-center">
             <Link 
               to="/login" 
-              className="text-sm text-purple-300 hover:text-purple-200 transition-colors duration-200"
+              className="text-amber-400 hover:text-amber-300 transition-colors duration-200"
             >
               Déjà un compte ? Se connecter
             </Link>

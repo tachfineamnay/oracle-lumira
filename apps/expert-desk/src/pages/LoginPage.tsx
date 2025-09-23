@@ -74,8 +74,8 @@ const LoginPage: React.FC = () => {
       >
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-8 h-8 text-slate-900" />
           </div>
           <h1 className="text-3xl font-bold gradient-text mb-2">Expert Desk</h1>
           <p className="text-slate-300">Accès réservé aux oracles certifiés</p>
@@ -158,7 +158,7 @@ const LoginPage: React.FC = () => {
           <p>Pas encore de compte ?</p>
           <Link 
             to="/register" 
-            className="text-purple-400 hover:text-purple-300 transition-colors duration-200 font-medium"
+            className="text-amber-400 hover:text-amber-300 transition-colors duration-200 font-medium"
           >
             S'inscrire comme expert
           </Link>

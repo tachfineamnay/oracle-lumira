@@ -70,7 +70,7 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
   const levelColors: Record<string, string> = {
     'Simple': 'text-gray-400 bg-gray-500/10 border-gray-500/20',
     'Intuitive': 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-    'Alchimique': 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+    'Alchimique': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
     'Intégrale': 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
   };
 
@@ -91,7 +91,7 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
     <div className="card h-fit">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Clock className="w-5 h-5 text-purple-400" />
+          <Clock className="w-5 h-5 text-amber-400" />
           Queue des commandes
         </h2>
         <button
@@ -118,8 +118,8 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
               onClick={() => onSelectOrder(order)}
               className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
                 selectedOrder?._id === order._id
-                  ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/20'
-                  : 'border-slate-600 hover:border-slate-500 hover:bg-slate-700/30'
+                  ? 'border-amber-400 bg-amber-400/10 shadow-lg shadow-amber-400/20'
+                  : 'border-white/20 hover:border-white/40 hover:bg-white/10'
               }`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -174,21 +174,21 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
                 </div>
 
                 {order.files && order.files.length > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-blue-400">
+                  <div className="flex items-center gap-2 text-sm text-amber-400">
                     <FileText className="w-4 h-4" />
                     <span>{order.files.length} fichier(s) joint(s)</span>
                   </div>
                 )}
 
                 {order.formData.specificQuestion && (
-                  <div className="mt-2 p-2 bg-slate-700/30 rounded text-xs text-slate-300">
-                    <p className="font-medium mb-1">Question :</p>
+                  <div className="mt-2 p-2 bg-white/10 rounded border border-white/20 text-xs text-white/80">
+                    <p className="font-medium mb-1 text-amber-400">Question :</p>
                     <p className="line-clamp-2">{order.formData.specificQuestion}</p>
                   </div>
                 )}
 
                 {/* Take Order Button */}
-                <div className="mt-3 pt-3 border-t border-slate-700/50">
+                <div className="mt-3 pt-3 border-t border-white/20">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

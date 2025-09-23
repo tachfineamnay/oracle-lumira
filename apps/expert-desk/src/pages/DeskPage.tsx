@@ -173,16 +173,16 @@ const DeskPage: React.FC = () => {
   return (
     <div className="min-h-screen gradient-bg text-white">
       {/* Header */}
-      <header className="bg-slate-800/80 backdrop-blur-xl border-b border-purple-500/20 px-6 py-4 sticky top-0 z-10">
+      <header className="bg-slate-800/80 backdrop-blur-xl border-b border-amber-500/20 px-6 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Wand2 className="w-5 h-5" />
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-500 rounded-lg flex items-center justify-center">
+              <Wand2 className="w-5 h-5 text-slate-900" />
             </div>
             <div>
               <h1 className="text-xl font-bold">Expert Desk</h1>
               <p className="text-sm text-slate-400">
-                Bonjour, <span className="text-purple-400">{expert?.name}</span>
+                Bonjour, <span className="text-amber-400">{expert?.name}</span>
               </p>
             </div>
           </div>
@@ -260,9 +260,9 @@ const DeskPage: React.FC = () => {
             transition={{ delay: 0.4 }}
           >
             <div className="flex items-center gap-3">
-              <TrendingUp className="w-5 h-5 text-purple-400" />
+              <TrendingUp className="w-5 h-5 text-amber-400" />
               <div>
-                <p className="text-2xl font-bold text-purple-400">{stats.totalTreated}</p>
+                <p className="text-2xl font-bold text-amber-400">{stats.totalTreated}</p>
                 <p className="text-sm text-slate-400">Total traitées</p>
               </div>
             </div>
