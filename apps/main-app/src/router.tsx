@@ -7,7 +7,6 @@ import ConfirmationPage from './pages/ConfirmationPage';
 import SanctuairePage from './pages/SanctuairePage';
 import CommandeTemple from './pages/CommandeTemple';
 import ConfirmationTemple from './pages/ConfirmationTemple';
-import DashboardSanctuaire from './pages/DashboardSanctuaire';
 import Sanctuaire from './pages/Sanctuaire';
 import MentionsLegales from './pages/MentionsLegales';
 import ExpertDeskPage from './expert/ExpertDesk';
@@ -19,6 +18,7 @@ const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
 const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
 const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
 const LazyTools = React.lazy(() => import('./components/spheres/Tools'));
+const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
 
 const AppRoutes: React.FC = () => (
   <Routes>
@@ -71,9 +71,16 @@ const AppRoutes: React.FC = () => (
           </React.Suspense>
         }
       />
+      <Route
+        path="profile"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazyProfile />
+          </React.Suspense>
+        }
+      />
     </Route>
 
-    <Route path="/dashboard" element={<DashboardSanctuaire />} />
     <Route path="/mentions-legales" element={<MentionsLegales />} />
     <Route path="/expert" element={<ExpertDeskPage />} />
   </Routes>

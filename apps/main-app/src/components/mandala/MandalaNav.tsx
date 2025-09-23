@@ -2,18 +2,18 @@ import React, { useRef, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import GlassCard from '../ui/GlassCard';
-import { Star, Book, Layers, MessageCircle, Wrench, Sparkles } from 'lucide-react';
+import { Star, Book, Layers, MessageCircle, Wrench, Sparkles, User } from 'lucide-react';
 import labels from '../../lib/sphereLabels';
 import type { SphereKey } from '../../lib/sphereLabels';
 
 type Props = {
   active?: string;
   onSelect?: (k: string) => void;
-  progress?: number[]; // length 5
+  progress?: number[]; // length 6
   effects?: 'minimal' | 'none';
 };
 
-const ORDER: string[] = ['spiritualPath', 'rawDraws', 'synthesis', 'conversations', 'tools'];
+const ORDER: string[] = ['spiritualPath', 'rawDraws', 'synthesis', 'conversations', 'tools', 'profile'];
 
 const ICONS: Record<string, React.ReactNode> = {
   spiritualPath: <Star className="w-6 h-6" />,
@@ -21,6 +21,7 @@ const ICONS: Record<string, React.ReactNode> = {
   synthesis: <Layers className="w-6 h-6" />,
   conversations: <MessageCircle className="w-6 h-6" />,
   tools: <Wrench className="w-6 h-6" />,
+  profile: <User className="w-6 h-6" />,
 };
 
 const SPHERE_COLORS: Record<string, { gradient: string; accent: string; shadow: string }> = {
@@ -49,6 +50,11 @@ const SPHERE_COLORS: Record<string, { gradient: string; accent: string; shadow: 
     accent: 'text-pink-400', 
     shadow: 'shadow-pink-400/30' 
   },
+  profile: { 
+    gradient: 'from-mystical-gold/30 to-mystical-purple/20', 
+    accent: 'text-mystical-gold', 
+    shadow: 'shadow-mystical-gold/30' 
+  },
 };
 
 const SPHERE_DESCRIPTIONS: Record<string, string> = {
@@ -57,9 +63,10 @@ const SPHERE_DESCRIPTIONS: Record<string, string> = {
   synthesis: "Découvrez la synthèse de vos insights spirituels",
   conversations: "Engagez des dialogues sacrés avec votre guide spirituel",
   tools: "Accédez à vos outils de développement personnel",
+  profile: "Gérez votre profil et vos préférences spirituelles",
 };
 
-const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0, 0], effects = 'minimal' }) => {
+const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0, 0, 0], effects = 'minimal' }) => {
   const shouldReduce = useReducedMotion();
   const [focusIndex, setFocusIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
