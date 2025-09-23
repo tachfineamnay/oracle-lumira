@@ -32,7 +32,7 @@ export const LevelUpload: React.FC = () => {
   const uploadConfig = useUploadConfig(userLevel.currentLevel || '');
   const [uploadFiles, setUploadFiles] = useState<FileUploadState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Refs pour les inputs de fichiers spécifiques
   const faceInputRef = useRef<HTMLInputElement>(null);
   const palmInputRef = useRef<HTMLInputElement>(null);
   const [searchParams] = useSearchParams();
@@ -45,7 +45,7 @@ export const LevelUpload: React.FC = () => {
   const [time, setTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // Suppression du système de steps - formulaire unique
 
   const getFileCategory = (file: File, override?: FileUploadState['category']): FileUploadState['category'] => {
     if (override) return override;
@@ -58,6 +58,8 @@ export const LevelUpload: React.FC = () => {
 
   const getFileIcon = (category: FileUploadState['category']) => {
     const icons = {
+      face: Image,
+      palm: Image,
       photo: Image,
       audio: Music,
       video: Video,
@@ -216,227 +218,151 @@ export const LevelUpload: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Stepper */}
-      <div className="flex items-center justify-center gap-4 mb-6">
-        {[1,2,3].map((i) => (
-          <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step===i ? 'bg-cosmic-gold text-cosmic-void' : 'bg-white/10 text-white/70'}`}>{i}</div>
-        ))}
-      </div>
+      {/* Coordonnées de base */}
+      <motion.div
+        className="p-6 bg-cosmic-deep/60 rounded-2xl border border-cosmic-gold/30 mb-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h3 className="text-xl font-bold text-cosmic-divine mb-4">Vos coordonnées</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-cosmic-ethereal mb-1">Email</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e)=>setEmail(e.target.value)} 
+              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" 
+              placeholder="vous@exemple.com" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-cosmic-ethereal mb-1">Téléphone</label>
+            <input 
+              value={phone} 
+              onChange={(e)=>setPhone(e.target.value)} 
+              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" 
+              placeholder="+33 6 12 34 56 78" 
+            />
+          </div>
+        </div>
+      </motion.div>
 
-      {step === 1 && (
-        <motion.div
-          className="p-6 bg-cosmic-deep/60 rounded-2xl border border-cosmic-gold/30"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h3 className="text-xl font-bold text-cosmic-divine mb-4">Coordonnées</h3>
-          <p className="text-sm text-cosmic-ethereal mb-4">Votre email et téléphone (pour vous notifier par SMS)</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-cosmic-ethereal mb-1">Email</label>
-              <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" placeholder="vous@exemple.com" />
+      {/* Zone Upload Photos - Deux zones distinctes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Photo du visage */}
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+          <div className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 ${isDragging ? 'border-cosmic-gold bg-cosmic-gold/10' : 'border-cosmic-gold/40 hover:border-cosmic-gold/60'}`} onDragOver={(e)=>{e.preventDefault(); setIsDragging(true);}} onDragLeave={()=>setIsDragging(false)} onDrop={(e)=>handleDrop(e, 'face')}>
+            <div className="mb-4">
+              <div className="w-12 h-12 bg-cosmic-gold/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Image className="w-6 h-6 text-cosmic-gold" />
+              </div>
+              <h3 className="text-lg font-bold text-cosmic-divine mb-1">Photo du visage</h3>
+              <p className="text-sm text-cosmic-ethereal mb-4">Photo de face pour lecture fractale</p>
             </div>
-            <div>
-              <label className="block text-sm text-cosmic-ethereal mb-1">Téléphone (SMS)</label>
-              <input value={phone} onChange={(e)=>setPhone(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" placeholder="+33 6 12 34 56 78" />
-            </div>
-          </div>
-          <div className="mt-6 text-right">
-            <button disabled={!email || !phone} onClick={()=>setStep(2)} className={`px-6 py-2 rounded-xl font-semibold ${email && phone ? 'bg-cosmic-gold text-cosmic-void' : 'bg-white/10 text-white/50 cursor-not-allowed'}`}>Continuer</button>
-          </div>
-        </motion.div>
-      )}
-
-      {step === 2 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${isDragging ? 'border-cosmic-gold bg-cosmic-gold/10' : 'border-cosmic-gold/40 hover:border-cosmic-gold/60'}`}
-          onDragOver={(e)=>{e.preventDefault(); setIsDragging(true);}}
-          onDragLeave={()=>setIsDragging(false)}
-          onDrop={(e)=>handleDrop(e, 'face')}
-        >
-          <Cloud className="w-16 h-16 text-cosmic-gold mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-cosmic-divine mb-2">Photo fractale (de face)</h3>
-          <p className="text-cosmic-ethereal mb-6">Glissez la photo ou cliquez pour sélectionner</p>
-          <button onClick={()=>faceInputRef.current?.click()} className="px-8 py-3 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void font-bold rounded-xl hover:shadow-stellar transition-all duration-300"><Upload className="w-5 h-5 inline mr-2" />Sélectionner la photo</button>
-          <input ref={faceInputRef} type="file" accept="image/*" onChange={(e)=>handleFileInput(e,'face')} className="hidden" />
-          <div className="mt-6">
-            <AnimatePresence>
-              {uploadFiles.filter(f=>f.category==='face').map((fileState)=> (
-                <motion.div key={fileState.file.name} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="p-4 bg-cosmic-deep/40 rounded-xl border border-cosmic-gold/20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Image className="w-6 h-6 text-cosmic-gold" />
-                      <span className="text-cosmic-divine">{fileState.file.name}</span>
-                    </div>
-                    {fileState.status === 'uploading' ? <span className="text-sm text-cosmic-ethereal">{Math.round(fileState.progress)}%</span> : <CheckCircle className="w-5 h-5 text-green-400" />}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-          <div className="mt-6 flex justify-between">
-            <button onClick={()=>setStep(1)} className="px-4 py-2 rounded-xl bg-white/10 text-white/80">Retour</button>
-            <button onClick={()=>setStep(3)} disabled={!uploadFiles.some(f=>f.category==='face' && f.status==='completed')} className={`px-6 py-2 rounded-xl font-semibold ${uploadFiles.some(f=>f.category==='face' && f.status==='completed') ? 'bg-cosmic-gold text-cosmic-void' : 'bg-white/10 text-white/50 cursor-not-allowed'}`}>Continuer</button>
-          </div>
-        </motion.div>
-      )}
-
-      {step === 3 && (
-        <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}}>
-          <div
-            className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${isDragging ? 'border-cosmic-gold bg-cosmic-gold/10' : 'border-cosmic-gold/40 hover:border-cosmic-gold/60'}`}
-            onDragOver={(e)=>{e.preventDefault(); setIsDragging(true);}}
-            onDragLeave={()=>setIsDragging(false)}
-            onDrop={(e)=>handleDrop(e, 'palm')}
-          >
-            <Cloud className="w-16 h-16 text-cosmic-gold mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-cosmic-divine mb-2">Photo de la paume</h3>
-            <p className="text-cosmic-ethereal mb-6">Glissez la photo ou cliquez pour sélectionner</p>
-            <button onClick={()=>palmInputRef.current?.click()} className="px-8 py-3 bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void font-bold rounded-xl hover:shadow-stellar transition-all duration-300"><Upload className="w-5 h-5 inline mr-2" />Sélectionner la photo</button>
-            <input ref={palmInputRef} type="file" accept="image/*" onChange={(e)=>handleFileInput(e,'palm')} className="hidden" />
-            <div className="mt-6">
+            <button onClick={()=>faceInputRef.current?.click()} className="px-6 py-2 bg-gradient-to-r from-cosmic-gold/80 to-cosmic-gold-warm/80 text-cosmic-void font-medium rounded-lg hover:shadow-stellar transition-all duration-300"><Upload className="w-4 h-4 inline mr-2" />Sélectionner</button>
+            <input ref={faceInputRef} type="file" accept="image/*" onChange={(e)=>handleFileInput(e,'face')} className="hidden" />
+            <div className="mt-4">
               <AnimatePresence>
-                {uploadFiles.filter(f=>f.category==='palm').map((fileState)=> (
-                  <motion.div key={fileState.file.name} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="p-4 bg-cosmic-deep/40 rounded-xl border border-cosmic-gold/20">
+                {uploadFiles.filter(f=>f.category==='face').map((fileState)=> (
+                  <motion.div key={fileState.file.name} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="p-3 bg-cosmic-deep/40 rounded-xl border border-cosmic-gold/20 mt-2">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Image className="w-6 h-6 text-cosmic-gold" />
-                        <span className="text-cosmic-divine">{fileState.file.name}</span>
+                      <div className="flex items-center gap-2">
+                        <Image className="w-4 h-4 text-cosmic-gold" />
+                        <span className="text-sm text-cosmic-divine truncate">{fileState.file.name}</span>
                       </div>
-                      {fileState.status === 'uploading' ? <span className="text-sm text-cosmic-ethereal">{Math.round(fileState.progress)}%</span> : <CheckCircle className="w-5 h-5 text-green-400" />}
+                      {fileState.status === 'uploading' ? <span className="text-xs text-cosmic-ethereal">{Math.round(fileState.progress)}%</span> : <CheckCircle className="w-4 h-4 text-green-400" />}
                     </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
             </div>
           </div>
-
-          <div className="mt-6 p-4 bg-cosmic-deep/60 rounded-xl border border-cosmic-gold/30">
-            <label className="block text-sm text-cosmic-ethereal mb-1">Dites ce que vous désirez à l'oracle...</label>
-            <textarea value={objective} onChange={(e)=>setObjective(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" placeholder="Décrivez votre intention..." />
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-cosmic-ethereal mb-1">Date (optionnel)</label>
-              <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
-            </div>
-            <div>
-              <label className="block text-sm text-cosmic-ethereal mb-1">Heure (optionnel)</label>
-              <input type="time" value={time} onChange={(e)=>setTime(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
-            </div>
-          </div>
-
-          <div className="mt-6 flex items-center justify-between">
-            <button onClick={()=>setStep(2)} className="px-4 py-2 rounded-xl bg-white/10 text-white/80">Retour</button>
-            <button
-              onClick={async ()=>{
-                const orderId = searchParams.get('order_id');
-                if (!orderId) { setSubmitMessage("Identifiant de commande manquant"); return; }
-                const hasFace = uploadFiles.some(f=>f.category==='face' && f.status==='completed');
-                const hasPalm = uploadFiles.some(f=>f.category==='palm' && f.status==='completed');
-                if (!hasFace || !hasPalm || !objective) { setSubmitMessage('Veuillez compléter les étapes: photos et objectif.'); return; }
-                try {
-                  setIsSubmitting(true); setSubmitMessage(null);
-                  const filesPayload = (userLevel.uploadedFiles || []).map(f=>({ name: f.name, originalName: f.name, url: f.url, type: f.type, size: f.size }));
-                  const face = (userLevel.uploadedFiles || []).find(f=> (f as any).category==='face');
-                  const palm = (userLevel.uploadedFiles || []).find(f=> (f as any).category==='palm');
-                  const payload = {
-                    files: filesPayload,
-                    formData: { email, phone, objective, dateOfBirth: date ? new Date(date).toISOString() : undefined },
-                    clientInputs: { birthTime: time || undefined, specificContext: objective || undefined, facePhotoUrl: face?.url, palmPhotoUrl: palm?.url }
-                  };
-                  await apiRequest(`/orders/by-payment-intent/${orderId}/client-submit`, { method: 'POST', body: JSON.stringify(payload) });
-                  updateUploadStatus('completed');
-                  setSubmitMessage('Informations transmises au Desk. Merci.');
-                } catch(e:any) {
-                  console.error(e); setSubmitMessage(e?.message || 'Échec de transmission au Desk');
-                } finally { setIsSubmitting(false); }
-              }}
-              disabled={isSubmitting}
-              className={`px-6 py-3 rounded-xl font-semibold ${!isSubmitting ? 'bg-cosmic-gold text-cosmic-void hover:shadow-stellar' : 'bg-white/10 text-white/50'}`}
-            >
-              {isSubmitting ? 'Transmission...' : 'Valider et envoyer'}
-            </button>
-          </div>
-          {submitMessage && <div className="mt-3 text-sm text-cosmic-ethereal">{submitMessage}</div>}
         </motion.div>
-      )}
 
-      {/* Informations complémentaires */}
-      <motion.div 
-        className="mt-8 p-4 bg-cosmic-deep/60 rounded-xl border border-cosmic-gold/30"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
-        <h4 className="font-bold text-cosmic-gold mb-4">Informations complémentaires</h4>
+        {/* Photo de la paume */}
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+          <div className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 ${isDragging ? 'border-cosmic-gold bg-cosmic-gold/10' : 'border-cosmic-gold/40 hover:border-cosmic-gold/60'}`} onDragOver={(e)=>{e.preventDefault(); setIsDragging(true);}} onDragLeave={()=>setIsDragging(false)} onDrop={(e)=>handleDrop(e, 'palm')}>
+            <div className="mb-4">
+              <div className="w-12 h-12 bg-cosmic-gold/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Image className="w-6 h-6 text-cosmic-gold" />
+              </div>
+              <h3 className="text-lg font-bold text-cosmic-divine mb-1">Photo de la paume</h3>
+              <p className="text-sm text-cosmic-ethereal mb-4">Photo de votre main pour chiromancie</p>
+            </div>
+            <button onClick={()=>palmInputRef.current?.click()} className="px-6 py-2 bg-gradient-to-r from-cosmic-gold/80 to-cosmic-gold-warm/80 text-cosmic-void font-medium rounded-lg hover:shadow-stellar transition-all duration-300"><Upload className="w-4 h-4 inline mr-2" />Sélectionner</button>
+            <input ref={palmInputRef} type="file" accept="image/*" onChange={(e)=>handleFileInput(e,'palm')} className="hidden" />
+            <div className="mt-4">
+              <AnimatePresence>
+                {uploadFiles.filter(f=>f.category==='palm').map((fileState)=> (
+                  <motion.div key={fileState.file.name} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="p-3 bg-cosmic-deep/40 rounded-xl border border-cosmic-gold/20 mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Image className="w-4 h-4 text-cosmic-gold" />
+                        <span className="text-sm text-cosmic-divine truncate">{fileState.file.name}</span>
+                      </div>
+                      {fileState.status === 'uploading' ? <span className="text-xs text-cosmic-ethereal">{Math.round(fileState.progress)}%</span> : <CheckCircle className="w-4 h-4 text-green-400" />}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Objectif et informations complémentaires */}
+      <motion.div className="p-6 bg-cosmic-deep/60 rounded-2xl border border-cosmic-gold/30 mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <h4 className="font-bold text-cosmic-gold mb-4">Votre intention oracle</h4>
+        <div className="mb-4">
+          <label className="block text-sm text-cosmic-ethereal mb-2">Dites ce que vous désirez à l'oracle...</label>
+          <textarea value={objective} onChange={(e)=>setObjective(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" placeholder="Décrivez votre intention, votre question, ce que vous cherchez..." />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-cosmic-ethereal mb-1">Téléphone</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="ex: +33 6 12 34 56 78" className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
+            <label className="block text-sm text-cosmic-ethereal mb-1">Date de naissance (optionnel)</label>
+            <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
           </div>
           <div>
-            <label className="block text-sm text-cosmic-ethereal mb-1">Objectif</label>
-            <input value={objective} onChange={e => setObjective(e.target.value)} placeholder="Votre intention/objectif" className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
-          </div>
-          <div>
-            <label className="block text-sm text-cosmic-ethereal mb-1">Date</label>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
-          </div>
-          <div>
-            <label className="block text-sm text-cosmic-ethereal mb-1">Heure</label>
-            <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
+            <label className="block text-sm text-cosmic-ethereal mb-1">Heure de naissance (optionnel)</label>
+            <input type="time" value={time} onChange={(e)=>setTime(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-cosmic-gold" />
           </div>
         </div>
+      </motion.div>
 
-        <div className="mt-4 flex items-center gap-4">
-          <button
-            onClick={async () => {
-              const orderId = searchParams.get('order_id');
-              if (!orderId) { setSubmitMessage("Identifiant de commande manquant"); return; }
-              if (!(uploadFiles.length > 0 && uploadFiles.every(f => f.status === 'completed'))) { setSubmitMessage('Veuillez compléter vos uploads.'); return; }
-              try {
-                setIsSubmitting(true);
-                setSubmitMessage(null);
-                const filesPayload = (userLevel.uploadedFiles || []).map(f => ({
-                  name: f.name,
-                  originalName: f.name,
-                  url: f.url,
-                  type: f.type,
-                  size: f.size,
-                }));
-                const payload = {
-                  files: filesPayload,
-                  formData: {
-                    phone,
-                    objective,
-                    dateOfBirth: date ? new Date(date).toISOString() : undefined,
-                  },
-                  clientInputs: {
-                    birthTime: time || undefined,
-                    specificContext: objective || undefined,
-                  }
-                };
-                await apiRequest(`/orders/by-payment-intent/${orderId}/client-submit`, { method: 'POST', body: JSON.stringify(payload) });
-                updateUploadStatus('completed');
-                setSubmitMessage('Informations transmises au Desk. Merci.');
-              } catch (e: any) {
-                console.error(e);
-                setSubmitMessage(e?.message || 'Échec de transmission au Desk');
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}
-            disabled={!(uploadFiles.length > 0 && uploadFiles.every(f => f.status === 'completed')) || isSubmitting}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all ${ (uploadFiles.length > 0 && uploadFiles.every(f => f.status === 'completed')) && !isSubmitting ? 'bg-cosmic-gold text-cosmic-void hover:shadow-stellar' : 'bg-white/10 text-white/50 cursor-not-allowed'}`}
-          >
-            {isSubmitting ? 'Transmission...' : 'Valider et envoyer'}
-          </button>
-          {submitMessage && <span className="text-sm text-cosmic-ethereal">{submitMessage}</span>}
-        </div>
+      {/* Bouton de soumission */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-center">
+        <button
+          onClick={async () => {
+            const orderId = searchParams.get('order_id');
+            if (!orderId) { setSubmitMessage("Identifiant de commande manquant"); return; }
+            const hasFace = uploadFiles.some(f=>f.category==='face' && f.status==='completed');
+            const hasPalm = uploadFiles.some(f=>f.category==='palm' && f.status==='completed');
+            if (!email || !phone) { setSubmitMessage('Veuillez renseigner email et téléphone.'); return; }
+            if (!hasFace) { setSubmitMessage('Veuillez ajouter une photo de votre visage.'); return; }
+            if (!hasPalm) { setSubmitMessage('Veuillez ajouter une photo de votre paume.'); return; }
+            if (!objective) { setSubmitMessage('Veuillez décrire votre intention.'); return; }
+            try {
+              setIsSubmitting(true); setSubmitMessage(null);
+              const filesPayload = (userLevel.uploadedFiles || []).map(f=>({ name: f.name, originalName: f.name, url: f.url, type: f.type, size: f.size }));
+              const face = (userLevel.uploadedFiles || []).find(f=> (f as any).category==='face');
+              const palm = (userLevel.uploadedFiles || []).find(f=> (f as any).category==='palm');
+              const payload = { files: filesPayload, formData: { email, phone, objective, dateOfBirth: date ? new Date(date).toISOString() : undefined }, clientInputs: { birthTime: time || undefined, specificContext: objective || undefined, facePhotoUrl: face?.url, palmPhotoUrl: palm?.url } };
+              await apiRequest(`/orders/by-payment-intent/${orderId}/client-submit`, { method: 'POST', body: JSON.stringify(payload) });
+              updateUploadStatus('completed');
+              setSubmitMessage('✨ Informations transmises à l\'Oracle. Merci pour votre confiance.');
+            } catch(e:any) { console.error(e); setSubmitMessage(e?.message || 'Échec de transmission. Veuillez réessayer.'); } finally { setIsSubmitting(false); }
+          }}
+          disabled={isSubmitting}
+          className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 ${!isSubmitting ? 'bg-gradient-to-r from-cosmic-gold to-cosmic-gold-warm text-cosmic-void hover:shadow-stellar hover:scale-105' : 'bg-white/10 text-white/50 cursor-not-allowed'}`}
+        >
+          {isSubmitting ? (<><RotateCcw className="w-5 h-5 inline mr-2 animate-spin" />Transmission à l'Oracle...</>) : (<><Upload className="w-5 h-5 inline mr-2" />Transmettre à l'Oracle</>)}
+        </button>
+        {submitMessage && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-3 bg-cosmic-deep/40 rounded-lg border border-cosmic-gold/30">
+            <p className="text-sm text-cosmic-ethereal">{submitMessage}</p>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );
