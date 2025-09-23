@@ -111,10 +111,10 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
     }
   };
 
-  // Enhanced pentagon positions with better spacing
+  // Enhanced hexagon positions with better spacing (6 sphères)
   const positions = ORDER.map((_, i) => {
     const angle = (i / ORDER.length) * Math.PI * 2 - Math.PI / 2;
-    const r = 150; // loosen nodes to avoid crowding
+    const r = 140; // Reduced radius for better fit with 6 sphères
     return { 
       left: `calc(50% + ${Math.round(Math.cos(angle) * r)}px)`, 
       top: `calc(50% + ${Math.round(Math.sin(angle) * r)}px)` 
