@@ -10,7 +10,7 @@ export interface IOrder extends Document {
   levelName: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale';
   amount: number; // in cents
   currency: string;
-  status: 'pending' | 'paid' | 'processing' | 'completed' | 'failed' | 'refunded';
+  status: 'pending' | 'paid' | 'processing' | 'awaiting_validation' | 'completed' | 'failed' | 'refunded';
   paymentIntentId?: string;
   stripeSessionId?: string;
   
@@ -77,6 +77,19 @@ export interface IOrder extends Document {
     notes?: string;
     reviewedAt?: Date;
   };
+
+  // Expert validation system for content validation
+  expertValidation?: {
+    validatorId?: string;
+    validatorName?: string;
+    validationStatus: 'pending' | 'approved' | 'rejected';
+    validationNotes?: string;
+    validatedAt?: Date;
+    rejectionReason?: string;
+  };
+
+  // Revision tracking
+  revisionCount?: number;
   
   // Delivery
   deliveredAt?: Date;
@@ -128,7 +141,7 @@ const orderSchema = new Schema<IOrder>({
   },
   status: {
     type: String,
-    enum: ['pending', 'paid', 'processing', 'completed', 'failed', 'refunded'],
+    enum: ['pending', 'paid', 'processing', 'awaiting_validation', 'completed', 'failed', 'refunded'],
     default: 'pending'
   },
   paymentIntentId: String,
@@ -195,6 +208,24 @@ const orderSchema = new Schema<IOrder>({
     notes: String,
     reviewedAt: Date
   },
+
+  expertValidation: {
+    validatorId: String,
+    validatorName: String,
+    validationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    validationNotes: String,
+    validatedAt: Date,
+    rejectionReason: String
+  },
+
+  revisionCount: {
+    type: Number,
+    default: 0
+  },
   
   deliveredAt: Date,
   deliveryMethod: { type: String, enum: ['email', 'whatsapp'] }
@@ -239,5 +270,7 @@ orderSchema.index({ status: 1 });
 orderSchema.index({ level: 1 });
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ 'expertReview.status': 1 });
+orderSchema.index({ 'expertValidation.validationStatus': 1 });
+orderSchema.index({ status: 1, 'expertValidation.validationStatus': 1 });
 
 export const Order = mongoose.model<IOrder>('Order', orderSchema);

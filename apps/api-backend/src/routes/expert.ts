@@ -444,34 +444,75 @@ router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => 
 // Add callback route for n8n
 router.post('/n8n-callback', async (req: any, res: any) => {
   try {
-    const { orderId, success, generatedContent, files, error } = req.body;
+    const { orderId, success, generatedContent, files, error, isRevision } = req.body;
     
-    console.log('📨 Callback n8n reçu:', { orderId, success });
+    console.log('📨 Callback n8n reçu:', { orderId, success, isRevision });
     
+    // Récupérer la commande pour vérifier le contexte
+    const order = await Order.findById(orderId);
+    if (!order) {
+      console.error('❌ Order introuvable:', orderId);
+      return res.status(404).json({ error: 'Commande introuvable' });
+    }
+
     const updateData: any = {
-      status: success ? 'ready' : 'failed',
       updatedAt: new Date()
     };
     
     if (success && generatedContent) {
+      // Stocker le contenu généré
       updateData.generatedContent = {
-        rawText: generatedContent.text || generatedContent,
-        files: files || [],
-        levelContent: generatedContent.levelData || {}
+        archetype: generatedContent.archetype || '',
+        reading: generatedContent.reading || generatedContent.text || generatedContent,
+        audioUrl: generatedContent.audioUrl || files?.find((f: any) => f.type === 'audio')?.url || '',
+        pdfUrl: generatedContent.pdfUrl || files?.find((f: any) => f.type === 'pdf')?.url || '',
+        mandalaSvg: generatedContent.mandalaSvg || '',
+        ritual: generatedContent.ritual || '',
+        blockagesAnalysis: generatedContent.blockagesAnalysis || '',
+        soulProfile: generatedContent.soulProfile || ''
       };
-      updateData.deliveredAt = new Date();
+
+      // Logique conditionnelle pour la validation
+      if (isRevision && order.expertValidation?.validationStatus === 'rejected') {
+        // Si c'est une révision après rejet, remettre en attente de validation
+        updateData.status = 'awaiting_validation';
+        updateData.expertValidation = {
+          ...order.expertValidation,
+          validationStatus: 'pending',
+          validationNotes: 'Contenu régénéré après rejet - En attente de validation',
+          validatedAt: undefined
+        };
+        updateData.revisionCount = (order.revisionCount || 0) + 1;
+        console.log(`✅ Order ${orderId} régénéré → awaiting_validation (révision #${updateData.revisionCount})`);
+      } else {
+        // Première génération → validation Expert
+        updateData.status = 'awaiting_validation';
+        updateData.expertValidation = {
+          validationStatus: 'pending',
+          validationNotes: 'Contenu généré par IA - En attente de validation Expert'
+        };
+        console.log(`✅ Order ${orderId} généré → awaiting_validation (première génération)`);
+      }
+      
     } else if (error) {
+      // Erreur de génération
+      updateData.status = 'failed';
       updateData.error = error;
+      console.log(`❌ Order ${orderId} → failed (erreur génération)`);
     }
     
     const updatedOrder = await Order.findByIdAndUpdate(orderId, updateData, { new: true });
     
     if (updatedOrder) {
-      console.log(`✅ Order ${orderId} mis à jour → ${updateData.status}`);
-      res.json({ success: true, orderId, status: updateData.status });
+      res.json({ 
+        success: true, 
+        orderId, 
+        status: updateData.status,
+        needsValidation: updateData.status === 'awaiting_validation'
+      });
     } else {
-      console.error('❌ Order introuvable:', orderId);
-      res.status(404).json({ error: 'Commande introuvable' });
+      console.error('❌ Échec mise à jour Order:', orderId);
+      res.status(500).json({ error: 'Échec mise à jour commande' });
     }
     
   } catch (error) {
@@ -765,5 +806,204 @@ router.get('/profile', authenticateExpert, async (req: any, res: any) => {
     res.status(500).json({ error: 'Erreur lors du chargement du profil' });
   }
 });
+
+// NOUVELLES ROUTES DE VALIDATION EXPERT DESK
+
+// Get orders awaiting validation
+router.get('/orders/validation-queue', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Récupérer les commandes en attente de validation
+    const orders = await Order.find({
+      status: 'awaiting_validation',
+      'expertValidation.validationStatus': 'pending'
+    })
+    .populate('userId', 'firstName lastName email phone')
+    .sort({ updatedAt: -1 }) // Plus récemment mises à jour en premier
+    .skip(skip)
+    .limit(limit);
+
+    const total = await Order.countDocuments({
+      status: 'awaiting_validation',
+      'expertValidation.validationStatus': 'pending'
+    });
+
+    console.log(`📋 ${orders.length} commandes en attente de validation`);
+
+    res.json({
+      orders,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: total,
+        limit
+      },
+      stats: {
+        awaitingValidation: total,
+        averageRevisions: await calculateAverageRevisions()
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get validation queue error:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement de la queue de validation' });
+  }
+});
+
+// Validate content (approve or reject)
+router.post('/validate-content', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const { orderId, action, validationNotes, rejectionReason } = req.body;
+
+    // Validation des paramètres
+    if (!orderId || !action || !['approve', 'reject'].includes(action)) {
+      return res.status(400).json({ 
+        error: 'Paramètres invalides',
+        details: 'orderId et action (approve/reject) sont requis'
+      });
+    }
+
+    // Récupérer la commande
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée' });
+    }
+
+    // Vérifier que la commande est en attente de validation
+    if (order.status !== 'awaiting_validation' || order.expertValidation?.validationStatus !== 'pending') {
+      return res.status(400).json({ 
+        error: 'Cette commande n\'est pas en attente de validation',
+        currentStatus: order.status,
+        validationStatus: order.expertValidation?.validationStatus
+      });
+    }
+
+    const now = new Date();
+
+    if (action === 'approve') {
+      // VALIDATION APPROUVÉE → Livraison au sanctuaire client
+      order.status = 'completed';
+      order.expertValidation = {
+        ...order.expertValidation,
+        validatorId: req.expert._id.toString(),
+        validatorName: req.expert.name,
+        validationStatus: 'approved',
+        validationNotes: validationNotes || 'Contenu validé et approuvé pour livraison',
+        validatedAt: now
+      };
+      order.deliveredAt = now;
+      
+      console.log(`✅ Order ${orderId} APPROUVÉ → completed (livraison sanctuaire)`);
+      
+      await order.save();
+      
+      res.json({
+        success: true,
+        message: 'Contenu validé et livré au sanctuaire du client',
+        orderId,
+        status: 'completed',
+        action: 'approved'
+      });
+      
+    } else if (action === 'reject') {
+      // VALIDATION REJETÉE → Retour vers n8n pour régénération
+      order.status = 'processing'; // Retour en traitement
+      order.expertValidation = {
+        ...order.expertValidation,
+        validatorId: req.expert._id.toString(),
+        validatorName: req.expert.name,
+        validationStatus: 'rejected',
+        validationNotes: validationNotes || 'Contenu rejeté - Nécessite régénération',
+        rejectionReason: rejectionReason || 'Qualité insuffisante',
+        validatedAt: now
+      };
+      
+      // Incrémenter le compteur de révisions
+      order.revisionCount = (order.revisionCount || 0) + 1;
+      
+      console.log(`❌ Order ${orderId} REJETÉ → processing (révision #${order.revisionCount})`);
+      
+      await order.save();
+      
+      // Relancer le processus n8n avec le contexte de révision
+      try {
+        const revisionPayload = {
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          isRevision: true,
+          revisionCount: order.revisionCount,
+          rejectionReason,
+          validationNotes,
+          originalPrompt: order.expertPrompt,
+          originalInstructions: order.expertInstructions,
+          level: order.level,
+          levelName: order.levelName,
+          client: {
+            firstName: order.formData.firstName,
+            lastName: order.formData.lastName,
+            email: order.formData.email
+          },
+          expert: {
+            id: req.expert._id,
+            name: req.expert.name,
+            email: req.expert.email
+          },
+          timestamp: new Date().toISOString()
+        };
+        
+        const webhookUrl = 'https://n8automate.ialexia.fr/webhook/10e13491-51ac-46f6-a734-89c1068cc7ec';
+        const n8nResponse = await axios.post(webhookUrl, revisionPayload, {
+          timeout: 10000,
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Oracle-Lumira-Expert-Validation/1.0'
+          }
+        });
+        
+        console.log(`🚀 Révision envoyée à n8n:`, n8nResponse.status);
+        
+        res.json({
+          success: true,
+          message: 'Contenu rejeté et envoyé pour régénération',
+          orderId,
+          status: 'processing',
+          action: 'rejected',
+          revisionCount: order.revisionCount,
+          n8nStatus: n8nResponse.status
+        });
+        
+      } catch (webhookError) {
+        console.error('❌ Erreur webhook révision:', webhookError);
+        res.status(500).json({
+          error: 'Échec de l\'envoi pour régénération',
+          details: webhookError instanceof Error ? webhookError.message : 'Unknown error'
+        });
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Validate content error:', error);
+    res.status(500).json({ error: 'Erreur lors de la validation du contenu' });
+  }
+});
+
+// Fonction utilitaire pour calculer les statistiques
+async function calculateAverageRevisions(): Promise<number> {
+  try {
+    const pipeline = [
+      { $match: { revisionCount: { $exists: true, $gt: 0 } } },
+      { $group: { _id: null, avgRevisions: { $avg: '$revisionCount' } } }
+    ];
+    
+    const result = await Order.aggregate(pipeline);
+    return result.length > 0 ? Math.round(result[0].avgRevisions * 10) / 10 : 0;
+  } catch (error) {
+    console.error('Erreur calcul moyenne révisions:', error);
+    return 0;
+  }
+}
 
 export { router as expertRoutes };
