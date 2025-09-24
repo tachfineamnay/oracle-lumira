@@ -1,6 +1,8 @@
 import express from 'express';
 import { User } from '../models/User';
+import { Order } from '../models/Order';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -123,6 +125,177 @@ router.get('/:id/stats', authenticateToken, requireRole(['admin']), async (req: 
   } catch (error) {
     console.error('Get user stats error:', error);
     res.status(500).json({ error: 'Failed to fetch user statistics' });
+  }
+});
+
+// SANCTUAIRE CLIENT ENDPOINTS
+
+// Authentification sanctuaire par email (génère un token temporaire)
+router.post('/auth/sanctuaire', async (req: any, res: any) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+    
+    // Rechercher l'utilisateur
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    // Vérifier qu'il a au moins une commande complétée
+    const completedOrders = await Order.find({ 
+      userId: user._id, 
+      status: 'completed' 
+    }).countDocuments();
+    
+    if (completedOrders === 0) {
+      return res.status(403).json({ 
+        error: 'Aucune commande complétée trouvée',
+        message: 'Vous devez avoir au moins une lecture complétée pour accéder au sanctuaire'
+      });
+    }
+    
+    // Générer token temporaire (24h)
+    const token = jwt.sign(
+      { 
+        userId: user._id, 
+        email: user.email,
+        type: 'sanctuaire_access'
+      },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '24h' }
+    );
+    
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        level: completedOrders // Niveau basé sur nombre de commandes
+      }
+    });
+    
+  } catch (error) {
+    console.error('Sanctuaire auth error:', error);
+    res.status(500).json({ error: 'Erreur authentification sanctuaire' });
+  }
+});
+
+// Middleware pour authentifier les utilisateurs sanctuaire
+const authenticateSanctuaire = async (req: any, res: any, next: any) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Token d\'authentification requis' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+    
+    if (decoded.type !== 'sanctuaire_access') {
+      return res.status(401).json({ error: 'Token invalide pour le sanctuaire' });
+    }
+    
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Utilisateur introuvable' });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Token invalide' });
+  }
+};
+
+// Récupérer les commandes complétées de l'utilisateur (SANCTUAIRE)
+router.get('/orders/completed', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const userId = req.user._id;
+    
+    const orders = await Order.find({ 
+      userId: userId,
+      status: 'completed',
+      // Seulement les commandes avec contenu validé par l'expert
+      'expertValidation.validationStatus': 'approved'
+    })
+    .populate('userId', 'firstName lastName email')
+    .sort({ deliveredAt: -1, updatedAt: -1 })
+    .limit(20);
+
+    // Formater les données pour le sanctuaire
+    const formattedOrders = orders.map(order => ({
+      id: order._id,
+      orderNumber: order.orderNumber,
+      level: order.level,
+      levelName: order.levelName,
+      amount: order.amount,
+      status: order.status,
+      createdAt: order.createdAt,
+      deliveredAt: order.deliveredAt,
+      generatedContent: order.generatedContent,
+      expertValidation: order.expertValidation,
+      formData: {
+        firstName: order.formData?.firstName,
+        lastName: order.formData?.lastName,
+        specificQuestion: order.formData?.specificQuestion
+      }
+    }));
+    
+    res.json({
+      orders: formattedOrders,
+      total: formattedOrders.length,
+      user: {
+        id: req.user._id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        level: formattedOrders.length
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get user completed orders error:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des commandes' });
+  }
+});
+
+// Récupérer les statistiques sanctuaire de l'utilisateur
+router.get('/sanctuaire/stats', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const userId = req.user._id;
+    
+    const orders = await Order.find({ userId: userId });
+    const completedOrders = orders.filter(o => o.status === 'completed');
+    const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'paid');
+    
+    const stats = {
+      totalOrders: orders.length,
+      completedOrders: completedOrders.length,
+      pendingOrders: pendingOrders.length,
+      totalSpent: orders.reduce((sum, order) => sum + order.amount, 0),
+      currentLevel: completedOrders.length,
+      maxLevel: Math.max(...completedOrders.map(o => o.level), 0),
+      levelProgress: Math.round((completedOrders.length / 4) * 100),
+      lastOrderDate: orders.length > 0 ? orders[orders.length - 1].createdAt : null,
+      availableContent: {
+        readings: completedOrders.filter(o => o.generatedContent?.reading).length,
+        audios: completedOrders.filter(o => o.generatedContent?.audioUrl).length,
+        pdfs: completedOrders.filter(o => o.generatedContent?.pdfUrl).length,
+        mandalas: completedOrders.filter(o => o.generatedContent?.mandalaSvg).length
+      }
+    };
+    
+    res.json(stats);
+    
+  } catch (error) {
+    console.error('Get sanctuaire stats error:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });
   }
 });
 

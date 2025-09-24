@@ -1,6 +1,7 @@
 import express from 'express';
 import { Order } from '../models/Order';
 import { User } from '../models/User';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -321,3 +322,90 @@ router.get('/stats/overview', async (req: any, res: any) => {
 });
 
 export { router as orderRoutes };
+
+// Middleware pour authentifier les utilisateurs sanctuaire (réutilisé depuis users.ts)
+const authenticateSanctuaire = async (req: any, res: any, next: any) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Token d\'authentification requis' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+    
+    if (decoded.type !== 'sanctuaire_access') {
+      return res.status(401).json({ error: 'Token invalide pour le sanctuaire' });
+    }
+    
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Utilisateur introuvable' });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Token invalide' });
+  }
+};
+
+// ENDPOINT SANCTUAIRE - Récupérer le contenu complet d'une commande
+router.get('/:id/content', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const orderId = req.params.id;
+    const userId = req.user._id;
+    
+    // Vérifier que la commande appartient à l'utilisateur et est complétée
+    const order = await Order.findOne({
+      _id: orderId,
+      userId: userId,
+      status: 'completed',
+      'expertValidation.validationStatus': 'approved'
+    }).populate('userId', 'firstName lastName email');
+    
+    if (!order) {
+      return res.status(404).json({ 
+        error: 'Commande non trouvée ou non accessible',
+        message: 'Cette commande n\'existe pas ou n\'a pas encore été validée par un expert'
+      });
+    }
+    
+    // Formater la réponse avec tout le contenu validé
+    const content = {
+      order: {
+        id: order._id,
+        orderNumber: order.orderNumber,
+        level: order.level,
+        levelName: order.levelName,
+        amount: order.amount,
+        createdAt: order.createdAt,
+        deliveredAt: order.deliveredAt
+      },
+      client: {
+        firstName: order.formData?.firstName,
+        lastName: order.formData?.lastName,
+        specificQuestion: order.formData?.specificQuestion
+      },
+      generatedContent: order.generatedContent,
+      expertValidation: {
+        validatedAt: order.expertValidation?.validatedAt,
+        validationNotes: order.expertValidation?.validationNotes,
+        validatorName: order.expertValidation?.validatorName
+      },
+      availableFormats: {
+        hasReading: !!order.generatedContent?.reading,
+        hasPdf: !!order.generatedContent?.pdfUrl,
+        hasAudio: !!order.generatedContent?.audioUrl,
+        hasMandala: !!order.generatedContent?.mandalaSvg,
+        hasRitual: !!order.generatedContent?.ritual
+      }
+    };
+    
+    res.json(content);
+    
+  } catch (error) {
+    console.error('Get order content error:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération du contenu' });
+  }
+});
