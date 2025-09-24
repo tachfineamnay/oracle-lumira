@@ -28,7 +28,7 @@ const ContextualHint: React.FC = () => {
         >
           {/* Message de bienvenue */}
           <div className="text-center mb-8">
-            <h2 className="font-playfair italic text-3xl font-medium text-mystical-gold mb-4">
+            <h2 className="font-playfair italic text-3xl font-medium text-amber-400 mb-4">
               Bienvenue dans votre Sanctuaire Spirituel
             </h2>
             <p className="text-white/80 text-lg mb-6">
@@ -38,7 +38,7 @@ const ContextualHint: React.FC = () => {
 
           {/* Mandala Central - Uniquement sur l'accueil */}
           <div className="mb-12">
-            <MandalaNav progress={[0, 0, 0, 0, 0]} effects="subtle" />
+            <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
           </div>
 
           {/* Formulaire d'accueil */}
@@ -66,86 +66,54 @@ const ContextualHint: React.FC = () => {
 
         {/* Mandala Central */}
         <div className="mb-12">
-          <MandalaNav progress={[0, 0, 0, 0, 0]} effects="subtle" />
+          <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
         </div>
 
-        {/* Progress Section stellaire */}
+        {/* Dashboard Cards */}
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="bg-gradient-to-br from-mystical-gold/10 to-mystical-purple/10 backdrop-blur-sm border border-mystical-gold/30 rounded-3xl p-8 mb-12"
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
-          <h2 className="font-playfair italic text-2xl font-medium text-mystical-gold mb-8 text-center">
-            Votre Évolution Spirituelle
-          </h2>
-          
-          <div className="grid md:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((level, index) => (
-              <div key={level} className="text-center">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                  index <= 1 ? 'bg-mystical-gold text-mystical-abyss' : 'bg-mystical-gold/20 text-mystical-gold'
-                }`}>
-                  <span className="font-semibold">{level}</span>
+          {/* Dernière Lecture Card */}
+          <div className="bg-gradient-to-br from-green-400/10 to-blue-400/10 backdrop-blur-sm border border-green-400/20 rounded-2xl p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-400/20 rounded-full flex items-center justify-center">
+                  <Star className="w-5 h-5 text-green-400" />
                 </div>
-                <h3 className="font-inter font-medium text-white mb-2">Niveau {level}</h3>
-                <p className="font-inter text-xs text-gray-400">
-                  {index <= 1 ? 'Complété' : 'À venir'}
-                </p>
+                <div>
+                  <h3 className="font-playfair italic text-xl font-medium text-green-400">
+                    Dernière Lecture
+                  </h3>
+                  <p className="font-inter text-sm text-white/60">
+                    Niveau Chercheur Cosmique
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Readings Section stellaire */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="grid md:grid-cols-2 gap-8"
-        >
-          {/* Reading Card */}
-          <div className="bg-gradient-to-br from-mystical-purple/10 to-mystical-gold/10 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-playfair italic text-xl font-medium text-white">
-                Votre Lecture Niveau 2
-              </h3>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 text-mystical-gold fill-current" />
-                ))}
+              <div className="flex space-x-2">
+                <button className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors">
+                  <Download className="w-4 h-4 text-white/70" />
+                </button>
+                <button className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors">
+                  <Play className="w-4 h-4 text-white/70" />
+                </button>
               </div>
             </div>
-            
-            <p className="font-inter text-sm text-gray-300 mb-6">
-              Archétype révélé : <span className="text-mystical-gold font-medium">L'Exploratrice Mystique</span>
+            <p className="font-inter text-sm text-white/80 mb-4 line-clamp-3">
+              Une révélation profonde sur votre chemin de vie vous attend dans cette analyse personnalisée de vos énergies cosmiques...
             </p>
-            
-            <div className="space-y-3 mb-6">
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-mystical-gold/20 hover:bg-mystical-gold/30 transition-colors duration-300">
-                <Download className="w-4 h-4 text-mystical-gold" />
-                <span className="font-inter text-sm text-white">Télécharger PDF (2.3 MB)</span>
-              </button>
-              
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-mystical-purple/20 hover:bg-mystical-purple/30 transition-colors duration-300">
-                <Play className="w-4 h-4 text-mystical-purple" />
-                <span className="font-inter text-sm text-white">Écouter Audio (25 min)</span>
-              </button>
-              
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-mystical-gold/20 hover:bg-mystical-gold/30 transition-colors duration-300">
-                <Download className="w-4 h-4 text-mystical-gold" />
-                <span className="font-inter text-sm text-white">Mandala HD (1920x1920)</span>
-              </button>
-            </div>
-            
-            <div className="flex items-center gap-2 text-gray-400">
-              <Calendar className="w-4 h-4" />
-              <span className="font-inter text-xs">Reçu le 15 mars 2024</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-white/50">
+                <Calendar className="w-4 h-4" />
+                <span className="font-inter text-xs">Reçu le 15 mars 2024</span>
+              </div>
             </div>
           </div>
 
           {/* Coming Soon Card */}
-          <div className="bg-gradient-to-br from-mystical-gold/5 to-mystical-purple/5 backdrop-blur-sm border border-mystical-gold/20 rounded-2xl p-6 opacity-60">
+          <div className="bg-gradient-to-br from-amber-400/5 to-purple-400/5 backdrop-blur-sm border border-amber-400/20 rounded-2xl p-6 opacity-60">
             <h3 className="font-playfair italic text-xl font-medium text-gray-300 mb-4">
               Prochaine Lecture
             </h3>
@@ -153,7 +121,7 @@ const ContextualHint: React.FC = () => {
               Votre prochain voyage spirituel vous attend. 
               Choisissez un nouveau niveau pour approfondir votre exploration.
             </p>
-            <button className="w-full py-3 rounded-lg border border-mystical-gold/30 text-mystical-gold hover:bg-mystical-gold/10 transition-all duration-300">
+            <button className="w-full py-3 rounded-lg border border-amber-400/30 text-amber-400 hover:bg-amber-400/10 transition-all duration-300">
               <span className="font-inter text-sm">Explorer les niveaux</span>
             </button>
           </div>
@@ -189,26 +157,11 @@ const Sanctuaire: React.FC = () => {
   const location = useLocation();
   const { userLevel } = useUserLevel();
 
-  const progress = Math.round(((user?.level || 1) / 4) * 100);
-
-  // Compute upload progress from UserLevel context to surface in UI + mandala
-  const uploadProgress = (() => {
-    if (!userLevel?.currentLevel) return 0;
-    const requiredFilesMap: Record<string, number> = {
-      initie: 1,
-      mystique: 2,
-      profond: 3,
-      integrale: 4,
-    };
-    const required = requiredFilesMap[userLevel.currentLevel] ?? 1;
-    const uploaded = userLevel.uploadedFiles?.length ?? 0;
-    return Math.min(Math.round((uploaded / required) * 100), 100);
-  })();
-
+  const progress = Math.round(((Number(userLevel.currentLevel) || 1) / 4) * 100);
   return (
     <PageLayout variant="dark">
       {/* Sidebar pour les sous-pages */}
-      <SanctuaireSidebar progress={[uploadProgress, 0, 0, 0]} />
+      <SanctuaireSidebar progress={[progress, 0, 0, 0]} />
       
       {/* Contenu principal avec marge pour sidebar sur sous-pages */}
       <div className={location.pathname !== '/sanctuaire' ? 'ml-64' : ''}>
@@ -287,38 +240,6 @@ const Sanctuaire: React.FC = () => {
                     </motion.div>
                   </div>
                 </div>
-              </motion.div>
-            )}
-
-            {/* Upload Callout - Uniquement si le profil est complété mais upload pas fini */}
-            {userLevel?.hasAccess && userLevel?.profile?.profileCompleted && userLevel?.uploadStatus !== 'completed' && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.25 }}
-              >
-                <GlassCard className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/5 border-white/10">
-                  <div>
-                    <div className="text-sm text-white/80 mb-1">Progression d'upload</div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-40 h-2 bg-white/10 rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-amber-400 to-amber-500"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${uploadProgress}%` }}
-                          transition={{ duration: 0.6 }}
-                        />
-                      </div>
-                      <span className="text-amber-400 text-sm font-medium">{uploadProgress}%</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate(`/upload-sanctuaire?level=${userLevel.currentLevel ?? ''}`)}
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-medium hover:from-amber-500 hover:to-amber-600 transition-colors"
-                  >
-                    Compléter mes fichiers
-                  </button>
-                </GlassCard>
               </motion.div>
             )}
 

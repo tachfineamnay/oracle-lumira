@@ -13,7 +13,9 @@ import {
   Star,
   Sparkles,
   Edit3,
-  X
+  X,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useUserLevel } from '../../contexts/UserLevelContext';
 import GlassCard from '../ui/GlassCard';
@@ -25,6 +27,8 @@ interface FormData {
   birthTime: string;
   objective: string;
   additionalInfo: string;
+  facePhoto?: File | null;
+  palmPhoto?: File | null;
 }
 
 type FormState = 'active' | 'submitted' | 'completed';
@@ -38,10 +42,14 @@ export const SanctuaireWelcomeForm: React.FC = () => {
     birthDate: '',
     birthTime: '',
     objective: '',
-    additionalInfo: ''
+    additionalInfo: '',
+    facePhoto: null,
+    palmPhoto: null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const facePhotoRef = useRef<HTMLInputElement>(null);
+  const palmPhotoRef = useRef<HTMLInputElement>(null);
 
   // Simuler soumission vers backend
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -79,11 +87,15 @@ export const SanctuaireWelcomeForm: React.FC = () => {
     setShowConfirmation(false);
   };
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const isFormValid = formData.email && formData.birthDate && formData.objective;
+  const handleFileChange = (field: 'facePhoto' | 'palmPhoto', file: File | null) => {
+    setFormData(prev => ({ ...prev, [field]: file }));
+  };
+
+  const isFormValid = formData.email && formData.birthDate && formData.objective && formData.facePhoto && formData.palmPhoto;
   const isReadOnly = formState === 'submitted';
 
   return (
@@ -201,18 +213,18 @@ export const SanctuaireWelcomeForm: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <GlassCard className={`p-8 ${isReadOnly ? 'bg-white/5 border-white/10' : 'bg-gradient-to-br from-mystical-gold/10 to-mystical-purple/10 border-mystical-gold/30'}`}>
+        <GlassCard className={`p-8 ${isReadOnly ? 'bg-white/5 border-white/10' : 'bg-gradient-to-br from-amber-400/10 to-purple-400/10 border-amber-400/30'}`}>
           <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring" }}
-              className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-mystical-gold/30 to-mystical-purple/20 flex items-center justify-center"
+              className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-400/30 to-purple-400/20 flex items-center justify-center"
             >
-              <User className="w-10 h-10 text-mystical-gold" />
+              <User className="w-10 h-10 text-amber-400" />
             </motion.div>
             
-            <h2 className="font-playfair italic text-3xl font-medium text-mystical-gold mb-4">
+            <h2 className="font-playfair italic text-3xl font-medium text-amber-400 mb-4">
               {isReadOnly ? 'Votre Profil Spirituel' : 'Complétez Votre Profil Spirituel'}
             </h2>
             
@@ -241,7 +253,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                   className={`w-full px-4 py-3 rounded-xl border transition-all ${
                     isReadOnly 
                       ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
-                      : 'bg-white/5 border-mystical-gold/30 text-white placeholder-white/50 focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20'
+                      : 'bg-white/5 border-amber-400/30 text-white placeholder-white/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
                   }`}
                   placeholder="votre@email.com"
                 />
@@ -261,7 +273,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                   className={`w-full px-4 py-3 rounded-xl border transition-all ${
                     isReadOnly 
                       ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
-                      : 'bg-white/5 border-mystical-gold/30 text-white placeholder-white/50 focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20'
+                      : 'bg-white/5 border-amber-400/30 text-white placeholder-white/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
                   }`}
                   placeholder="+33 6 12 34 56 78"
                 />
@@ -282,7 +294,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                   className={`w-full px-4 py-3 rounded-xl border transition-all ${
                     isReadOnly 
                       ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
-                      : 'bg-white/5 border-mystical-gold/30 text-white focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20'
+                      : 'bg-white/5 border-amber-400/30 text-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
                   }`}
                 />
               </div>
@@ -301,7 +313,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                   className={`w-full px-4 py-3 rounded-xl border transition-all ${
                     isReadOnly 
                       ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
-                      : 'bg-white/5 border-mystical-gold/30 text-white focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20'
+                      : 'bg-white/5 border-amber-400/30 text-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
                   }`}
                 />
               </div>
@@ -322,7 +334,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                 className={`w-full px-4 py-3 rounded-xl border transition-all resize-none ${
                   isReadOnly 
                     ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
-                    : 'bg-white/5 border-mystical-gold/30 text-white placeholder-white/50 focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20'
+                    : 'bg-white/5 border-amber-400/30 text-white placeholder-white/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
                 }`}
                 placeholder="Partagez votre intention spirituelle et vos aspirations..."
               />
@@ -341,10 +353,89 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                 className={`w-full px-4 py-3 rounded-xl border transition-all resize-none ${
                   isReadOnly 
                     ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
-                    : 'bg-white/5 border-mystical-gold/30 text-white placeholder-white/50 focus:border-mystical-gold focus:ring-2 focus:ring-mystical-gold/20'
+                    : 'bg-white/5 border-amber-400/30 text-white placeholder-white/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
                 }`}
                 placeholder="Partagez vos expériences, vos questions ou tout ce que vous souhaitez que l'Oracle connaisse sur votre chemin..."
               />
+            </div>
+
+            {/* Section Upload Photos */}
+            <div className="grid md:grid-cols-2 gap-6 pt-6">
+              {/* Photo du visage */}
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-3">
+                  <Camera className="w-4 h-4 inline mr-2" />
+                  Photo de votre visage *
+                </label>
+                <div 
+                  className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                    isReadOnly 
+                      ? 'border-white/10 bg-white/5 cursor-not-allowed'
+                      : 'border-amber-400/30 bg-amber-400/5 hover:border-amber-400/50 hover:bg-amber-400/10 cursor-pointer'
+                  }`}
+                  onClick={() => !isReadOnly && facePhotoRef.current?.click()}
+                >
+                  <input
+                    ref={facePhotoRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isReadOnly}
+                    onChange={(e) => handleFileChange('facePhoto', e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <div className="space-y-3">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-amber-400/20 to-amber-500/10 flex items-center justify-center">
+                      <Camera className="w-8 h-8 text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-white/90 font-medium">
+                        {formData.facePhoto ? formData.facePhoto.name : 'Cliquez pour ajouter'}
+                      </p>
+                      <p className="text-white/60 text-sm mt-1">
+                        Photo claire de votre visage pour l'analyse vibratoire
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Photo de la paume */}
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-3">
+                  <ImageIcon className="w-4 h-4 inline mr-2" />
+                  Photo de votre paume *
+                </label>
+                <div 
+                  className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                    isReadOnly 
+                      ? 'border-white/10 bg-white/5 cursor-not-allowed'
+                      : 'border-purple-400/30 bg-purple-400/5 hover:border-purple-400/50 hover:bg-purple-400/10 cursor-pointer'
+                  }`}
+                  onClick={() => !isReadOnly && palmPhotoRef.current?.click()}
+                >
+                  <input
+                    ref={palmPhotoRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={isReadOnly}
+                    onChange={(e) => handleFileChange('palmPhoto', e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <div className="space-y-3">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-purple-400/20 to-purple-500/10 flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-white/90 font-medium">
+                        {formData.palmPhoto ? formData.palmPhoto.name : 'Cliquez pour ajouter'}
+                      </p>
+                      <p className="text-white/60 text-sm mt-1">
+                        Photo de votre paume dominante pour la lecture palmaire
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Boutons d'action */}
@@ -355,7 +446,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                   disabled={!isFormValid || isSubmitting}
                   className={`px-8 py-4 rounded-xl font-medium transition-all duration-300 ${
                     isFormValid && !isSubmitting
-                      ? 'bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-abyss hover:shadow-lg hover:shadow-mystical-gold/30'
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black hover:from-amber-500 hover:to-amber-600 hover:shadow-lg hover:shadow-amber-400/30'
                       : 'bg-white/10 text-white/50 cursor-not-allowed'
                   }`}
                   whileHover={isFormValid && !isSubmitting ? { scale: 1.05 } : {}}
@@ -363,7 +454,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 border-2 border-mystical-abyss/30 border-t-mystical-abyss rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                       Transmission en cours...
                     </div>
                   ) : (
@@ -373,6 +464,9 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                     </div>
                   )}
                 </motion.button>
+                <p className="text-white/60 text-sm mt-3">
+                  Assurez-vous que toutes les photos sont claires et bien éclairées
+                </p>
               </div>
             )}
           </form>
