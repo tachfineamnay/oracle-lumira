@@ -1,9 +1,11 @@
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import GlassCard from '../ui/GlassCard';
+import EmptyState from '../ui/EmptyState';
 import { PrimaryButton } from '../ui/Buttons';
 import axios from 'axios';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 import labels from '../../lib/sphereLabels';
+import { useNavigate } from 'react-router-dom';
 
 type Props = {
   level?: 1 | 2 | 3 | 4;
@@ -15,6 +17,7 @@ const SpiritualPath: React.FC<Props> = ({ level = 1, completed = 0, total = 4 })
   const ref = useRef<HTMLDivElement | null>(null);
   const prefersReduced = useReducedMotion();
   const inView = useInView(ref, { once: true });
+  const navigate = useNavigate();
 
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,69 +47,55 @@ const SpiritualPath: React.FC<Props> = ({ level = 1, completed = 0, total = 4 })
 
   if (isLoading) {
     return (
-      <div className="p-8">
-        <div className="space-y-6">
-          {/* ux: cosmic loading skeleton */}
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-amber-400/20 to-mystical-600/20 rounded-full animate-pulse" />
-            <div className="space-y-3 flex-1">
-              <div className="h-4 bg-white/10 rounded-full animate-pulse w-3/4" />
-              <div className="h-3 bg-white/5 rounded-full animate-pulse w-1/2" />
-            </div>
-          </div>
-          <div className="grid grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-20 bg-white/5 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        </div>
+      <div className="space-y-4">
+        {[...Array(2)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: i * 0.1 }}
+          >
+            <GlassCard className="p-6 bg-gradient-to-br from-white/5 to-white/10 border-white/10">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-amber-400/20 to-amber-500/10 rounded-full animate-pulse" />
+                <div className="space-y-3 flex-1">
+                  <div className="h-5 bg-amber-400/20 rounded-full animate-pulse w-3/4" />
+                  <div className="h-3 bg-white/10 rounded-full animate-pulse w-1/2" />
+                  <div className="h-3 bg-white/10 rounded-full animate-pulse w-2/3" />
+                </div>
+                <div className="w-20 h-8 bg-amber-400/20 rounded animate-pulse" />
+              </div>
+            </GlassCard>
+          </motion.div>
+        ))}
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="p-8 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* ux: cosmic empty state with inline mandala SVG */}
-          <div className="flex justify-center mb-6">
-            <svg width="120" height="120" viewBox="0 0 120 120" className="text-amber-400/30">
-              <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3"/>
-              <circle cx="60" cy="60" r="35" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.5"/>
-              <circle cx="60" cy="60" r="20" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.7"/>
-              <circle cx="60" cy="60" r="5" fill="currentColor" opacity="0.9"/>
-              {[...Array(8)].map((_, i) => {
-                const angle = (i / 8) * Math.PI * 2;
-                const x1 = 60 + Math.cos(angle) * 20;
-                const y1 = 60 + Math.sin(angle) * 20;
-                const x2 = 60 + Math.cos(angle) * 35;
-                const y2 = 60 + Math.sin(angle) * 35;
-                return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1" opacity="0.4" />;
-              })}
-            </svg>
-          </div>
-          <h3 className="text-xl font-cinzel text-amber-400 mb-2">Votre chemin spirituel vous attend</h3>
-          <p className="text-white/60 mb-6 leading-relaxed max-w-md mx-auto">
-            Votre parcours initiatique n'a pas encore commencé. Laissez l'oracle vous guider vers votre première révélation.
-          </p>
-          <PrimaryButton className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600">
-            Commencer mon éveil spirituel
-          </PrimaryButton>
-        </motion.div>
-      </div>
+      <EmptyState 
+        type="spiritualPath"
+        action={{
+          label: "Commencer mon éveil spirituel",
+          onClick: () => navigate('/commande')
+        }}
+      />
     );
   }
 
   const teachings = data?.teachings ?? [];
   if (!teachings || teachings.length === 0) {
     return (
-      <GlassCard>
-        <p className="font-inter text-sm text-white/90">Aucun enseignement pour l’instant</p>
-      </GlassCard>
+      <EmptyState 
+        type="spiritualPath"
+        title="Vos Enseignements arrivent"
+        message="L'Oracle prépare vos leçons spirituelles personnalisées. Votre parcours initiatique commence bientôt."
+        action={{
+          label: "Découvrir mon chemin",
+          onClick: () => navigate('/commande')
+        }}
+      />
     );
   }
 

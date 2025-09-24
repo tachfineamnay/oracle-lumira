@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import GlassCard from '../ui/GlassCard';
-// ...existing code...
 import { Wand2 } from 'lucide-react';
 
 type Tool = {

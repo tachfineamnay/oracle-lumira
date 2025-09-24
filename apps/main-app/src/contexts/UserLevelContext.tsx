@@ -2,6 +2,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { Product } from '../types/products';
 
+export interface UserProfile {
+  email?: string;
+  phone?: string;
+  birthDate?: string;
+  birthTime?: string;
+  objective?: string;
+  additionalInfo?: string;
+  profileCompleted?: boolean;
+  submittedAt?: Date;
+}
+
 export interface UserLevel {
   currentLevel: string | null;
   purchasedProduct: Product | null;
@@ -10,6 +21,7 @@ export interface UserLevel {
   uploadedFiles: UploadedFile[];
   availableFeatures: string[];
   hasAccess: boolean;
+  profile?: UserProfile;
 }
 
 export interface UploadedFile {
@@ -30,6 +42,7 @@ interface UserLevelContextType {
   removeUploadedFile: (fileId: string) => void;
   checkAccess: (requiredLevel: string) => boolean;
   resetUserLevel: () => void;
+  updateUserProfile: (profile: UserProfile) => void;
 }
 
 const defaultUserLevel: UserLevel = {
@@ -40,6 +53,7 @@ const defaultUserLevel: UserLevel = {
   uploadedFiles: [],
   availableFeatures: [],
   hasAccess: false,
+  profile: undefined,
 };
 
 const UserLevelContext = createContext<UserLevelContextType | undefined>(undefined);
@@ -106,6 +120,13 @@ export const UserLevelProvider: React.FC<{ children: ReactNode }> = ({ children 
     return currentIndex >= requiredIndex;
   };
 
+  const updateUserProfile = (profile: UserProfile) => {
+    setUserLevel(prev => ({
+      ...prev,
+      profile: { ...prev.profile, ...profile }
+    }));
+  };
+
   const resetUserLevel = () => {
     setUserLevel(defaultUserLevel);
     localStorage.removeItem('oraclelumira_user_level');
@@ -119,6 +140,7 @@ export const UserLevelProvider: React.FC<{ children: ReactNode }> = ({ children 
     removeUploadedFile,
     checkAccess,
     resetUserLevel,
+    updateUserProfile,
   };
 
   return (

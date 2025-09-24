@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import GlassCard from '../ui/GlassCard';
+import EmptyState from '../ui/EmptyState';
 import { FileText, Headphones, Image } from 'lucide-react';
 import { SecondaryButton } from '../ui/Buttons';
 
@@ -31,6 +33,7 @@ const RawDraws: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageSize] = useState(10);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -55,32 +58,37 @@ const RawDraws: React.FC = () => {
 
   if (loading) {
     return (
-      <GlassCard>
-        <div className="space-y-2">
-          <div className="h-3 bg-mystical-gold/20 rounded animate-pulse w-3/4" />
-          <div className="h-3 bg-mystical-gold/20 rounded animate-pulse w-1/2" />
-          <div className="h-3 bg-mystical-gold/20 rounded animate-pulse w-2/3" />
-        </div>
-      </GlassCard>
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <GlassCard key={i} className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 space-y-3">
+                <div className="h-4 bg-amber-400/20 rounded-full animate-pulse w-3/4" />
+                <div className="h-3 bg-white/10 rounded-full animate-pulse w-1/2" />
+              </div>
+              <div className="flex gap-2">
+                <div className="w-20 h-8 bg-white/10 rounded animate-pulse" />
+                <div className="w-20 h-8 bg-white/10 rounded animate-pulse" />
+                <div className="w-20 h-8 bg-white/10 rounded animate-pulse" />
+              </div>
+            </div>
+          </GlassCard>
+        ))}
+      </div>
     );
   }
 
   if (!orders || orders.length === 0) {
     return (
-      <GlassCard>
-        <div className="flex flex-col items-center text-center gap-4">
-          <svg width="96" height="96" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-            <rect x="8" y="12" width="48" height="40" rx="4" fill="currentColor" className="text-amber-100" />
-            <path d="M18 22h28" stroke="currentColor" className="text-amber-600" strokeWidth="2" strokeLinecap="round" />
-            <path d="M18 30h20" stroke="currentColor" className="text-amber-600" strokeWidth="2" strokeLinecap="round" />
-            <path d="M18 38h12" stroke="currentColor" className="text-amber-600" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <div>
-            <p className="font-inter text-sm text-white/90">Aucun tirage reçu</p>
-            <p className="text-xs text-white/70">Revenez plus tard ou créez un nouveau tirage.</p>
-          </div>
-        </div>
-      </GlassCard>
+      <EmptyState
+        type="draws"
+        title="Vos Révélations vous attendent"
+        message="L'Oracle prépare vos tirages personnalisés. Chaque révélation vous guidera vers votre vérité intérieure et éclairera votre chemin spirituel."
+        action={{
+          label: "Demander un nouveau tirage",
+          onClick: () => navigate('/commande')
+        }}
+      />
     );
   }
 
