@@ -17,7 +17,7 @@ const LazySpiritualPath = React.lazy(() => import('./components/spheres/Spiritua
 const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
 const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
 const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
-const LazyTools = React.lazy(() => import('./components/spheres/Tools'));
+
 const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
 
 const AppRoutes: React.FC = () => (
@@ -63,14 +63,7 @@ const AppRoutes: React.FC = () => (
           </React.Suspense>
         }
       />
-      <Route
-        path="tools"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazyTools />
-          </React.Suspense>
-        }
-      />
+
       <Route
         path="profile"
         element={

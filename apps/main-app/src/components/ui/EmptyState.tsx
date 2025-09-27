@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import GlassCard from './GlassCard';
 import { PrimaryButton } from './Buttons';
 
-export type EmptyStateType = 'spiritualPath' | 'draws' | 'synthesis' | 'conversations' | 'tools' | 'profile';
+export type EmptyStateType = 'spiritualPath' | 'draws' | 'synthesis' | 'conversations' | 'profile';
 
 interface EmptyStateAction {
   label: string;
@@ -26,7 +26,6 @@ const MandalaIcon: React.FC<{ type: EmptyStateType }> = ({ type }) => {
       case 'draws': return 'text-purple-400';
       case 'synthesis': return 'text-blue-400';
       case 'conversations': return 'text-green-400';
-      case 'tools': return 'text-orange-400';
       case 'profile': return 'text-pink-400';
       default: return 'text-amber-400';
     }
@@ -134,11 +133,6 @@ const getDefaultContent = (type: EmptyStateType) => {
       return {
         title: "L'Oracle attend vos Questions",
         message: "Votre dialogue spirituel peut commencer. Posez vos questions les plus profondes et recevez la guidance cosmique qui vous attend."
-      };
-    case 'tools':
-      return {
-        title: "Vos Outils Spirituels arrivent",
-        message: "L'Oracle sélectionne les instruments parfaits pour votre évolution. Rituels, méditations et pratiques personnalisées vous attendent."
       };
     case 'profile':
       return {

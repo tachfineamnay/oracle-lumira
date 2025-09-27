@@ -2,25 +2,24 @@ import React, { useRef, useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import GlassCard from '../ui/GlassCard';
-import { Star, Book, Layers, MessageCircle, Wrench, Sparkles, User } from 'lucide-react';
+import { Star, Book, Layers, MessageCircle, Sparkles, User } from 'lucide-react';
 import labels from '../../lib/sphereLabels';
 import type { SphereKey } from '../../lib/sphereLabels';
 
 type Props = {
   active?: string;
   onSelect?: (k: string) => void;
-  progress?: number[]; // length 6
+  progress?: number[]; // length 5
   effects?: 'minimal' | 'none';
 };
 
-const ORDER: string[] = ['spiritualPath', 'rawDraws', 'synthesis', 'conversations', 'tools', 'profile'];
+const ORDER: string[] = ['spiritualPath', 'rawDraws', 'synthesis', 'conversations', 'profile'];
 
 const ICONS: Record<string, React.ReactNode> = {
   spiritualPath: <Star className="w-6 h-6" />,
   rawDraws: <Book className="w-6 h-6" />,
   synthesis: <Layers className="w-6 h-6" />,
   conversations: <MessageCircle className="w-6 h-6" />,
-  tools: <Wrench className="w-6 h-6" />,
   profile: <User className="w-6 h-6" />,
 };
 
@@ -45,11 +44,6 @@ const SPHERE_COLORS: Record<string, { gradient: string; accent: string; shadow: 
     accent: 'text-blue-400', 
     shadow: 'shadow-blue-400/30' 
   },
-  tools: { 
-    gradient: 'from-pink-400/30 to-rose-500/20', 
-    accent: 'text-pink-400', 
-    shadow: 'shadow-pink-400/30' 
-  },
   profile: { 
     gradient: 'from-mystical-gold/30 to-mystical-purple/20', 
     accent: 'text-mystical-gold', 
@@ -62,11 +56,10 @@ const SPHERE_DESCRIPTIONS: Record<string, string> = {
   rawDraws: "Consultez vos tirages et lectures énergétiques brutes", 
   synthesis: "Découvrez la synthèse de vos insights spirituels",
   conversations: "Engagez des dialogues sacrés avec votre guide spirituel",
-  tools: "Accédez à vos outils de développement personnel",
   profile: "Gérez votre profil et vos préférences spirituelles",
 };
 
-const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0, 0, 0], effects = 'minimal' }) => {
+const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0, 0], effects = 'minimal' }) => {
   const shouldReduce = useReducedMotion();
   const [focusIndex, setFocusIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -111,10 +104,10 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
     }
   };
 
-  // Enhanced hexagon positions with better spacing (6 sphères)
+  // Enhanced hexagon positions with better spacing (5 sphères)
   const positions = ORDER.map((_, i) => {
     const angle = (i / ORDER.length) * Math.PI * 2 - Math.PI / 2;
-    const r = 140; // Reduced radius for better fit with 6 sphères
+    const r = 140; // Reduced radius for better fit with 5 sphères
     return { 
       left: `calc(50% + ${Math.round(Math.cos(angle) * r)}px)`, 
       top: `calc(50% + ${Math.round(Math.sin(angle) * r)}px)` 

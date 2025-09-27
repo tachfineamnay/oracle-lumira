@@ -1,24 +1,23 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Star, Book, Layers, MessageCircle, Wrench } from 'lucide-react';
+import { Star, Book, Layers, MessageCircle } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
 import labels from '../../lib/sphereLabels';
 
 type Props = {
-  progress?: number[]; // [path, draws, synthesis, conversations, tools]
+  progress?: number[]; // [path, draws, synthesis, conversations]
 };
 
-const ORDER: Array<{ key: 'spiritualPath'|'rawDraws'|'synthesis'|'conversations'|'tools'; to: string; icon: React.ReactNode; }>= [
+const ORDER: Array<{ key: 'spiritualPath'|'rawDraws'|'synthesis'|'conversations'; to: string; icon: React.ReactNode; }>= [
   { key: 'spiritualPath', to: '/sanctuaire/path', icon: <Star className="w-4 h-4" /> },
   { key: 'rawDraws', to: '/sanctuaire/draws', icon: <Book className="w-4 h-4" /> },
   { key: 'synthesis', to: '/sanctuaire/synthesis', icon: <Layers className="w-4 h-4" /> },
   { key: 'conversations', to: '/sanctuaire/chat', icon: <MessageCircle className="w-4 h-4" /> },
-  { key: 'tools', to: '/sanctuaire/tools', icon: <Wrench className="w-4 h-4" /> },
 ];
 
 const circumference = 2 * Math.PI * 12; // r=12 small ring
 
-const MandalaSidebar: React.FC<Props> = ({ progress = [0,0,0,0,0] }) => {
+const MandalaSidebar: React.FC<Props> = ({ progress = [0,0,0,0] }) => {
   const location = useLocation();
 
   return (
