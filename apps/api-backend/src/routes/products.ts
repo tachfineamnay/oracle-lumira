@@ -486,14 +486,24 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
   }
 }
 
-// Create a minimal Order document for Expert Desk if none exists yet
+// Create a complete Order document for Expert Desk if none exists yet
 async function ensureDeskOrderForPayment(paymentIntent: Stripe.PaymentIntent) {
   try {
+    console.log('🔄 ensureDeskOrderForPayment called:', {
+      paymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount,
+      metadata: paymentIntent.metadata
+    });
+
     const existing = await Order.findOne({ paymentIntentId: paymentIntent.id });
-    if (existing) return;
+    if (existing) {
+      console.log('📋 Order already exists for paymentIntent:', paymentIntent.id);
+      return existing;
+    }
 
     const email = (paymentIntent.metadata?.customerEmail || '').toLowerCase() || `client+${paymentIntent.id}@noemail.local`;
     const levelKey = (paymentIntent.metadata?.level || '').toLowerCase();
+    const productName = paymentIntent.metadata?.productName || 'Lecture Oracle';
 
     const levelMap: Record<string, { num: 1|2|3|4; name: 'Simple'|'Intuitive'|'Alchimique'|'Intégrale' }> = {
       initie: { num: 1, name: 'Simple' },
@@ -512,25 +522,67 @@ async function ensureDeskOrderForPayment(paymentIntent: Stripe.PaymentIntent) {
         firstName: local.substring(0, 1).toUpperCase() + local.substring(1, Math.min(local.length, 20)) || 'Client',
         lastName: 'Stripe',
       });
+      console.log('👤 User created:', user.email);
+    } else {
+      console.log('👤 User found:', user.email);
     }
 
-    await Order.create({
+    // Générer un orderNumber
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const timestamp = Date.now().toString().slice(-6);
+    const orderNumber = `LU${year}${month}${day}${timestamp}`;
+
+    const orderData = {
+      orderNumber,
       userId: user._id,
       userEmail: user.email,
+      userName: `${user.firstName} ${user.lastName}`,
       level: levelInfo.num,
       levelName: levelInfo.name,
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
-      status: 'paid',
+      status: 'paid' as const,
       paymentIntentId: paymentIntent.id,
+      paidAt: new Date(),
       formData: {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        phone: paymentIntent.metadata?.phone || '',
+        dateOfBirth: paymentIntent.metadata?.dateOfBirth ? new Date(paymentIntent.metadata.dateOfBirth) : undefined,
+        specificQuestion: paymentIntent.metadata?.specificQuestion || `Lecture ${levelInfo.name} - ${productName}`,
+        preferences: {
+          audioVoice: 'feminine' as const,
+          deliveryFormat: 'email' as const
+        }
       },
+      metadata: {
+        source: 'stripe_payment',
+        productName,
+        level: levelKey,
+        ...paymentIntent.metadata
+      }
+    };
+
+    const newOrder = await Order.create(orderData);
+    
+    console.log('✅ Order created for Expert Desk:', {
+      orderId: newOrder._id,
+      orderNumber: newOrder.orderNumber,
+      level: newOrder.level,
+      levelName: newOrder.levelName,
+      status: newOrder.status,
+      userEmail: newOrder.userEmail,
+      amount: newOrder.amount
     });
+
+    return newOrder;
   } catch (err) {
-    console.error('ensureDeskOrderForPayment error:', err);
+    console.error('❌ ensureDeskOrderForPayment error:', err);
+    throw err;
   }
 }
 

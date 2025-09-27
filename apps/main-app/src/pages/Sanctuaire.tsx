@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, Download, Play, Calendar, Home } from 'lucide-react';
+import { Star, Download, Play, Calendar, Home, Clock, User, FileText } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
 import MandalaNav from '../components/mandala/MandalaNav';
 import SanctuaireSidebar from '../components/layout/SanctuaireSidebar';
@@ -112,18 +112,52 @@ const ContextualHint: React.FC = () => {
             </div>
           </div>
 
-          {/* Coming Soon Card */}
-          <div className="bg-gradient-to-br from-amber-400/5 to-purple-400/5 backdrop-blur-sm border border-amber-400/20 rounded-2xl p-6 opacity-60">
-            <h3 className="font-playfair italic text-xl font-medium text-gray-300 mb-4">
-              Prochaine Lecture
-            </h3>
-            <p className="font-inter text-sm text-gray-400 mb-6">
-              Votre prochain voyage spirituel vous attend. 
-              Choisissez un nouveau niveau pour approfondir votre exploration.
+          {/* Commande en Cours Card */}
+          <div className="bg-gradient-to-br from-amber-400/10 to-orange-400/10 backdrop-blur-sm border border-amber-400/20 rounded-2xl p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-amber-400/20 rounded-full flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-playfair italic text-xl font-medium text-amber-400">
+                    Lecture en Préparation
+                  </h3>
+                  <p className="font-inter text-sm text-white/60">
+                    L'Oracle travaille sur votre révélation
+                  </p>
+                </div>
+              </div>
+              <div className="px-3 py-1 bg-amber-400/20 rounded-full">
+                <span className="text-xs text-amber-400 font-medium">En cours</span>
+              </div>
+            </div>
+            <p className="font-inter text-sm text-white/80 mb-4 line-clamp-3">
+              Votre lecture personnalisée est en cours de préparation par nos experts spirituels. 
+              Vous recevrez une notification dès qu'elle sera prête (sous 24h).
             </p>
-            <button className="w-full py-3 rounded-lg border border-amber-400/30 text-amber-400 hover:bg-amber-400/10 transition-all duration-300">
-              <span className="font-inter text-sm">Explorer les niveaux</span>
-            </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-white/50">
+                <Calendar className="w-4 h-4" />
+                <span className="font-inter text-xs">Commandé aujourd'hui</span>
+              </div>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => navigate('/sanctuaire/draws')}
+                  className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+                  title="Voir mes commandes"
+                >
+                  <FileText className="w-4 h-4 text-white/70" />
+                </button>
+                <button 
+                  onClick={() => navigate('/sanctuaire/profile')}
+                  className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
+                  title="Mon profil"
+                >
+                  <User className="w-4 h-4 text-white/70" />
+                </button>
+              </div>
+            </div>
           </div>
         </motion.div>
       </motion.div>

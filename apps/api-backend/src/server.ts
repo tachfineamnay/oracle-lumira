@@ -161,33 +161,38 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  logger.error('❌ MONGODB_URI is not defined in .env file');
-  console.error('❌ [API] MONGODB_URI is not defined in .env file. The application will now exit.');
-  process.exit(1);
-}
-
-console.log('✅ [API] server.ts - Connecting to MongoDB...');
-logger.info('Connecting to MongoDB...');
-
-// Disable autoIndex in production for performance
-if (process.env.NODE_ENV === 'production') {
-  mongoose.set('autoIndex', false);
-  logger.info('MongoDB autoIndex disabled in production');
-}
-
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    console.log('✅ [API] server.ts - MongoDB connected successfully');
-    logger.info('MongoDB connected successfully');
-    
-    // Listen on all interfaces for Docker compatibility
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`✅ [API] Server is running on port ${PORT} (all interfaces)`);
-      logger.info(`Server is running on port ${PORT} (all interfaces)`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ [API] server.ts - MongoDB connection error:', err.message);
-    logger.error('MongoDB connection error:', { error: err.message, stack: err.stack });
-    process.exit(1);
+  logger.warn('⚠️ MONGODB_URI is not defined - Using mock MongoDB mode for development');
+  console.warn('⚠️ [API] MONGODB_URI is not defined - Using mock MongoDB mode for development');
+  
+  // Start server without MongoDB in mock mode
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ [API] Server is running on port ${PORT} (all interfaces) - MOCK MODE`);
+    logger.info(`Server is running on port ${PORT} (all interfaces) - MOCK MODE`);
   });
+} else {
+  console.log('✅ [API] server.ts - Connecting to MongoDB...');
+  logger.info('Connecting to MongoDB...');
+
+  // Disable autoIndex in production for performance
+  if (process.env.NODE_ENV === 'production') {
+    mongoose.set('autoIndex', false);
+    logger.info('MongoDB autoIndex disabled in production');
+  }
+
+  mongoose.connect(MONGODB_URI)
+    .then(() => {
+      console.log('✅ [API] server.ts - MongoDB connected successfully');
+      logger.info('MongoDB connected successfully');
+      
+      // Listen on all interfaces for Docker compatibility
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`✅ [API] Server is running on port ${PORT} (all interfaces)`);
+        logger.info(`Server is running on port ${PORT} (all interfaces)`);
+      });
+    })
+    .catch(err => {
+      console.error('❌ [API] server.ts - MongoDB connection error:', err.message);
+      logger.error('MongoDB connection error:', { error: err.message, stack: err.stack });
+      process.exit(1);
+    });
+}

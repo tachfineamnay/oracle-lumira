@@ -676,7 +676,10 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
 // Get pending orders for expert
 router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => {
   try {
-    const orders = await Order.find({
+    console.log('📋 Expert /orders/pending requested by:', req.expert.email);
+    
+    // Rechercher les commandes avec statuts paid ou pending, non assignées
+    const query = {
       status: { $in: ['paid', 'pending'] },
       // Only orders that haven't been assigned to an expert yet, or assigned to this expert
       $or: [
@@ -684,12 +687,41 @@ router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => 
         { 'expertReview.expertId': null },
         { 'expertReview.expertId': req.expert._id.toString() }
       ]
-    })
-    .populate('userId', 'firstName lastName email phone')
-    .sort({ createdAt: 1 }) // Oldest first
-    .limit(20); // Limit for performance
+    };
+
+    console.log('🔍 Query pour pending orders:', JSON.stringify(query, null, 2));
+
+    const orders = await Order.find(query)
+      .populate('userId', 'firstName lastName email phone')
+      .sort({ createdAt: 1 }) // Oldest first
+      .limit(20); // Limit for performance
 
     console.log(`📋 Found ${orders.length} pending orders for expert ${req.expert.email}`);
+    
+    if (orders.length > 0) {
+      console.log('🔍 First few orders details:');
+      orders.slice(0, 3).forEach(order => {
+        console.log(`  - Order ${order._id}: status=${order.status}, level=${order.level}, email=${order.userEmail}, created=${order.createdAt}`);
+      });
+    } else {
+      // Debug: Vérifier s'il y a des orders en général
+      const totalOrders = await Order.countDocuments({});
+      const paidOrders = await Order.countDocuments({ status: 'paid' });
+      const pendingOrders = await Order.countDocuments({ status: 'pending' });
+      
+      console.log('🔍 Debug - Total orders in DB:', {
+        total: totalOrders,
+        paid: paidOrders,
+        pending: pendingOrders
+      });
+      
+      // Afficher quelques exemples d'orders récents
+      const recentOrders = await Order.find({}).sort({ createdAt: -1 }).limit(5);
+      console.log('🔍 Recent orders in DB:');
+      recentOrders.forEach(order => {
+        console.log(`  - Order ${order._id}: status=${order.status}, level=${order.level || 'N/A'}, email=${order.userEmail}, created=${order.createdAt}`);
+      });
+    }
     
     res.json({ orders });
     
