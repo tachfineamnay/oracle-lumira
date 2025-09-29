@@ -18,6 +18,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { useUserLevel } from '../../contexts/UserLevelContext';
+import { apiRequest } from '../../utils/api';
 import GlassCard from '../ui/GlassCard';
 
 interface FormData {
@@ -57,8 +58,37 @@ export const SanctuaireWelcomeForm: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulation API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Try to attach submission to last order if available
+      let lastOrderId: string | null = null;
+      try {
+        const urlOrder = new URLSearchParams(window.location.search).get('order_id');
+        const storedOrder = localStorage.getItem('oraclelumira_last_order_id');
+        lastOrderId = urlOrder || storedOrder;
+      } catch {}
+
+      if (lastOrderId) {
+        try {
+          await apiRequest(`/orders/by-payment-intent/${lastOrderId}/client-submit`, {
+            method: 'POST',
+            body: JSON.stringify({
+              files: [],
+              formData: {
+                email: formData.email,
+                phone: formData.phone,
+                dateOfBirth: formData.birthDate || undefined,
+                specificQuestion: formData.objective || undefined,
+              },
+              clientInputs: {
+                birthTime: formData.birthTime || undefined,
+                specificContext: formData.additionalInfo || undefined,
+              },
+            }),
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (err) {
+          console.warn('Client submission sync failed:', err);
+        }
+      }
       
       // Mettre à jour le profil utilisateur
       updateUserProfile({

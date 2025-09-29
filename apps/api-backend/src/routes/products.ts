@@ -662,6 +662,10 @@ export default router;
  * Créer une commande directe pour les tests (bypasse Stripe)
  */
 router.post('/create-order', async (req: Request, res: Response): Promise<void> => {
+  if (!(process.env.ENABLE_DEBUG_ROUTES === 'true' && process.env.NODE_ENV !== 'production')) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
   try {
     const { level, amount, formData, metadata } = req.body;
     
@@ -731,6 +735,10 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
  * Simuler un paiement réussi pour les tests
  */
 router.post('/simulate-payment', async (req: Request, res: Response): Promise<void> => {
+  if (!(process.env.ENABLE_DEBUG_ROUTES === 'true' && process.env.NODE_ENV !== 'production')) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
   try {
     const { orderId, status = 'paid' } = req.body;
     

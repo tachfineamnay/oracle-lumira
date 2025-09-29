@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, Download, Play, Calendar, Home, Clock, User, FileText } from 'lucide-react';
+import { Star, Download, Play, Calendar, Home, Clock, User, FileText, Settings, CreditCard, Eye } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
 import MandalaNav from '../components/mandala/MandalaNav';
 import SanctuaireSidebar from '../components/layout/SanctuaireSidebar';
@@ -11,10 +11,95 @@ import { useAuth } from '../hooks/useAuth';
 import { labels } from '../lib/sphereLabels';
 import { useUserLevel } from '../contexts/UserLevelContext';
 
+const ProfileIcon: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { userLevel } = useUserLevel();
+
+  const hasProfileData = userLevel.profile?.profileCompleted;
+
+  return (
+    <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
+      {/* Bouton Accueil */}
+      <button
+        onClick={() => navigate('/sanctuaire')}
+        className="flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white hover:bg-white/20 transition-all"
+        title="Retour à l'accueil"
+      >
+        <Home className="w-4 h-4" />
+      </button>
+
+      {/* Icône Profil avec dropdown */}
+      <div className="relative group">
+        <button className="flex items-center gap-2 px-3 py-2 bg-amber-400/10 backdrop-blur-md border border-amber-400/20 rounded-lg text-amber-400 hover:bg-amber-400/20 transition-all">
+          <User className="w-4 h-4" />
+          <span className="text-sm font-medium">
+            {user?.firstName || 'Profil'}
+          </span>
+        </button>
+
+        {/* Dropdown Menu */}
+        <div className="absolute right-0 top-full mt-2 w-72 bg-mystical-900/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+          <div className="p-4">
+            {/* Info utilisateur */}
+            <div className="mb-4">
+              <h3 className="text-white font-medium">{user?.firstName || 'Âme Lumineuse'}</h3>
+              <p className="text-white/60 text-sm">{user?.email || 'Non renseigné'}</p>
+            </div>
+
+            {/* Statut du profil */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-amber-400/10 to-green-400/10 border border-amber-400/20 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 rounded-full ${hasProfileData ? 'bg-green-400' : 'bg-amber-400'}`} />
+                <span className="text-sm font-medium text-white">
+                  {hasProfileData ? 'Profil Complété' : 'Profil à compléter'}
+                </span>
+              </div>
+              {hasProfileData && userLevel.profile?.submittedAt && (
+                <p className="text-xs text-white/70">
+                  Soumis le {new Date(userLevel.profile.submittedAt).toLocaleDateString('fr-FR')}
+                </p>
+              )}
+            </div>
+
+            {/* Actions rapides */}
+            <div className="space-y-2">
+              <button
+                onClick={() => navigate('/sanctuaire/profile')}
+                className="w-full flex items-center gap-3 px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all text-left"
+              >
+                <Settings className="w-4 h-4" />
+                <span className="text-sm">Gérer mon profil</span>
+              </button>
+
+              <button
+                onClick={() => navigate('/sanctuaire/draws')}
+                className="w-full flex items-center gap-3 px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all text-left"
+              >
+                <Eye className="w-4 h-4" />
+                <span className="text-sm">Mes lectures</span>
+              </button>
+
+              <button
+                onClick={() => navigate('/commande')}
+                className="w-full flex items-center gap-3 px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all text-left"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span className="text-sm">Nouvelle commande</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ContextualHint: React.FC = () => {
   const location = useLocation();
   const path = location.pathname;
   const { userLevel } = useUserLevel();
+  const navigate = useNavigate();
 
   // Si on est sur la page principale /sanctuaire, afficher le contenu approprié
   if (path === '/sanctuaire') {
@@ -26,7 +111,7 @@ const ContextualHint: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          {/* Message de bienvenue */}
+      {/* Message de bienvenue simplifié */}
           <div className="text-center mb-8">
             <h2 className="font-playfair italic text-3xl font-medium text-amber-400 mb-4">
               Bienvenue dans votre Sanctuaire Spirituel
@@ -54,12 +139,12 @@ const ContextualHint: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.2 }}
       >
-        {/* Message de bienvenue personnalisé */}
+        {/* Message de bienvenue personnalisé - Plus compact */}
         <div className="text-center mb-8">
-          <h2 className="font-playfair italic text-3xl font-medium text-amber-400 mb-4">
+          <h2 className="font-playfair italic text-3xl font-medium text-amber-400 mb-2">
             Votre Sanctuaire Personnel
           </h2>
-          <p className="text-white/70 text-lg">
+          <p className="text-white/70">
             Explorez votre univers intérieur à travers le mandala sacré
           </p>
         </div>
@@ -68,6 +153,55 @@ const ContextualHint: React.FC = () => {
         <div className="mb-12">
           <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
         </div>
+
+        {/* Statut de la dernière commande si applicable */}
+        {userLevel.profile?.submittedAt && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-8"
+          >
+            <GlassCard className="p-6 bg-gradient-to-br from-green-400/10 to-blue-400/10 border-green-400/20">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-400/20 flex items-center justify-center">
+                  <Clock className="w-8 h-8 text-green-400" />
+                </div>
+                <h3 className="text-xl font-playfair italic text-green-400 mb-2">
+                  ✨ Votre demande a été transmise avec succès
+                </h3>
+                <p className="text-white/80 mb-4">
+                  L'Oracle travaille sur votre révélation personnalisée. Vous serez notifié par email et via l'application dès qu'elle sera prête.
+                </p>
+                <div className="flex items-center justify-center gap-6 text-sm text-white/60">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>Délai de traitement : 24h</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-amber-400" />
+                    <span>En cours d'analyse</span>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-3 justify-center">
+                  <button
+                    onClick={() => navigate('/sanctuaire/draws')}
+                    className="px-4 py-2 bg-green-400/20 text-green-400 border border-green-400/30 rounded-lg hover:bg-green-400/30 transition-all flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Suivre ma commande
+                  </button>
+                  <button
+                    onClick={() => navigate('/commande')}
+                    className="px-4 py-2 bg-amber-400/20 text-amber-400 border border-amber-400/30 rounded-lg hover:bg-amber-400/30 transition-all"
+                  >
+                    Nouvelle lecture
+                  </button>
+                </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
 
         {/* Dashboard Cards */}
         <motion.div
@@ -112,51 +246,46 @@ const ContextualHint: React.FC = () => {
             </div>
           </div>
 
-          {/* Commande en Cours Card */}
-          <div className="bg-gradient-to-br from-amber-400/10 to-orange-400/10 backdrop-blur-sm border border-amber-400/20 rounded-2xl p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-amber-400/20 rounded-full flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <h3 className="font-playfair italic text-xl font-medium text-amber-400">
-                    Lecture en Préparation
-                  </h3>
-                  <p className="font-inter text-sm text-white/60">
-                    L'Oracle travaille sur votre révélation
-                  </p>
-                </div>
+          {/* Actions Rapides Card */}
+          <div className="bg-gradient-to-br from-amber-400/10 to-purple-400/10 backdrop-blur-sm border border-amber-400/20 rounded-2xl p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-amber-400/20 rounded-full flex items-center justify-center">
+                <Star className="w-5 h-5 text-amber-400" />
               </div>
-              <div className="px-3 py-1 bg-amber-400/20 rounded-full">
-                <span className="text-xs text-amber-400 font-medium">En cours</span>
+              <div>
+                <h3 className="font-playfair italic text-xl font-medium text-amber-400">
+                  Actions Rapides
+                </h3>
+                <p className="font-inter text-sm text-white/60">
+                  Gérez votre parcours spirituel
+                </p>
               </div>
             </div>
-            <p className="font-inter text-sm text-white/80 mb-4 line-clamp-3">
-              Votre lecture personnalisée est en cours de préparation par nos experts spirituels. 
-              Vous recevrez une notification dès qu'elle sera prête (sous 24h).
-            </p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-white/50">
-                <Calendar className="w-4 h-4" />
-                <span className="font-inter text-xs">Commandé aujourd'hui</span>
-              </div>
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => navigate('/sanctuaire/draws')}
-                  className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
-                  title="Voir mes commandes"
-                >
-                  <FileText className="w-4 h-4 text-white/70" />
-                </button>
-                <button 
-                  onClick={() => navigate('/sanctuaire/profile')}
-                  className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors"
-                  title="Mon profil"
-                >
-                  <User className="w-4 h-4 text-white/70" />
-                </button>
-              </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/sanctuaire/profile')}
+                className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-all text-left"
+              >
+                <User className="w-4 h-4 text-white/70" />
+                <span className="text-sm text-white/80">Mon profil complet</span>
+              </button>
+              
+              <button
+                onClick={() => navigate('/sanctuaire/draws')}
+                className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-all text-left"
+              >
+                <FileText className="w-4 h-4 text-white/70" />
+                <span className="text-sm text-white/80">Mes lectures et tirages</span>
+              </button>
+              
+              <button
+                onClick={() => navigate('/commande')}
+                className="w-full flex items-center gap-3 p-3 bg-amber-400/10 hover:bg-amber-400/20 rounded-lg transition-all text-left border border-amber-400/20"
+              >
+                <CreditCard className="w-4 h-4 text-amber-400" />
+                <span className="text-sm text-amber-400 font-medium">Nouvelle lecture</span>
+              </button>
             </div>
           </div>
         </motion.div>
@@ -194,6 +323,9 @@ const Sanctuaire: React.FC = () => {
   const progress = Math.round(((Number(userLevel.currentLevel) || 1) / 4) * 100);
   return (
     <PageLayout variant="dark">
+      {/* Icône Profil - Toujours visible */}
+      <ProfileIcon />
+      
       {/* Sidebar pour les sous-pages */}
       <SanctuaireSidebar progress={[progress, 0, 0, 0]} />
       
@@ -219,63 +351,17 @@ const Sanctuaire: React.FC = () => {
                     {location.pathname.includes('/path') ? 'Chemin Spirituel' :
                      location.pathname.includes('/draws') ? 'Tirages & Lectures' :
                      location.pathname.includes('/synthesis') ? 'Synthèse' :
-                     location.pathname.includes('/chat') ? 'Conversations' : 'Sanctuaire'}
+                     location.pathname.includes('/chat') ? 'Conversations' :
+                     location.pathname.includes('/profile') ? 'Mon Profil' : 'Sanctuaire'}
                   </h1>
                   <p className="text-white/70">
                     Bienvenue {user?.firstName || 'âme lumineuse'}
                   </p>
                 </div>
-                
-                {/* Bouton retour à l'accueil facile */}
-                <button
-                  onClick={() => navigate('/sanctuaire')}
-                  className="flex items-center gap-2 px-4 py-2 bg-amber-400/10 border border-amber-400/20 rounded-lg text-amber-400 hover:bg-amber-400/20 transition-all"
-                >
-                  <Home className="w-4 h-4" />
-                  <span className="text-sm">Accueil</span>
-                </button>
               </motion.div>
             )}
 
-            {/* Cosmic Header - Uniquement pour l'accueil */}
-            {location.pathname === '/sanctuaire' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="relative"
-              >
-                <div className="relative w-full h-48 sm:h-56 lg:h-60 rounded-3xl overflow-hidden backdrop-blur-2xl bg-gradient-to-br from-mystical-900/40 via-mystical-800/30 to-mystical-700/20 border border-white/10 shadow-2xl">
-                  <div className="absolute inset-0 bg-gradient-to-t from-mystical-900/50 via-transparent to-transparent" />
-                  
-                  <div className="relative z-10 h-full flex flex-col justify-center px-8 sm:px-12">
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.4 }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-32 h-1 bg-white/20 rounded-full overflow-hidden">
-                          <motion.div 
-                            className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            transition={{ duration: 0.8, delay: 0.6 }}
-                          />
-                        </div>
-                        <span className="text-sm text-amber-400 font-medium">{progress}%</span>
-                      </div>
-                      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-cinzel font-light text-amber-400 mb-3 tracking-wide">
-                        Bienvenue, âme lumineuse
-                      </h1>
-                      <p className="text-lg sm:text-xl text-white/80 font-light">
-                        {user?.firstName ? `Bonjour ${user.firstName}` : 'Bonjour'}
-                      </p>
-                    </motion.div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+            {/* Cosmic Header - Supprimé car remplacé par l'icône profil et message de confirmation */}
 
             {/* Contextual Hint */}
             <ContextualHint />

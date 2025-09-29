@@ -174,6 +174,9 @@ export const useInitializeUserLevel = () => {
     };
     
     setUserLevel(newLevel);
+    try {
+      localStorage.setItem('oraclelumira_last_order_id', orderId);
+    } catch {}
     
     // Optionnel: envoi analytics
     if (typeof window !== 'undefined' && window.gtag) {

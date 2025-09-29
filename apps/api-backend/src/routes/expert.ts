@@ -11,6 +11,9 @@ const router = express.Router();
 
 // DEBUG: Check if expert exists in database
 router.get('/check', async (req, res) => {
+  if (!(process.env.ENABLE_DEBUG_ROUTES === 'true' && process.env.NODE_ENV !== 'production')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
   try {
     const expert = await Expert.findOne({ email: 'expert@oraclelumira.com' });
     if (expert) {
@@ -38,6 +41,9 @@ router.get('/check', async (req, res) => {
 
 // DEBUG: Create expert if not exists
 router.post('/create-debug', async (req, res) => {
+  if (!(process.env.ENABLE_DEBUG_ROUTES === 'true' && process.env.NODE_ENV !== 'production')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
   try {
     // Vérifier si expert existe déjà
     const existingExpert = await Expert.findOne({ email: 'expert@oraclelumira.com' });
@@ -200,13 +206,13 @@ router.post('/login', authLimiter, async (req: any, res: any) => {
     let expert = await Expert.findOne({ email: email.toLowerCase(), isActive: true });
     
     // AUTO-CREATE EXPERT IF NOT EXISTS (for expert@oraclelumira.com only)
-    if (!expert && email.toLowerCase() === 'expert@oraclelumira.com') {
+    if (!expert && email.toLowerCase() === 'expert@oraclelumira.com' && process.env.ENABLE_AUTO_CREATE_EXPERT === 'true' && process.env.NODE_ENV !== 'production') {
       console.log('🆕 Auto-creating expert for first login');
       // default password will be hashed by schema pre-save
       
       expert = new Expert({
         email: 'expert@oraclelumira.com',
-        password: 'Lumira2025L',
+        password: process.env.DEFAULT_EXPERT_PASSWORD || 'Lumira2025L',
         name: 'Oracle Expert',
         expertise: ['tarot', 'oracle', 'spiritualité'],
         isActive: true
@@ -596,8 +602,15 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
       timestamp: new Date().toISOString()
     };
 
-    // Send to n8n webhook - WEBHOOK FIXE
-    const webhookUrl = 'https://n8automate.ialexia.fr/webhook/10e13491-51ac-46f6-a734-89c1068cc7ec';
+    // Send to n8n webhook - configurable via env
+    const webhookUrl = process.env.N8N_WEBHOOK_URL;
+    if (!webhookUrl) {
+      console.error('N8N webhook URL not configured (N8N_WEBHOOK_URL)');
+      // Revert order status if webhook cannot be used
+      order.status = 'pending';
+      await order.save();
+      return res.status(503).json({ error: "Service non configur	 (N8N_WEBHOOK_URL manquant)" });
+    }
     
     try {
       console.log('🚀 Envoi vers n8n:', webhookUrl);
@@ -988,7 +1001,11 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
           timestamp: new Date().toISOString()
         };
         
-        const webhookUrl = 'https://n8automate.ialexia.fr/webhook/10e13491-51ac-46f6-a734-89c1068cc7ec';
+        const webhookUrl = process.env.N8N_WEBHOOK_URL;
+        if (!webhookUrl) {
+          console.error('N8N webhook URL not configured (N8N_WEBHOOK_URL)');
+          return res.status(503).json({ error: "Service non configur	 (N8N_WEBHOOK_URL manquant)" });
+        }
         const n8nResponse = await axios.post(webhookUrl, revisionPayload, {
           timeout: 10000,
           headers: {
