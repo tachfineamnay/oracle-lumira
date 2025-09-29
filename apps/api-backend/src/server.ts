@@ -101,6 +101,7 @@ app.use(limiter);
 // Stripe webhooks need raw body for signature verification
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/products/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 
 // Body parsing middleware (after webhook routes)
 app.use(express.json({ limit: '10mb' }));
