@@ -11,6 +11,10 @@ export interface UserProfile {
   additionalInfo?: string;
   profileCompleted?: boolean;
   submittedAt?: Date;
+  facePhoto?: File | null;
+  palmPhoto?: File | null;
+  facePhotoUrl?: string;
+  palmPhotoUrl?: string;
 }
 
 export interface UserLevel {

@@ -15,7 +15,9 @@ import {
   CreditCard,
   History,
   Settings,
-  Eye
+  Eye,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserLevel } from '../../contexts/UserLevelContext';
@@ -248,6 +250,66 @@ const Profile: React.FC = () => {
           </div>
         </GlassCard>
       </motion.div>
+
+      {/* Section Photos Uploadées */}
+      {(profile?.facePhoto || profile?.palmPhoto) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <GlassCard className="p-6">
+            <h2 className="text-lg font-playfair italic text-white mb-4 flex items-center gap-2">
+              <Camera className="w-5 h-5 text-amber-400" />
+              Photos Uploadées
+            </h2>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Photo de visage */}
+              {profile?.facePhoto && (
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-3">
+                    <Camera className="w-4 h-4 inline mr-2" />
+                    Photo de visage
+                  </label>
+                  <div className="relative bg-white/5 border border-amber-400/20 rounded-xl p-4 text-center">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-amber-400/20 flex items-center justify-center">
+                      <Camera className="w-8 h-8 text-amber-400" />
+                    </div>
+                    <p className="text-white/90 font-medium text-sm">
+                      {profile.facePhoto.name || 'Photo de visage'}
+                    </p>
+                    <p className="text-white/60 text-xs mt-1">
+                      Uploadée avec succès
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Photo de paume */}
+              {profile?.palmPhoto && (
+                <div>
+                  <label className="block text-sm font-medium text-white/90 mb-3">
+                    <ImageIcon className="w-4 h-4 inline mr-2" />
+                    Photo de paume
+                  </label>
+                  <div className="relative bg-white/5 border border-purple-400/20 rounded-xl p-4 text-center">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-purple-400/20 flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-purple-400" />
+                    </div>
+                    <p className="text-white/90 font-medium text-sm">
+                      {profile.palmPhoto.name || 'Photo de paume'}
+                    </p>
+                    <p className="text-white/60 text-xs mt-1">
+                      Uploadée avec succès
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </GlassCard>
+        </motion.div>
+      )}
 
       {/* Actions rapides */}
       <motion.div

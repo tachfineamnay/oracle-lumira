@@ -68,29 +68,41 @@ export const SanctuaireWelcomeForm: React.FC = () => {
 
       if (lastOrderId) {
         try {
+          // Utiliser FormData pour envoyer les fichiers
+          const formDataToSend = new FormData();
+          
+          // Ajouter les informations du formulaire
+          formDataToSend.append('formData', JSON.stringify({
+            email: formData.email,
+            phone: formData.phone,
+            dateOfBirth: formData.birthDate || undefined,
+            specificQuestion: formData.objective || undefined,
+          }));
+          
+          formDataToSend.append('clientInputs', JSON.stringify({
+            birthTime: formData.birthTime || undefined,
+            specificContext: formData.additionalInfo || undefined,
+          }));
+          
+          // Ajouter les fichiers
+          if (formData.facePhoto) {
+            formDataToSend.append('facePhoto', formData.facePhoto);
+          }
+          if (formData.palmPhoto) {
+            formDataToSend.append('palmPhoto', formData.palmPhoto);
+          }
+
           await apiRequest(`/orders/by-payment-intent/${lastOrderId}/client-submit`, {
             method: 'POST',
-            body: JSON.stringify({
-              files: [],
-              formData: {
-                email: formData.email,
-                phone: formData.phone,
-                dateOfBirth: formData.birthDate || undefined,
-                specificQuestion: formData.objective || undefined,
-              },
-              clientInputs: {
-                birthTime: formData.birthTime || undefined,
-                specificContext: formData.additionalInfo || undefined,
-              },
-            }),
-            headers: { 'Content-Type': 'application/json' },
+            body: formDataToSend,
+            // Ne pas définir Content-Type, le navigateur le fera automatiquement
           });
         } catch (err) {
           console.warn('Client submission sync failed:', err);
         }
       }
       
-      // Mettre à jour le profil utilisateur
+      // Mettre à jour le profil utilisateur avec les fichiers
       updateUserProfile({
         email: formData.email,
         phone: formData.phone,
@@ -98,6 +110,8 @@ export const SanctuaireWelcomeForm: React.FC = () => {
         birthTime: formData.birthTime,
         objective: formData.objective,
         additionalInfo: formData.additionalInfo,
+        facePhoto: formData.facePhoto,
+        palmPhoto: formData.palmPhoto,
         profileCompleted: true,
         submittedAt: new Date()
       });

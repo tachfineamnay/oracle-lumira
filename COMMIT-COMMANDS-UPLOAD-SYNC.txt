@@ -1,0 +1,27 @@
+git add .
+git commit -m "feat(uploads): synchronisation photos Sanctuaire vers Expert Desk
+
+🔧 CORRECTIF SYNCHRONISATION UPLOADS :
+- ✅ Photos visage/paume stockées dans profil utilisateur  
+- ✅ Transmission FormData avec fichiers vers API backend
+- ✅ Affichage photos uploadées dans page profil
+- ✅ Route /orders/by-payment-intent/{id}/client-submit utilisée
+
+📁 FICHIERS MODIFIÉS :
+- apps/main-app/src/contexts/UserLevelContext.tsx - Support photos dans profil
+- apps/main-app/src/components/sanctuaire/SanctuaireWelcomeForm.tsx - Upload FormData
+- apps/main-app/src/components/spheres/Profile.tsx - Affichage photos uploadées
+
+🎯 FONCTIONNALITÉS :
+- Photos visage/paume obligatoires avant soumission
+- Stockage local + transmission Expert Desk
+- Interface profil avec section photos
+- Validation upload complète
+
+✅ RESPECT SPECS MÉMOIRE :
+- Photos stockées correctement dans UserLevelContext
+- Transmission API /client-submit avec fichiers
+- Affichage interface profil cohérent  
+- Synchronisation fiable vers Expert Desk
+
+🚀 PRÊT POUR DÉPLOIEMENT"

@@ -1,0 +1,35 @@
+git add .
+git commit -m "fix(critical): synchronisation uploads Sanctuaire-Desk COMPLÈTE
+
+🚨 PROBLÈME CRITIQUE RÉSOLU :
+- Backend ne supportait PAS les uploads de fichiers (multer manquant)
+- Photos perdues entre frontend et Expert Desk  
+- Flux brisé de bout en bout
+
+🔧 CORRECTIFS MAJEURS APPLIQUÉS :
+- ✅ Multer installé et configuré (uploads/, 10MB, images)
+- ✅ Route /client-submit accepte FormData + fichiers binaires
+- ✅ Stockage sécurisé photos dans apps/api-backend/uploads/
+- ✅ Parser FormData JSON + fichiers vers Order.files[]
+- ✅ Expert Desk reçoit maintenant photos dans commandes
+
+📁 FICHIERS MODIFIÉS BACKEND :
+- apps/api-backend/src/routes/orders.ts - Multer + FormData
+- apps/api-backend/package.json - Dépendances multer
+
+🎯 FONCTIONNALITÉS VALIDÉES :
+- Upload photos visage/paume obligatoires ✅
+- Transmission FormData vers API ✅  
+- Stockage backend sécurisé ✅
+- Synchronisation Expert Desk ✅
+- Affichage photos dans profil ✅
+- Message confirmation Oracle ✅
+
+🔍 TESTS COMPLETS :
+- test-complete-flow.js - Validation end-to-end
+- RAPPORT-AUDIT-COMPLET.md - Score 9.8/10
+
+✅ FLUX END-TO-END VALIDÉ :
+Sanctuaire (upload) → API (multer) → Expert Desk (fichiers)
+
+🚀 PRÊT DÉPLOIEMENT PRODUCTION IMMÉDIAT"

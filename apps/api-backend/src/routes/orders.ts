@@ -1,12 +1,48 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { Order } from '../models/Order';
 import { User } from '../models/User';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
+// Configuration Multer pour upload de fichiers
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Type de fichier non autorisé'));
+    }
+  }
+});
+
 // Client submission: attach uploaded files + form data by paymentIntentId
-router.post('/by-payment-intent/:paymentIntentId/client-submit', async (req: any, res: any) => {
+router.post('/by-payment-intent/:paymentIntentId/client-submit', 
+  upload.fields([{ name: 'facePhoto', maxCount: 1 }, { name: 'palmPhoto', maxCount: 1 }]),
+  async (req: any, res: any) => {
   try {
     const { paymentIntentId } = req.params;
     if (!paymentIntentId || typeof paymentIntentId !== 'string') {
@@ -18,26 +54,47 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit', async (req: any
       return res.status(404).json({ error: 'Order not found for paymentIntentId', paymentIntentId });
     }
 
-    const { files = [], formData = {}, clientInputs = {} } = req.body || {};
+    // Traiter les fichiers uploadés
+    const uploadedFiles = [];
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      
+      // Photo de visage
+      if (files.facePhoto && files.facePhoto[0]) {
+        const file = files.facePhoto[0];
+        uploadedFiles.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          path: file.path,
+          mimetype: file.mimetype,
+          size: file.size,
+          type: 'face_photo',
+          uploadedAt: new Date()
+        });
+      }
+      
+      // Photo de paume
+      if (files.palmPhoto && files.palmPhoto[0]) {
+        const file = files.palmPhoto[0];
+        uploadedFiles.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          path: file.path,
+          mimetype: file.mimetype,
+          size: file.size,
+          type: 'palm_photo',
+          uploadedAt: new Date()
+        });
+      }
+    }
 
-    // Normalize and merge files; treat path as remote URL if provided
-    const normalized = Array.isArray(files) ? files.map((f: any) => ({
-      filename: String(f.name || f.filename || 'file'),
-      originalName: String(f.originalName || f.name || 'file'),
-      path: String(f.url || f.path || ''),
-      mimetype: String(f.type || f.mimetype || ''),
-      size: Number(f.size || 0),
-      uploadedAt: new Date()
-    })) : [];
+    // Parser les données JSON depuis FormData
+    const formData = req.body.formData ? JSON.parse(req.body.formData) : {};
+    const clientInputs = req.body.clientInputs ? JSON.parse(req.body.clientInputs) : {};
 
-    // De-duplicate by originalName+size
+    // Fusionner les fichiers existants avec les nouveaux
     const existing = order.files || [];
-    const combined = [...existing];
-    normalized.forEach((nf: any) => {
-      const dup = existing.find((ef: any) => ef.originalName === nf.originalName && ef.size === nf.size);
-      if (!dup) combined.push(nf);
-    });
-
+    const combined = [...existing, ...uploadedFiles];
     order.files = combined as any;
 
     // Merge formData if provided; only overwrite defined fields
