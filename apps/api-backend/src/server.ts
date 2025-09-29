@@ -138,13 +138,16 @@ app.use('/api/debug', envDebugRoutes);
 // Mount real expert routes (production-ready)
 app.use('/api/expert', expertRoutes);
 
-// Expose uploaded files for Expert Desk access
+// Expose uploaded and generated files for Expert Desk access
 try {
-  const uploadsPath = path.join(process.cwd(), 'uploads');
+  const uploadsPath = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
+  const generatedPath = process.env.GENERATED_DIR || path.join(process.cwd(), 'generated');
   app.use('/uploads', express.static(uploadsPath));
+  app.use('/generated', express.static(generatedPath));
   console.log(`Uploads served at /uploads from ${uploadsPath}`);
+  console.log(`Generated served at /generated from ${generatedPath}`);
 } catch (e) {
-  console.warn('Could not configure static uploads:', e);
+  console.warn('Could not configure static asset directories:', e);
 }
 
 // Test/debug routes only in non-production environments
