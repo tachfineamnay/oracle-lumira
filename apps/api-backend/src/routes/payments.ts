@@ -77,8 +77,8 @@ router.post('/confirm-payment', async (req, res) => {
     // Update order if exists
     const order = await Order.findOne({ paymentIntentId });
     if (order) {
-      if (isSuccess && order.status !== 'completed') {
-        order.status = 'completed';
+      if (isSuccess && order.status !== 'paid') {
+        order.status = 'paid';
         order.paidAt = new Date();
         order.updatedAt = new Date();
         await order.save();

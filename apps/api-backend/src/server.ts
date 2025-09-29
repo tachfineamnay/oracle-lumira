@@ -1,6 +1,7 @@
 console.log('✅ [API] server.ts - Script started');
 
 import express from 'express';
+import path from 'path';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -136,6 +137,15 @@ app.use('/api/products', productRoutes);
 app.use('/api/debug', envDebugRoutes);
 // Mount real expert routes (production-ready)
 app.use('/api/expert', expertRoutes);
+
+// Expose uploaded files for Expert Desk access
+try {
+  const uploadsPath = path.join(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(uploadsPath));
+  console.log(`Uploads served at /uploads from ${uploadsPath}`);
+} catch (e) {
+  console.warn('Could not configure static uploads:', e);
+}
 
 // Test/debug routes only in non-production environments
 if (process.env.NODE_ENV !== 'production') {
