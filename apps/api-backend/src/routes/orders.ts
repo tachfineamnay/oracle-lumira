@@ -51,20 +51,46 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
   uploadPermissive.fields([{ name: 'facePhoto', maxCount: 1 }, { name: 'palmPhoto', maxCount: 1 }]),
   async (req: any, res: any) => {
   try {
+    // =================== MISSION FINISH LINE - INSTRUMENTATION CHIRURGICALE ===================
+    console.log('[CLIENT-SUBMIT] START - Request received. Headers:', req.headers);
+    console.log('[CLIENT-SUBMIT] ENV CHECK - ALLOW_DIRECT_CLIENT_SUBMIT:', process.env.ALLOW_DIRECT_CLIENT_SUBMIT);
+    
     const { paymentIntentId } = req.params;
     if (!paymentIntentId || typeof paymentIntentId !== 'string') {
+      console.error('[CLIENT-SUBMIT] FATAL: paymentIntentId invalid:', paymentIntentId);
       return res.status(400).json({ error: 'paymentIntentId invalid' });
     }
+    
+    console.log('[CLIENT-SUBMIT] PaymentIntentId received:', paymentIntentId);
 
+    console.log('[CLIENT-SUBMIT] FILES RECEIVED:', req.files);
+    console.log('[CLIENT-SUBMIT] FORM-DATA RAW:', req.body.formData);
+    
     let order = await Order.findOne({ paymentIntentId });
+    console.log('[CLIENT-SUBMIT] Existing order found:', !!order);
+    
     if (!order) {
       // Parse early (we may need formData for direct creation) - robust to strings/objects
       const __earlySafeParse = (v: any) => { try { if (!v) return {}; if (typeof v === 'string') return JSON.parse(v); if (typeof v === 'object') return v; return {}; } catch { return {}; } };
-      const parsedFormData = __earlySafeParse(req.body?.formData);
+      let parsedFormData;
+      try {
+        parsedFormData = __earlySafeParse(req.body?.formData);
+        console.log('[CLIENT-SUBMIT] FORM-DATA PARSED:', parsedFormData);
+        console.log('[CLIENT-SUBMIT] EMAIL CHECK:', parsedFormData.email);
+        console.log('[CLIENT-SUBMIT] LEVEL CHECK:', parsedFormData.level);
+      } catch (e) {
+        console.error('[CLIENT-SUBMIT] FATAL: JSON parsing failed:', e);
+        return res.status(400).json({ error: 'Invalid formData JSON.' });
+      }
 
       // 1) Try Stripe validation (standard path)
+      let stripeError = null;
+      let paymentIntent = null;
       try {
+        console.log('[CLIENT-SUBMIT] Attempting Stripe validation for PaymentIntent:', paymentIntentId);
         const pi = await StripeService.getPaymentIntent(paymentIntentId);
+        paymentIntent = pi;
+        console.log('[CLIENT-SUBMIT] Stripe PaymentIntent retrieved:', { status: pi?.status, amount: pi?.amount });
         if (pi && pi.status === 'succeeded') {
           const emailCandidate = (pi.metadata as any)?.customerEmail || parsedFormData?.email;
           if (emailCandidate) {
@@ -113,9 +139,15 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
           }
         }
       } catch (e) {
+        console.log('[CLIENT-SUBMIT] Stripe validation failed:', e.message);
+        stripeError = e;
         // 2) Optional direct creation fallback (no Stripe) if explicitly allowed
         //    This decouples Desk from Stripe for uploads-only workflows.
+        console.log('[CLIENT-SUBMIT] ENTERING FALLBACK BLOCK - StripeError:', !!stripeError, 'PaymentIntentStatus:', paymentIntent?.status);
+        console.log('[CLIENT-SUBMIT] FALLBACK CONDITION CHECK - ALLOW_DIRECT_CLIENT_SUBMIT === "true"?', process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true');
+        
         if (process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true') {
+          console.log('[CLIENT-SUBMIT] CREATING DIRECT ORDER with data:', { email: parsedFormData.email, level: parsedFormData.level });
           const email = parsedFormData?.email ? String(parsedFormData.email).toLowerCase() : undefined;
           const levelKey = String(parsedFormData?.level || 'initie').toLowerCase();
           if (email) {
@@ -155,6 +187,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
               },
             });
+            console.log('[CLIENT-SUBMIT] DIRECT ORDER CREATED:', order._id, 'Status:', order.status);
           }
         }
       }
@@ -200,12 +233,15 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
               preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
             },
           });
+          console.log('[CLIENT-SUBMIT] ADDITIONAL FALLBACK ORDER CREATED:', order._id, 'Status:', order.status);
         }
       }
 
       if (!order) {
+        console.error('[CLIENT-SUBMIT] FATAL: No order created despite all attempts');
         return res.status(404).json({ error: 'Order not found for paymentIntentId', paymentIntentId });
       }
+      console.log('[CLIENT-SUBMIT] Final order status before file processing:', order.status);
     }
 
     // Traiter les fichiers uploadés
@@ -281,7 +317,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
 
     res.json({ success: true, order });
   } catch (error) {
-    console.error('Client submit error:', error);
+    console.error('[CLIENT-SUBMIT] CATCH BLOCK - An error occurred:', error);
     res.status(500).json({ error: 'Failed to attach client submission' });
   }
 });
