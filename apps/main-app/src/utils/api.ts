@@ -22,15 +22,23 @@ export function getApiBaseUrl(): string {
 export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${getApiBaseUrl()}${endpoint}`;
   
-  const defaultHeaders = {
-    'Content-Type': 'application/json',
+  // Don't set Content-Type for FormData - let the browser set it automatically
+  const defaultHeaders: Record<string, string> = {};
+  
+  // Only set JSON Content-Type if we're not sending FormData
+  if (!(options.body instanceof FormData)) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
+  
+  const headers = {
+    ...defaultHeaders,
     ...options.headers,
   };
 
   try {
     const response = await fetch(url, {
       ...options,
-      headers: defaultHeaders,
+      headers,
     });
 
     if (!response.ok) {

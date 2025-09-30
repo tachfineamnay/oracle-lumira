@@ -64,7 +64,8 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     console.log('[CLIENT-SUBMIT] PaymentIntentId received:', paymentIntentId);
 
     console.log('[CLIENT-SUBMIT] FILES RECEIVED:', req.files);
-    console.log('[CLIENT-SUBMIT] FORM-DATA RAW:', req.body.formData);
+    console.log('[CLIENT-SUBMIT] BODY:', req.body);
+    console.log('[CLIENT-SUBMIT] FORM-DATA RAW:', req.body?.formData);
     
     let order = await Order.findOne({ paymentIntentId });
     console.log('[CLIENT-SUBMIT] Existing order found:', !!order);
@@ -76,8 +77,8 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       try {
         parsedFormData = __earlySafeParse(req.body?.formData);
         console.log('[CLIENT-SUBMIT] FORM-DATA PARSED:', parsedFormData);
-        console.log('[CLIENT-SUBMIT] EMAIL CHECK:', parsedFormData.email);
-        console.log('[CLIENT-SUBMIT] LEVEL CHECK:', parsedFormData.level);
+        console.log('[CLIENT-SUBMIT] EMAIL CHECK:', parsedFormData?.email);
+        console.log('[CLIENT-SUBMIT] LEVEL CHECK:', parsedFormData?.level);
       } catch (e) {
         console.error('[CLIENT-SUBMIT] FATAL: JSON parsing failed:', e);
         return res.status(400).json({ error: 'Invalid formData JSON.' });
@@ -148,7 +149,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
         console.log('[CLIENT-SUBMIT] FALLBACK CONDITION CHECK - ALLOW_DIRECT_CLIENT_SUBMIT === "true"?', process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true');
         
         if (process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true') {
-          console.log('[CLIENT-SUBMIT] CREATING DIRECT ORDER with data:', { email: parsedFormData.email, level: parsedFormData.level });
+          console.log('[CLIENT-SUBMIT] CREATING DIRECT ORDER with data:', { email: parsedFormData?.email, level: parsedFormData?.level });
           const email = parsedFormData?.email ? String(parsedFormData.email).toLowerCase() : undefined;
           const levelKey = String(parsedFormData?.level || 'initie').toLowerCase();
           if (email) {
