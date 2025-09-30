@@ -58,8 +58,9 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
 
     let order = await Order.findOne({ paymentIntentId });
     if (!order) {
-      // Parse early (we may need formData for direct creation)
-      const parsedFormData = req.body?.formData ? JSON.parse(req.body.formData) : {};
+      // Parse early (we may need formData for direct creation) - robust to strings/objects
+      const __earlySafeParse = (v: any) => { try { if (!v) return {}; if (typeof v === 'string') return JSON.parse(v); if (typeof v === 'object') return v; return {}; } catch { return {}; } };
+      const parsedFormData = __earlySafeParse(req.body?.formData);
 
       // 1) Try Stripe validation (standard path)
       try {
