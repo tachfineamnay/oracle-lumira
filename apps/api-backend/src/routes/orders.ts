@@ -40,9 +40,15 @@ const upload = multer({
   }
 });
 
+// Permissive uploader (accept all images) to avoid failing on unknown mimetypes
+const uploadPermissive = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
 // Client submission: attach uploaded files + form data by paymentIntentId
 router.post('/by-payment-intent/:paymentIntentId/client-submit', 
-  upload.fields([{ name: 'facePhoto', maxCount: 1 }, { name: 'palmPhoto', maxCount: 1 }]),
+  uploadPermissive.fields([{ name: 'facePhoto', maxCount: 1 }, { name: 'palmPhoto', maxCount: 1 }]),
   async (req: any, res: any) => {
   try {
     const { paymentIntentId } = req.params;
@@ -168,7 +174,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
         uploadedFiles.push({
           filename: file.filename,
           originalName: file.originalname,
-          path: file.path,
+          path: '/uploads/' + file.filename,
           mimetype: file.mimetype,
           size: file.size,
           type: 'face_photo',
@@ -182,7 +188,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
         uploadedFiles.push({
           filename: file.filename,
           originalName: file.originalname,
-          path: file.path,
+          path: '/uploads/' + file.filename,
           mimetype: file.mimetype,
           size: file.size,
           type: 'palm_photo',

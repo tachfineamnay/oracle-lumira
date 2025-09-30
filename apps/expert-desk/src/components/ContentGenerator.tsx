@@ -63,6 +63,13 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const [expertInstructions, setExpertInstructions] = useState('');
   const [sending, setSending] = useState(false);
   const [n8nWebhookUrl, setN8nWebhookUrl] = useState('');
+  const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+  const hostBase = typeof apiBase === 'string' ? apiBase.replace(/\/api\/?$/, '') : '';
+  const buildFileUrl = (p: string | undefined, fallbackName?: string) => {
+    const path = p && p.length > 0 ? p : (fallbackName ? `/uploads/${fallbackName}` : '');
+    if (!path) return '';
+    return path.startsWith('http') ? path : `${hostBase}${path}`;
+  };
 
   // Reset form when order changes
   React.useEffect(() => {
@@ -270,16 +277,31 @@ PERSONNALISATION:
           <div className="mt-3">
             <span className="text-slate-400 text-xs">Fichiers joints:</span>
             <div className="mt-2 space-y-2">
-              {order.files.map((file, index) => (
-                <div key={index} className="flex items-center gap-2 text-xs bg-white/10 border border-white/20 p-2 rounded">
-                  <FileText className="w-3 h-3 text-amber-400" />
-                  <span className="flex-1 font-medium">{file.originalName}</span>
-                  <span className="text-white/70">{formatFileSize(file.size)}</span>
-                  <button className="text-amber-400 hover:text-amber-300">
-                    <Download className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+              {order.files.map((file, index) => {
+                const url = buildFileUrl((file as any).path, file.filename);
+                const isImage = (file.mimetype || '').startsWith('image/') || /\.(png|jpe?g|gif|webp|heic|heif)$/i.test(url);
+                return (
+                  <div key={index} className="flex items-center gap-3 text-xs bg-white/10 border border-white/20 p-2 rounded">
+                    {isImage ? (
+                      <a href={url} target="_blank" rel="noreferrer">
+                        <img src={url} alt={file.originalName} className="w-14 h-14 object-cover rounded border border-white/20" />
+                      </a>
+                    ) : (
+                      <FileText className="w-4 h-4 text-amber-400" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate font-medium">{file.originalName}</div>
+                      <div className="text-white/60">{formatFileSize(file.size)}</div>
+                    </div>
+                    {url && (
+                      <a href={url} target="_blank" rel="noreferrer" className="text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                        <Download className="w-3 h-3" />
+                        <span>Télécharger</span>
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
