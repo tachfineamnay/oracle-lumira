@@ -72,11 +72,18 @@ export const SanctuaireWelcomeForm: React.FC = () => {
           const formDataToSend = new FormData();
           
           // Ajouter les informations du formulaire
+          // Inclure aussi le niveau depuis l'URL (decouplage Stripe côté Desk)
+          let levelFromUrl: string | undefined;
+          try {
+            levelFromUrl = new URLSearchParams(window.location.search).get('level') || undefined;
+          } catch {}
+
           formDataToSend.append('formData', JSON.stringify({
             email: formData.email,
             phone: formData.phone,
             dateOfBirth: formData.birthDate || undefined,
             specificQuestion: formData.objective || undefined,
+            level: levelFromUrl,
           }));
           
           formDataToSend.append('clientInputs', JSON.stringify({

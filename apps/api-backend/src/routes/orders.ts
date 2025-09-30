@@ -52,13 +52,13 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
 
     let order = await Order.findOne({ paymentIntentId });
     if (!order) {
-      // Try to create the order on-the-fly if payment succeeded (webhook may not have run yet)
+      // Parse early (we may need formData for direct creation)
+      const parsedFormData = req.body?.formData ? JSON.parse(req.body.formData) : {};
+
+      // 1) Try Stripe validation (standard path)
       try {
         const pi = await StripeService.getPaymentIntent(paymentIntentId);
         if (pi && pi.status === 'succeeded') {
-          // Parse form data early to fetch email fallback
-          const parsedFormData = req.body?.formData ? JSON.parse(req.body.formData) : {};
-
           const emailCandidate = (pi.metadata as any)?.customerEmail || parsedFormData?.email;
           if (emailCandidate) {
             const email = String(emailCandidate).toLowerCase();
@@ -72,15 +72,14 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
               });
             }
 
-            const levelKey = String((pi.metadata as any)?.level || 'initie').toLowerCase();
+            const levelKeyStripe = String((pi.metadata as any)?.level || 'initie').toLowerCase();
             const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Int�grale' }> = {
               initie: { num: 1, name: 'Simple' },
               mystique: { num: 2, name: 'Intuitive' },
               profond: { num: 3, name: 'Alchimique' },
               integrale: { num: 4, name: 'Int�grale' },
             };
-            const levelInfo = levelMap[levelKey] || levelMap['initie'];
-
+            const levelInfo = levelMap[levelKeyStripe] || levelMap['initie'];
             const amount = typeof (pi as any).amount === 'number' ? (pi as any).amount : 0;
             const currency = (pi as any).currency || 'eur';
 
@@ -101,16 +100,56 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 phone: parsedFormData?.phone || '',
                 dateOfBirth: parsedFormData?.dateOfBirth ? new Date(parsedFormData.dateOfBirth) : undefined,
                 specificQuestion: parsedFormData?.specificQuestion || parsedFormData?.objective || '',
-                preferences: {
-                  audioVoice: 'feminine',
-                  deliveryFormat: 'email',
-                },
+                preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
               },
             });
           }
         }
       } catch (e) {
-        // Ignore and fall through to 404
+        // 2) Optional direct creation fallback (no Stripe) if explicitly allowed
+        //    This decouples Desk from Stripe for uploads-only workflows.
+        if (process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true') {
+          const email = parsedFormData?.email ? String(parsedFormData.email).toLowerCase() : undefined;
+          const levelKey = String(parsedFormData?.level || 'initie').toLowerCase();
+          if (email) {
+            let user = await User.findOne({ email });
+            if (!user) {
+              const local = email.split('@')[0];
+              user = await User.create({
+                email,
+                firstName: local.substring(0, 1).toUpperCase() + local.substring(1, Math.min(local.length, 20)) || 'Client',
+                lastName: 'Client'
+              });
+            }
+            const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Int�grale' }> = {
+              initie: { num: 1, name: 'Simple' },
+              mystique: { num: 2, name: 'Intuitive' },
+              profond: { num: 3, name: 'Alchimique' },
+              integrale: { num: 4, name: 'Int�grale' },
+            };
+            const levelInfo = levelMap[levelKey] || levelMap['initie'];
+            order = await Order.create({
+              userId: user._id,
+              userEmail: user.email,
+              level: levelInfo.num,
+              levelName: levelInfo.name,
+              amount: 0,
+              currency: 'eur',
+              status: 'paid',
+              paymentIntentId,
+              paidAt: new Date(),
+              formData: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: parsedFormData?.phone || '',
+                dateOfBirth: parsedFormData?.dateOfBirth ? new Date(parsedFormData.dateOfBirth) : undefined,
+                specificQuestion: parsedFormData?.specificQuestion || parsedFormData?.objective || '',
+                preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
+              },
+            });
+          }
+        }
       }
 
       if (!order) {
