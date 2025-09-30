@@ -64,9 +64,11 @@ export const SanctuaireWelcomeForm: React.FC = () => {
         const urlOrder = new URLSearchParams(window.location.search).get('order_id');
         const storedOrder = localStorage.getItem('oraclelumira_last_order_id');
         lastOrderId = urlOrder || storedOrder;
+        console.log('[SANCTUAIRE] LastOrderId found:', lastOrderId);
       } catch {}
 
       if (lastOrderId) {
+        console.log('[SANCTUAIRE] Attempting client-submit to:', `/orders/by-payment-intent/${lastOrderId}/client-submit`);
         try {
           // Utiliser FormData pour envoyer les fichiers
           const formDataToSend = new FormData();
@@ -99,14 +101,18 @@ export const SanctuaireWelcomeForm: React.FC = () => {
             formDataToSend.append('palmPhoto', formData.palmPhoto);
           }
 
+          console.log('[SANCTUAIRE] FormData prepared, sending request...');
           await apiRequest(`/orders/by-payment-intent/${lastOrderId}/client-submit`, {
             method: 'POST',
             body: formDataToSend,
             // Ne pas définir Content-Type, le navigateur le fera automatiquement
           });
+          console.log('[SANCTUAIRE] Client-submit successful!');
         } catch (err) {
-          console.warn('Client submission sync failed:', err);
+          console.warn('[SANCTUAIRE] Client submission sync failed:', err);
         }
+      } else {
+        console.warn('[SANCTUAIRE] No lastOrderId found - skipping client-submit');
       }
       
       // Mettre à jour le profil utilisateur avec les fichiers
@@ -125,10 +131,12 @@ export const SanctuaireWelcomeForm: React.FC = () => {
 
       setFormState('submitted');
       setShowConfirmation(true);
+      console.log('[SANCTUAIRE] Form submission completed successfully');
       
     } catch (error) {
-      console.error('Erreur soumission:', error);
+      console.error('[SANCTUAIRE] Erreur soumission:', error);
     } finally {
+      console.log('[SANCTUAIRE] Setting isSubmitting to false');
       setIsSubmitting(false);
     }
   }, [formData, updateUserProfile]);
