@@ -138,8 +138,9 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
             });
           }
         }
-      } catch (e) {
-        console.log('[CLIENT-SUBMIT] Stripe validation failed:', e.message);
+      } catch (stripeErr) {
+        const e = stripeErr as any;
+        console.log('[CLIENT-SUBMIT] Stripe validation failed:', e?.message || e);
         stripeError = e;
         // 2) Optional direct creation fallback (no Stripe) if explicitly allowed
         //    This decouples Desk from Stripe for uploads-only workflows.
