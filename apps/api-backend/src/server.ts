@@ -104,8 +104,23 @@ app.use('/api/products/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 
 // Body parsing middleware (after webhook routes)
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Skip JSON parsing for upload routes to avoid conflicts with Multer
+app.use((req, res, next) => {
+  // Skip JSON parsing for routes that handle file uploads
+  if (req.path.includes('client-submit')) {
+    console.log('[MIDDLEWARE] Skipping JSON parsing for client-submit route:', req.path);
+    return next();
+  }
+  return express.json({ limit: '10mb' })(req, res, next);
+});
+
+app.use((req, res, next) => {
+  // Skip URL encoding for routes that handle file uploads
+  if (req.path.includes('client-submit')) {
+    return next();
+  }
+  return express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
+});
 
 // Request logging middleware
 app.use((req, res, next) => {
