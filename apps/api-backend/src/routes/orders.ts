@@ -158,6 +158,50 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
         }
       }
 
+      // Additional fallback: create a paid order directly when allowed and no order yet
+      if (!order && process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true') {
+        const email = (parsedFormData && parsedFormData.email) ? String(parsedFormData.email).toLowerCase() : undefined;
+        const levelKey = String(parsedFormData?.level || 'initie').toLowerCase();
+        if (email) {
+          let user = await User.findOne({ email });
+          if (!user) {
+            const local = email.split('@')[0];
+            user = await User.create({
+              email,
+              firstName: local.substring(0, 1).toUpperCase() + local.substring(1, Math.min(local.length, 20)) || 'Client',
+              lastName: 'Client'
+            });
+          }
+          const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Int?grale' }> = {
+            initie: { num: 1, name: 'Simple' },
+            mystique: { num: 2, name: 'Intuitive' },
+            profond: { num: 3, name: 'Alchimique' },
+            integrale: { num: 4, name: 'Int?grale' },
+          };
+          const levelInfo = levelMap[levelKey] || levelMap['initie'];
+          order = await Order.create({
+            userId: user._id,
+            userEmail: user.email,
+            level: levelInfo.num,
+            levelName: levelInfo.name,
+            amount: 0,
+            currency: 'eur',
+            status: 'paid',
+            paymentIntentId,
+            paidAt: new Date(),
+            formData: {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              phone: parsedFormData?.phone || '',
+              dateOfBirth: parsedFormData?.dateOfBirth ? new Date(parsedFormData.dateOfBirth) : undefined,
+              specificQuestion: parsedFormData?.specificQuestion || parsedFormData?.objective || '',
+              preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
+            },
+          });
+        }
+      }
+
       if (!order) {
         return res.status(404).json({ error: 'Order not found for paymentIntentId', paymentIntentId });
       }
@@ -198,8 +242,9 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     }
 
     // Parser les données JSON depuis FormData
-    const formData = req.body.formData ? JSON.parse(req.body.formData) : {};
-    const clientInputs = req.body.clientInputs ? JSON.parse(req.body.clientInputs) : {};
+    const __safeParse = (v: any) => { try { if (!v) return {}; if (typeof v === 'string') return JSON.parse(v); if (typeof v === 'object') return v; return {}; } catch { return {}; } };
+    const formData = __safeParse(req.body.formData);
+    const clientInputs = __safeParse(req.body.clientInputs);
 
     // Fusionner les fichiers existants avec les nouveaux
     const existing = order.files || [];
