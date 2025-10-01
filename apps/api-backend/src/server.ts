@@ -1,8 +1,6 @@
 console.log('✅ [API] server.ts - Script started');
 
 import express from 'express';
-import path from 'path';
-import fs from 'fs';
 import mongoose from 'mongoose';
 import { execSync } from 'child_process';
 import cors from 'cors';
@@ -132,68 +130,6 @@ app.use((req, res, next) => {
 
 console.log('✅ [API] server.ts - Middleware configured');
 
-const ensureDirectoriesExist = (dirs: string[]) => {
-  dirs.forEach(dir => {
-    try {
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-        console.log(`✅ [STARTUP] Directory created: ${dir}`);
-      } else {
-        console.log(`✅ [STARTUP] Directory exists: ${dir}`);
-      }
-      
-      // Test de permissions avancé
-      const testFile = path.join(dir, `.write-test-${Date.now()}`);
-      fs.writeFileSync(testFile, 'permission-test');
-      fs.unlinkSync(testFile);
-      
-      // Vérification des permissions effectif
-      const stats = fs.statSync(dir);
-      console.log(`✅ [STARTUP] Directory ${dir} - Mode: ${stats.mode.toString(8)}, UID: ${stats.uid}, GID: ${stats.gid}`);
-      
-    } catch (error: any) {
-      console.error(`❌ [STARTUP] Critical permission error for ${dir}:`, error.message);
-      
-      if (error.code === 'EACCES') {
-        console.log(`🔧 [STARTUP] Attempting runtime permission fix for ${dir}...`);
-        try {
-          const currentUid = process.getuid ? process.getuid() : 'unknown';
-          const currentGid = process.getgid ? process.getgid() : 'unknown';
-          console.log(`📋 [STARTUP] Current process UID: ${currentUid}, GID: ${currentGid}`);
-          
-          // Tentative de correction avec les permissions actuelles
-          if (typeof currentUid === 'number' && typeof currentGid === 'number') {
-            execSync(`chown -R ${currentUid}:${currentGid} "${dir}"`, { stdio: 'inherit' });
-            execSync(`chmod -R 755 "${dir}"`, { stdio: 'inherit' });
-            console.log(`✅ [STARTUP] Runtime permission fix successful for ${dir}`);
-            
-            // Réessayer le test d'écriture
-            const testFile = path.join(dir, `.write-test-${Date.now()}`);
-            fs.writeFileSync(testFile, 'permission-test-retry');
-            fs.unlinkSync(testFile);
-            console.log(`✅ [STARTUP] Write test successful after fix for ${dir}`);
-          } else {
-            console.warn(`⚠️ [STARTUP] Cannot determine current UID/GID, skipping chown for ${dir}`);
-          }
-        } catch (fixError) {
-          console.error(`❌ [STARTUP] Runtime permission fix failed:`, fixError);
-          console.error(`❌ [STARTUP] CRITICAL: Directory ${dir} is not writable. Application may fail.`);
-          // Ne pas arrêter l'application, mais logger l'erreur critique
-        }
-      } else {
-        console.error(`❌ [STARTUP] Directory error for ${dir}:`, error);
-      }
-    }
-  });
-};
-
-// Call directory check immediately
-const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
-const generatedDir = process.env.GENERATED_DIR || path.join(process.cwd(), 'generated');
-const logsDir = process.env.LOGS_DIR || path.join(process.cwd(), 'logs');
-const dirs = [uploadsDir, generatedDir, logsDir];
-ensureDirectoriesExist(dirs);
-
 // Simple healthcheck endpoint for Coolify
 app.get('/api/healthz', (req, res) => {
   res.status(200).json({ 
@@ -217,18 +153,6 @@ app.use('/api/products', productRoutes);
 app.use('/api/debug', envDebugRoutes);
 // Mount real expert routes (production-ready)
 app.use('/api/expert', expertRoutes);
-
-// Expose uploaded and generated files for Expert Desk access
-try {
-  const uploadsPath = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
-  const generatedPath = process.env.GENERATED_DIR || path.join(process.cwd(), 'generated');
-  app.use('/uploads', express.static(uploadsPath));
-  app.use('/generated', express.static(generatedPath));
-  console.log(`Uploads served at /uploads from ${uploadsPath}`);
-  console.log(`Generated served at /generated from ${generatedPath}`);
-} catch (e) {
-  console.warn('Could not configure static asset directories:', e);
-}
 
 // Test/debug routes only in non-production environments
 if (process.env.NODE_ENV !== 'production') {

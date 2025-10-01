@@ -1,34 +1,18 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { Order } from '../models/Order';
 import { User } from '../models/User';
 import jwt from 'jsonwebtoken';
 import { StripeService } from '../services/stripe';
+import { s3Service, FileUploadData } from '../services/s3';
 
 const router = express.Router();
 
-// Configuration Multer pour upload de fichiers
-const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ 
-  storage,
+// Configuration Multer pour upload en mémoire (S3)
+const upload = multer({
+  storage: multer.memoryStorage(), // ✅ Buffer en mémoire
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 10 * 1024 * 1024, // 10MB max
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -40,10 +24,10 @@ const upload = multer({
   }
 });
 
-// Permissive uploader (accept all images) to avoid failing on unknown mimetypes
+// Upload permissif pour éviter les erreurs de type MIME
 const uploadPermissive = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }
+  storage: multer.memoryStorage(), // ✅ Buffer en mémoire
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
 // Client submission: attach uploaded files + form data by paymentIntentId
@@ -252,36 +236,66 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       console.log('[CLIENT-SUBMIT] Final order status before file processing:', order.status);
     }
 
-    // Traiter les fichiers uploadés
+    // Traiter les fichiers uploadés avec S3
     const uploadedFiles = [];
     if (req.files) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       
-      // Photo de visage
-      if (files.facePhoto && files.facePhoto[0]) {
-        const file = files.facePhoto[0];
-        uploadedFiles.push({
-          filename: file.filename,
-          originalName: file.originalname,
-          path: '/uploads/' + file.filename,
-          mimetype: file.mimetype,
-          size: file.size,
-          type: 'face_photo',
-          uploadedAt: new Date()
-        });
-      }
-      
-      // Photo de paume
-      if (files.palmPhoto && files.palmPhoto[0]) {
-        const file = files.palmPhoto[0];
-        uploadedFiles.push({
-          filename: file.filename,
-          originalName: file.originalname,
-          path: '/uploads/' + file.filename,
-          mimetype: file.mimetype,
-          size: file.size,
-          type: 'palm_photo',
-          uploadedAt: new Date()
+      try {
+        // Préparer les données de fichiers pour S3
+        const filesToUpload: FileUploadData[] = [];
+        
+        // Photo de visage
+        if (files.facePhoto && files.facePhoto[0]) {
+          const file = files.facePhoto[0];
+          filesToUpload.push({
+            buffer: file.buffer,
+            originalName: file.originalname,
+            contentType: file.mimetype,
+            size: file.size,
+            type: 'face_photo'
+          });
+        }
+        
+        // Photo de paume
+        if (files.palmPhoto && files.palmPhoto[0]) {
+          const file = files.palmPhoto[0];
+          filesToUpload.push({
+            buffer: file.buffer,
+            originalName: file.originalname,
+            contentType: file.mimetype,
+            size: file.size,
+            type: 'palm_photo'
+          });
+        }
+        
+        // Upload vers S3 en parallèle
+        if (filesToUpload.length > 0) {
+          console.log(`[CLIENT-SUBMIT] Uploading ${filesToUpload.length} files to S3`);
+          const s3Results = await s3Service.uploadMultipleFiles(filesToUpload);
+          
+          // Convertir les résultats S3 au format attendu
+          s3Results.forEach((result, index) => {
+            const originalFileData = filesToUpload[index];
+            uploadedFiles.push({
+              name: originalFileData.originalName,
+              url: result.url,
+              key: result.key,
+              contentType: result.contentType,
+              size: result.size,
+              type: originalFileData.type,
+              uploadedAt: new Date()
+            });
+          });
+          
+          console.log(`[CLIENT-SUBMIT] Successfully uploaded ${uploadedFiles.length} files to S3`);
+        }
+        
+      } catch (uploadError: any) {
+        console.error('[CLIENT-SUBMIT] S3 upload error:', uploadError.message);
+        return res.status(500).json({ 
+          error: 'Erreur upload fichiers', 
+          details: uploadError.message 
         });
       }
     }
