@@ -325,10 +325,8 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
 
     res.json({ success: true, order });
   } catch (catchError) {
-    const err = catchError as any;
-    console.error('[CLIENT-SUBMIT] ERREUR BLOQUANTE:', err);
-    console.error('[CLIENT-SUBMIT] Stack trace:', err?.stack);
-    res.status(500).json({ error: 'Erreur client-submit', details: err?.message || 'Unknown error' });
+    console.error('[CLIENT-SUBMIT] ERREUR BLOQUANTE - Une erreur s\'est produite');
+    res.status(500).json({ error: 'Erreur client-submit', details: 'Erreur interne' });
   }
 });
 
