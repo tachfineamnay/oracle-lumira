@@ -4,6 +4,7 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import mongoose from 'mongoose';
+import { execSync } from 'child_process';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -131,37 +132,50 @@ app.use((req, res, next) => {
 
 console.log('✅ [API] server.ts - Middleware configured');
 
-// 🚀 PERMISSIONS CHECK - Ensure upload directories exist and are writable
-function ensureDirectoriesExist() {
-  const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
-  const generatedDir = process.env.GENERATED_DIR || path.join(process.cwd(), 'generated');
-  const logsDir = process.env.LOGS_DIR || path.join(process.cwd(), 'logs');
-  
-  const dirs = [uploadsDir, generatedDir, logsDir];
-  
+const ensureDirectoriesExist = (dirs: string[]) => {
   dirs.forEach(dir => {
     try {
       if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
-        console.log(`✅ [STARTUP] Created directory: ${dir}`);
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`✅ [STARTUP] Directory created: ${dir}`);
       } else {
         console.log(`✅ [STARTUP] Directory exists: ${dir}`);
       }
-      
-      // Test write permissions
+      // Test d'écriture
       const testFile = path.join(dir, '.write-test');
       fs.writeFileSync(testFile, 'test');
       fs.unlinkSync(testFile);
-      console.log(`✅ [STARTUP] Write permissions OK for: ${dir}`);
-    } catch (error) {
-      console.error(`❌ [STARTUP] Directory error for ${dir}:`, error);
-      logger.error(`Directory setup failed for ${dir}`);
+    } catch (error: any) {
+      console.error(`❌ [STARTUP] Directory setup failed for ${dir}`, { timestamp: new Date().toISOString() });
+      if (error.code === 'EACCES') {
+        console.log(`🔧 [STARTUP] Permission denied, attempting to fix permissions for ${dir}...`);
+        try {
+          // On corrige les permissions sur le dossier parent et le dossier lui-même
+          const parentDir = path.dirname(dir);
+          execSync(`chown -R 1001:1001 "${parentDir}" "${dir}"`, { stdio: 'inherit' });
+          execSync(`chmod -R 755 "${parentDir}" "${dir}"`, { stdio: 'inherit' });
+          console.log(`✅ [STARTUP] Permissions fixed for ${dir}. Retrying write test...`);
+          // On réessaye le test d'écriture
+          const testFile = path.join(dir, '.write-test');
+          fs.writeFileSync(testFile, 'test');
+          fs.unlinkSync(testFile);
+          console.log(`✅ [STARTUP] Write test successful for ${dir}.`);
+        } catch (fixError) {
+          console.error(`❌ [STARTUP] Failed to fix permissions for ${dir}:`, fixError);
+        }
+      } else {
+        console.error(`❌ [STARTUP] Directory error for ${dir}:`, error);
+      }
     }
   });
-}
+};
 
 // Call directory check immediately
-ensureDirectoriesExist();
+const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
+const generatedDir = process.env.GENERATED_DIR || path.join(process.cwd(), 'generated');
+const logsDir = process.env.LOGS_DIR || path.join(process.cwd(), 'logs');
+const dirs = [uploadsDir, generatedDir, logsDir];
+ensureDirectoriesExist(dirs);
 
 // Simple healthcheck endpoint for Coolify
 app.get('/api/healthz', (req, res) => {
