@@ -2,6 +2,7 @@ console.log('✅ [API] server.ts - Script started');
 
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -129,6 +130,38 @@ app.use((req, res, next) => {
 });
 
 console.log('✅ [API] server.ts - Middleware configured');
+
+// 🚀 PERMISSIONS CHECK - Ensure upload directories exist and are writable
+function ensureDirectoriesExist() {
+  const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
+  const generatedDir = process.env.GENERATED_DIR || path.join(process.cwd(), 'generated');
+  const logsDir = process.env.LOGS_DIR || path.join(process.cwd(), 'logs');
+  
+  const dirs = [uploadsDir, generatedDir, logsDir];
+  
+  dirs.forEach(dir => {
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+        console.log(`✅ [STARTUP] Created directory: ${dir}`);
+      } else {
+        console.log(`✅ [STARTUP] Directory exists: ${dir}`);
+      }
+      
+      // Test write permissions
+      const testFile = path.join(dir, '.write-test');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      console.log(`✅ [STARTUP] Write permissions OK for: ${dir}`);
+    } catch (error) {
+      console.error(`❌ [STARTUP] Directory error for ${dir}:`, error);
+      logger.error(`Directory setup failed for ${dir}`);
+    }
+  });
+}
+
+// Call directory check immediately
+ensureDirectoriesExist();
 
 // Simple healthcheck endpoint for Coolify
 app.get('/api/healthz', (req, res) => {
