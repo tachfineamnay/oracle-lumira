@@ -51,6 +51,12 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
   uploadPermissive.fields([{ name: 'facePhoto', maxCount: 1 }, { name: 'palmPhoto', maxCount: 1 }]),
   async (req: any, res: any) => {
   try {
+    // =================== INSTRUMENTATION AGRESSIVE CLIENT-SUBMIT ===================
+    console.log('[CLIENT-SUBMIT] Début de traitement - PI:', req.params.paymentIntentId);
+    console.log('[CLIENT-SUBMIT] Fichiers reçus:', req.files);
+    console.log('[CLIENT-SUBMIT] Body reçu:', req.body);
+    console.log('[CLIENT-SUBMIT] Headers:', req.headers);
+    // =================== FIN INSTRUMENTATION ===================
     // =================== MISSION FINISH LINE - INSTRUMENTATION CHIRURGICALE ===================
     console.log('[CLIENT-SUBMIT] START - Request received. Headers:', req.headers);
     console.log('[CLIENT-SUBMIT] ENV CHECK - ALLOW_DIRECT_CLIENT_SUBMIT:', process.env.ALLOW_DIRECT_CLIENT_SUBMIT);
@@ -319,8 +325,9 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
 
     res.json({ success: true, order });
   } catch (error) {
-    console.error('[CLIENT-SUBMIT] CATCH BLOCK - An error occurred:', error);
-    res.status(500).json({ error: 'Failed to attach client submission' });
+    console.error('[CLIENT-SUBMIT] ERREUR BLOQUANTE:', error);
+    console.error('[CLIENT-SUBMIT] Stack trace:', error.stack);
+    res.status(500).json({ error: 'Erreur client-submit', details: error.message });
   }
 });
 

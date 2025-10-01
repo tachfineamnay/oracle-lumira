@@ -527,6 +527,46 @@ router.post('/n8n-callback', async (req: any, res: any) => {
   }
 });
 
+// ROUTES SPÉCIFIQUES AVANT LES ROUTES GÉNÉRIQUES
+// Get orders awaiting validation - DOIT ÊTRE AVANT /orders/:id
+router.get('/orders/validation-queue', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const orders = await Order.find({
+      status: 'awaiting_validation',
+      'expertValidation.validationStatus': 'pending'
+    })
+    .populate('userId', 'firstName lastName email phone')
+    .sort({ updatedAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+    const total = await Order.countDocuments({
+      status: 'awaiting_validation',
+      'expertValidation.validationStatus': 'pending'
+    });
+
+    console.log(`📋 ${orders.length} commandes en attente de validation`);
+
+    res.json({
+      orders,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: total,
+        limit
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get validation queue error:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement de la queue de validation' });
+  }
+});
+
 // Get single order details
 router.get('/orders/:id', authenticateExpert, async (req: any, res: any) => {
   try {
@@ -855,50 +895,6 @@ router.get('/profile', authenticateExpert, async (req: any, res: any) => {
 });
 
 // NOUVELLES ROUTES DE VALIDATION EXPERT DESK
-
-// Get orders awaiting validation
-router.get('/orders/validation-queue', authenticateExpert, async (req: any, res: any) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    // Récupérer les commandes en attente de validation
-    const orders = await Order.find({
-      status: 'awaiting_validation',
-      'expertValidation.validationStatus': 'pending'
-    })
-    .populate('userId', 'firstName lastName email phone')
-    .sort({ updatedAt: -1 }) // Plus récemment mises à jour en premier
-    .skip(skip)
-    .limit(limit);
-
-    const total = await Order.countDocuments({
-      status: 'awaiting_validation',
-      'expertValidation.validationStatus': 'pending'
-    });
-
-    console.log(`📋 ${orders.length} commandes en attente de validation`);
-
-    res.json({
-      orders,
-      pagination: {
-        current: page,
-        total: Math.ceil(total / limit),
-        count: total,
-        limit
-      },
-      stats: {
-        awaitingValidation: total,
-        averageRevisions: await calculateAverageRevisions()
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Get validation queue error:', error);
-    res.status(500).json({ error: 'Erreur lors du chargement de la queue de validation' });
-  }
-});
 
 // Validate content (approve or reject)
 router.post('/validate-content', authenticateExpert, async (req: any, res: any) => {
