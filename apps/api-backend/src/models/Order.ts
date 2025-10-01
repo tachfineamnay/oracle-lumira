@@ -34,14 +34,20 @@ export interface IOrder extends Document {
     };
   };
   
-  // Client uploaded files
+  // Client uploaded files with S3 support
   files?: [{
-    filename: string;
-    originalName: string;
-    path: string;
-    mimetype: string;
-    size: number;
-    uploadedAt: Date;
+    name: string;          // Nom d'affichage du fichier
+    url: string;           // URL publique S3 d'accès direct
+    key: string;           // Clé S3 pour gestion interne
+    contentType: string;   // Type MIME
+    size: number;          // Taille en octets
+    uploadedAt: Date;      // Timestamp d'upload
+    type?: string;         // Type fonctionnel (face_photo, palm_photo)
+    // Champs legacy (à supprimer après migration)
+    filename?: string;     // DEPRECATED - à supprimer
+    originalName?: string; // DEPRECATED - à supprimer  
+    path?: string;         // DEPRECATED - à supprimer
+    mimetype?: string;     // DEPRECATED - à supprimer
   }];
   
   // Client additional inputs
@@ -167,12 +173,18 @@ const orderSchema = new Schema<IOrder>({
   },
   
   files: [{
-    filename: { type: String, required: true },
-    originalName: { type: String, required: true },
-    path: String,
-    mimetype: String,
-    size: Number,
-    uploadedAt: { type: Date, default: Date.now }
+    name: { type: String, required: true },        // Nom d'affichage
+    url: { type: String, required: true },         // URL publique S3
+    key: { type: String, required: true },         // Clé S3
+    contentType: { type: String, required: true }, // Type MIME
+    size: { type: Number, required: true },        // Taille en octets
+    uploadedAt: { type: Date, default: Date.now }, // Timestamp
+    type: String,                                   // Type fonctionnel
+    // Champs legacy pour compatibilité (optionnels)
+    filename: String,     // DEPRECATED
+    originalName: String, // DEPRECATED
+    path: String,         // DEPRECATED
+    mimetype: String      // DEPRECATED
   }],
   
   clientInputs: {
