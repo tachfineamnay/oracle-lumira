@@ -114,11 +114,16 @@ export const SanctuaireWelcomeForm: React.FC = () => {
           console.log('🚀 [SANCTUAIRE] FINAL URL:', finalUrl);
           console.log('📦 [SANCTUAIRE] FORMDATA KEYS:', Array.from(formDataToSend.keys()));
           
-          await apiRequest(targetUrl, {
+          // APPEL DIRECT SANS API REQUEST POUR ÉVITER DOUBLE /API
+          const response = await fetch(finalUrl, {
             method: 'POST',
             body: formDataToSend,
-            // Ne pas définir Content-Type, le navigateur le fera automatiquement
           });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
           console.log('✅ [SANCTUAIRE] Client-submit successful!');
         } catch (err) {
           console.warn('[SANCTUAIRE] Client submission sync failed:', err);
