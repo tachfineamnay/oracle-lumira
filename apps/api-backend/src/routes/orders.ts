@@ -324,10 +324,11 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     await order.save();
 
     res.json({ success: true, order });
-  } catch (error) {
-    console.error('[CLIENT-SUBMIT] ERREUR BLOQUANTE:', error);
-    console.error('[CLIENT-SUBMIT] Stack trace:', error.stack);
-    res.status(500).json({ error: 'Erreur client-submit', details: error.message });
+  } catch (catchError) {
+    const err = catchError as any;
+    console.error('[CLIENT-SUBMIT] ERREUR BLOQUANTE:', err);
+    console.error('[CLIENT-SUBMIT] Stack trace:', err?.stack);
+    res.status(500).json({ error: 'Erreur client-submit', details: err?.message || 'Unknown error' });
   }
 });
 
