@@ -31,8 +31,8 @@ COPY --from=builder --chown=lumira:nodejs /app/dist ./dist
 COPY --from=builder --chown=lumira:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=lumira:nodejs /app/package.json ./
 
-# Create logs directory
-RUN mkdir -p /app/logs && chown lumira:nodejs /app/logs
+# Create logs and uploads directories with proper permissions
+RUN mkdir -p /app/logs /app/uploads /app/generated && chown -R lumira:nodejs /app/logs /app/uploads /app/generated
 
 # Switch to non-root user
 USER lumira
