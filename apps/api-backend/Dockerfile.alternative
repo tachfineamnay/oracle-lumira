@@ -1,0 +1,24 @@
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine
+WORKDIR /app
+
+# Créer les répertoires avec les bonnes permissions
+RUN mkdir -p uploads logs generated && \
+    chown -R node:node uploads logs generated && \
+    chmod -R 755 uploads logs generated
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+
+# Définir l'utilisateur d'exécution
+USER node
+
+EXPOSE 3000
+CMD ["node", "dist/server.js"]

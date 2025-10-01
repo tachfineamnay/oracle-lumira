@@ -141,27 +141,44 @@ const ensureDirectoriesExist = (dirs: string[]) => {
       } else {
         console.log(`✅ [STARTUP] Directory exists: ${dir}`);
       }
-      // Test d'écriture
-      const testFile = path.join(dir, '.write-test');
-      fs.writeFileSync(testFile, 'test');
+      
+      // Test de permissions avancé
+      const testFile = path.join(dir, `.write-test-${Date.now()}`);
+      fs.writeFileSync(testFile, 'permission-test');
       fs.unlinkSync(testFile);
+      
+      // Vérification des permissions effectif
+      const stats = fs.statSync(dir);
+      console.log(`✅ [STARTUP] Directory ${dir} - Mode: ${stats.mode.toString(8)}, UID: ${stats.uid}, GID: ${stats.gid}`);
+      
     } catch (error: any) {
-      console.error(`❌ [STARTUP] Directory setup failed for ${dir}`, { timestamp: new Date().toISOString() });
+      console.error(`❌ [STARTUP] Critical permission error for ${dir}:`, error.message);
+      
       if (error.code === 'EACCES') {
-        console.log(`🔧 [STARTUP] Permission denied, attempting to fix permissions for ${dir}...`);
+        console.log(`🔧 [STARTUP] Attempting runtime permission fix for ${dir}...`);
         try {
-          // On corrige les permissions sur le dossier parent et le dossier lui-même
-          const parentDir = path.dirname(dir);
-          execSync(`chown -R 1001:1001 "${parentDir}" "${dir}"`, { stdio: 'inherit' });
-          execSync(`chmod -R 755 "${parentDir}" "${dir}"`, { stdio: 'inherit' });
-          console.log(`✅ [STARTUP] Permissions fixed for ${dir}. Retrying write test...`);
-          // On réessaye le test d'écriture
-          const testFile = path.join(dir, '.write-test');
-          fs.writeFileSync(testFile, 'test');
-          fs.unlinkSync(testFile);
-          console.log(`✅ [STARTUP] Write test successful for ${dir}.`);
+          const currentUid = process.getuid ? process.getuid() : 'unknown';
+          const currentGid = process.getgid ? process.getgid() : 'unknown';
+          console.log(`📋 [STARTUP] Current process UID: ${currentUid}, GID: ${currentGid}`);
+          
+          // Tentative de correction avec les permissions actuelles
+          if (typeof currentUid === 'number' && typeof currentGid === 'number') {
+            execSync(`chown -R ${currentUid}:${currentGid} "${dir}"`, { stdio: 'inherit' });
+            execSync(`chmod -R 755 "${dir}"`, { stdio: 'inherit' });
+            console.log(`✅ [STARTUP] Runtime permission fix successful for ${dir}`);
+            
+            // Réessayer le test d'écriture
+            const testFile = path.join(dir, `.write-test-${Date.now()}`);
+            fs.writeFileSync(testFile, 'permission-test-retry');
+            fs.unlinkSync(testFile);
+            console.log(`✅ [STARTUP] Write test successful after fix for ${dir}`);
+          } else {
+            console.warn(`⚠️ [STARTUP] Cannot determine current UID/GID, skipping chown for ${dir}`);
+          }
         } catch (fixError) {
-          console.error(`❌ [STARTUP] Failed to fix permissions for ${dir}:`, fixError);
+          console.error(`❌ [STARTUP] Runtime permission fix failed:`, fixError);
+          console.error(`❌ [STARTUP] CRITICAL: Directory ${dir} is not writable. Application may fail.`);
+          // Ne pas arrêter l'application, mais logger l'erreur critique
         }
       } else {
         console.error(`❌ [STARTUP] Directory error for ${dir}:`, error);
