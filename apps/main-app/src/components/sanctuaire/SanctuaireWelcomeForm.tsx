@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useUserLevel } from '../../contexts/UserLevelContext';
 import { apiRequest } from '../../utils/api';
+import { getApiBaseUrl } from '../../lib/apiBase';
 import GlassCard from '../ui/GlassCard';
 
 interface FormData {
@@ -102,12 +103,23 @@ export const SanctuaireWelcomeForm: React.FC = () => {
           }
 
           console.log('[SANCTUAIRE] FormData prepared, sending request...');
-          await apiRequest(`/orders/by-payment-intent/${lastOrderId}/client-submit`, {
+          
+          // 🚀 INSTRUMENTATION GPS - TRACAGE COMPLET
+          const targetUrl = `/orders/by-payment-intent/${lastOrderId}/client-submit`;
+          const fullApiUrl = getApiBaseUrl();
+          const finalUrl = `${fullApiUrl}${targetUrl}`;
+          
+          console.log('🌐 [SANCTUAIRE] API BASE URL:', fullApiUrl);
+          console.log('🎯 [SANCTUAIRE] TARGET ENDPOINT:', targetUrl);
+          console.log('🚀 [SANCTUAIRE] FINAL URL:', finalUrl);
+          console.log('📦 [SANCTUAIRE] FORMDATA KEYS:', Array.from(formDataToSend.keys()));
+          
+          await apiRequest(targetUrl, {
             method: 'POST',
             body: formDataToSend,
             // Ne pas définir Content-Type, le navigateur le fera automatiquement
           });
-          console.log('[SANCTUAIRE] Client-submit successful!');
+          console.log('✅ [SANCTUAIRE] Client-submit successful!');
         } catch (err) {
           console.warn('[SANCTUAIRE] Client submission sync failed:', err);
         }

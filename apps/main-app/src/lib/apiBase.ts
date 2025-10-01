@@ -8,7 +8,7 @@ export function getApiBaseUrl() {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host.endsWith('oraclelumira.com')) {
-      return 'https://api.oraclelumira.com/api';
+      return 'https://api.oraclelumira.com';
     }
   }
   // Default to same-origin proxy
