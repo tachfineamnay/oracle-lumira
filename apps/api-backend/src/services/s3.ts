@@ -105,7 +105,7 @@ export class S3Service {
       return `${endpoint.replace(/\/$/, '')}/${this.bucketName}/${key}`;
     } else {
       // AWS S3 standard
-      const region = process.env.S3_REGION || 'us-east-1';
+      const region = process.env.AWS_REGION || 'us-east-1';
       return `https://${this.bucketName}.s3.${region}.amazonaws.com/${key}`;
     }
   }
@@ -145,17 +145,17 @@ let s3ServiceInstance: S3Service | null = null;
 export function getS3Service(): S3Service {
   if (!s3ServiceInstance) {
     const config: S3Config = {
-      accessKeyId: process.env.S3_ACCESS_KEY || process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.S3_SECRET_KEY || process.env.AWS_SECRET_ACCESS_KEY || '',
-      region: process.env.S3_REGION || process.env.AWS_REGION || 'us-east-1',
-      bucketName: process.env.S3_BUCKET_NAME || 'lumira-uploads',
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+      region: process.env.AWS_REGION || 'us-east-1',
+      bucketName: process.env.AWS_S3_BUCKET_NAME || 'lumira-uploads',
       endpoint: process.env.S3_ENDPOINT,
       forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
     };
 
     // Validation de la configuration
     if (!config.accessKeyId || !config.secretAccessKey) {
-      throw new Error('Configuration S3 manquante: S3_ACCESS_KEY et S3_SECRET_KEY requis');
+      throw new Error('Configuration S3 manquante: AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis');
     }
 
     s3ServiceInstance = new S3Service(config);
