@@ -1,37 +1,24 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { Order } from '../models/Order';
 import { User } from '../models/User';
 import jwt from 'jsonwebtoken';
 import { StripeService } from '../services/stripe';
+import { getS3Service } from '../services/s3';
 
 const router = express.Router();
 
-// Configuration Multer pour upload de fichiers
-const uploadsDir = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configuration Multer pour upload de fichiers en mémoire (S3)
 const upload = multer({ 
-  storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'image/heic', 'image/heif' // Support formats iPhone
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -40,9 +27,9 @@ const upload = multer({
   }
 });
 
-// Permissive uploader (accept all images) to avoid failing on unknown mimetypes
+// Uploader permissif pour éviter les erreurs de type MIME
 const uploadPermissive = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
@@ -252,37 +239,62 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       console.log('[CLIENT-SUBMIT] Final order status before file processing:', order.status);
     }
 
-    // Traiter les fichiers uploadés
+    // Traiter les fichiers uploadés avec S3
     const uploadedFiles = [];
     if (req.files) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const s3Service = getS3Service();
       
       // Photo de visage
       if (files.facePhoto && files.facePhoto[0]) {
         const file = files.facePhoto[0];
-        uploadedFiles.push({
-          filename: file.filename,
-          originalName: file.originalname,
-          path: '/uploads/' + file.filename,
-          mimetype: file.mimetype,
-          size: file.size,
-          type: 'face_photo',
-          uploadedAt: new Date()
-        });
+        try {
+          const uploadResult = await s3Service.uploadFile(
+            file.buffer,
+            file.originalname,
+            file.mimetype,
+            'face_photo'
+          );
+          
+          uploadedFiles.push({
+            name: file.originalname,
+            url: uploadResult.url,
+            key: uploadResult.key,
+            contentType: file.mimetype,
+            size: uploadResult.size,
+            type: 'face_photo',
+            uploadedAt: new Date()
+          });
+        } catch (error) {
+          console.error('Erreur upload photo visage S3:', error);
+          return res.status(500).json({ error: 'Échec upload photo visage' });
+        }
       }
       
       // Photo de paume
       if (files.palmPhoto && files.palmPhoto[0]) {
         const file = files.palmPhoto[0];
-        uploadedFiles.push({
-          filename: file.filename,
-          originalName: file.originalname,
-          path: '/uploads/' + file.filename,
-          mimetype: file.mimetype,
-          size: file.size,
-          type: 'palm_photo',
-          uploadedAt: new Date()
-        });
+        try {
+          const uploadResult = await s3Service.uploadFile(
+            file.buffer,
+            file.originalname,
+            file.mimetype,
+            'palm_photo'
+          );
+          
+          uploadedFiles.push({
+            name: file.originalname,
+            url: uploadResult.url,
+            key: uploadResult.key,
+            contentType: file.mimetype,
+            size: uploadResult.size,
+            type: 'palm_photo',
+            uploadedAt: new Date()
+          });
+        } catch (error) {
+          console.error('Erreur upload photo paume S3:', error);
+          return res.status(500).json({ error: 'Échec upload photo paume' });
+        }
       }
     }
 

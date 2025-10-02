@@ -34,13 +34,14 @@ export interface IOrder extends Document {
     };
   };
   
-  // Client uploaded files
+  // Client uploaded files (nouveaux format S3)
   files?: [{
-    filename: string;
-    originalName: string;
-    path: string;
-    mimetype: string;
+    name: string; // Nom d'affichage
+    url: string; // URL publique S3
+    key: string; // Clé S3 pour gestion
+    contentType: string; // Type MIME
     size: number;
+    type: 'face_photo' | 'palm_photo'; // Type fonctionnel
     uploadedAt: Date;
   }];
   
@@ -167,11 +168,12 @@ const orderSchema = new Schema<IOrder>({
   },
   
   files: [{
-    filename: { type: String, required: true },
-    originalName: { type: String, required: true },
-    path: String,
-    mimetype: String,
-    size: Number,
+    name: { type: String, required: true }, // Nom d'affichage
+    url: { type: String, required: true }, // URL publique S3
+    key: { type: String, required: true }, // Clé S3
+    contentType: { type: String, required: true }, // Type MIME
+    size: { type: Number, required: true },
+    type: { type: String, enum: ['face_photo', 'palm_photo'], required: true },
     uploadedAt: { type: Date, default: Date.now }
   }],
   

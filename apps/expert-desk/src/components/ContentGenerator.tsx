@@ -66,9 +66,13 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
   const hostBase = typeof apiBase === 'string' ? apiBase.replace(/\/api\/?$/, '') : '';
   const buildFileUrl = (p: string | undefined, fallbackName?: string) => {
+    // Pour S3, utiliser directement l'URL complète si elle commence par http
     const path = p && p.length > 0 ? p : (fallbackName ? `/uploads/${fallbackName}` : '');
     if (!path) return '';
-    return path.startsWith('http') ? path : `${hostBase}${path}`;
+    // Si c'est déjà une URL S3 complète, la retourner directement
+    if (path.startsWith('http')) return path;
+    // Sinon, construire l'URL locale (fallback)
+    return `${hostBase}${path}`;
   };
 
   // Reset form when order changes
@@ -278,7 +282,8 @@ PERSONNALISATION:
             <span className="text-slate-400 text-xs">Fichiers joints:</span>
             <div className="mt-2 space-y-2">
               {order.files.map((file, index) => {
-                const url = buildFileUrl((file as any).path, file.filename);
+                // Nouveau système S3 : utiliser directement file.url
+                const url = (file as any).url || buildFileUrl((file as any).path, file.filename);
                 const isImage = (file.mimetype || '').startsWith('image/') || /\.(png|jpe?g|gif|webp|heic|heif)$/i.test(url);
                 return (
                   <div key={index} className="flex items-center gap-3 text-xs bg-white/10 border border-white/20 p-2 rounded">
