@@ -145,8 +145,8 @@ let s3ServiceInstance: S3Service | null = null;
 export function getS3Service(): S3Service {
   if (!s3ServiceInstance) {
     const config: S3Config = {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.LUMIRA_ACCESS_KEY || '',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || process.env.LUMIRA_SECRET_KEY || '',
       region: process.env.AWS_REGION || 'us-east-1',
       bucketName: process.env.AWS_S3_BUCKET_NAME || 'lumira-uploads',
       endpoint: process.env.S3_ENDPOINT,
