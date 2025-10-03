@@ -132,7 +132,9 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 paymentIntentId
               });
 
+              const orderNumber = `LUM-${Date.now()}`;
               order = await Order.create({
+                orderNumber: orderNumber,
                 userId: user._id,
                 userEmail: user.email,
                 level: levelInfo.num,
@@ -199,7 +201,9 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
               integrale: { num: 4, name: 'Int�grale' },
             };
             const levelInfo = levelMap[levelKey] || levelMap['initie'];
+            const orderNumber = `LUM-${Date.now()}`;
             order = await Order.create({
+              orderNumber: orderNumber,
               userId: user._id,
               userEmail: user.email,
               level: levelInfo.num,
@@ -266,7 +270,9 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
               paymentIntentId
             });
 
+            const orderNumber = `LUM-${Date.now()}`;
             order = await Order.create({
+              orderNumber: orderNumber,
               userId: user._id,
               userEmail: user.email,
               level: levelInfo.num,
