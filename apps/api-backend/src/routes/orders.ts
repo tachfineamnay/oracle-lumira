@@ -110,26 +110,63 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
             const amount = typeof (pi as any).amount === 'number' ? (pi as any).amount : 0;
             const currency = (pi as any).currency || 'eur';
 
-            order = await Order.create({
-              userId: user._id,
-              userEmail: user.email,
-              level: levelInfo.num,
-              levelName: levelInfo.name,
-              amount,
-              currency,
-              status: 'paid',
-              paymentIntentId,
-              paidAt: new Date(),
-              formData: {
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                phone: parsedFormData?.phone || '',
-                dateOfBirth: parsedFormData?.dateOfBirth ? new Date(parsedFormData.dateOfBirth) : undefined,
-                specificQuestion: parsedFormData?.specificQuestion || parsedFormData?.objective || '',
-                preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
-              },
-            });
+            // Validation des champs obligatoires avant création
+            if (!levelInfo.num) {
+              console.error('[CLIENT-SUBMIT] CRITICAL: Level number is missing or invalid:', levelInfo);
+              return res.status(400).json({ error: 'Level information is invalid' });
+            }
+
+            if (!user._id) {
+              console.error('[CLIENT-SUBMIT] CRITICAL: User ID is missing');
+              return res.status(400).json({ error: 'User information is missing' });
+            }
+
+            try {
+              console.log('[CLIENT-SUBMIT] Creating order with validated data:', {
+                userId: user._id,
+                userEmail: user.email,
+                level: levelInfo.num,
+                levelName: levelInfo.name,
+                amount,
+                currency,
+                paymentIntentId
+              });
+
+              order = await Order.create({
+                userId: user._id,
+                userEmail: user.email,
+                level: levelInfo.num,
+                levelName: levelInfo.name,
+                amount,
+                currency,
+                status: 'paid',
+                paymentIntentId,
+                paidAt: new Date(),
+                formData: {
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  email: user.email,
+                  phone: parsedFormData?.phone || '',
+                  dateOfBirth: parsedFormData?.dateOfBirth ? new Date(parsedFormData.dateOfBirth) : undefined,
+                  specificQuestion: parsedFormData?.specificQuestion || parsedFormData?.objective || '',
+                  preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
+                },
+              });
+              
+              console.log('[CLIENT-SUBMIT] Order created successfully:', order._id, 'OrderNumber:', order.orderNumber);
+            } catch (orderCreationError) {
+              console.error('[CLIENT-SUBMIT] CRITICAL ERROR during order creation:', orderCreationError);
+              console.error('[CLIENT-SUBMIT] Order creation failed with data:', {
+                userId: user._id,
+                level: levelInfo.num,
+                amount,
+                currency
+              });
+              return res.status(500).json({ 
+                error: 'Failed to create order', 
+                details: orderCreationError instanceof Error ? orderCreationError.message : 'Unknown error'
+              });
+            }
           }
         }
       } catch (stripeErr) {
@@ -208,27 +245,61 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
             integrale: { num: 4, name: 'Int?grale' },
           };
           const levelInfo = levelMap[levelKey] || levelMap['initie'];
-          order = await Order.create({
-            userId: user._id,
-            userEmail: user.email,
-            level: levelInfo.num,
-            levelName: levelInfo.name,
-            amount: 0,
-            currency: 'eur',
-            status: 'paid',
-            paymentIntentId,
-            paidAt: new Date(),
-            formData: {
-              firstName: user.firstName,
-              lastName: user.lastName,
-              email: user.email,
-              phone: parsedFormData?.phone || '',
-              dateOfBirth: parsedFormData?.dateOfBirth ? new Date(parsedFormData.dateOfBirth) : undefined,
-              specificQuestion: parsedFormData?.specificQuestion || parsedFormData?.objective || '',
-              preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
-            },
-          });
-          console.log('[CLIENT-SUBMIT] ADDITIONAL FALLBACK ORDER CREATED:', order._id, 'Status:', order.status);
+          
+          // Validation des champs obligatoires avant création (additional fallback)
+          if (!levelInfo.num) {
+            console.error('[CLIENT-SUBMIT] CRITICAL ADDITIONAL FALLBACK: Level number is missing or invalid:', levelInfo);
+            return res.status(400).json({ error: 'Level information is invalid in additional fallback mode' });
+          }
+
+          if (!user._id) {
+            console.error('[CLIENT-SUBMIT] CRITICAL ADDITIONAL FALLBACK: User ID is missing');
+            return res.status(400).json({ error: 'User information is missing in additional fallback mode' });
+          }
+
+          try {
+            console.log('[CLIENT-SUBMIT] Creating additional fallback order with validated data:', {
+              userId: user._id,
+              userEmail: user.email,
+              level: levelInfo.num,
+              levelName: levelInfo.name,
+              paymentIntentId
+            });
+
+            order = await Order.create({
+              userId: user._id,
+              userEmail: user.email,
+              level: levelInfo.num,
+              levelName: levelInfo.name,
+              amount: 0,
+              currency: 'eur',
+              status: 'paid',
+              paymentIntentId,
+              paidAt: new Date(),
+              formData: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: parsedFormData?.phone || '',
+                dateOfBirth: parsedFormData?.dateOfBirth ? new Date(parsedFormData.dateOfBirth) : undefined,
+                specificQuestion: parsedFormData?.specificQuestion || parsedFormData?.objective || '',
+                preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
+              },
+            });
+            
+            console.log('[CLIENT-SUBMIT] ADDITIONAL FALLBACK ORDER CREATED:', order._id, 'OrderNumber:', order.orderNumber, 'Status:', order.status);
+          } catch (orderCreationError) {
+            console.error('[CLIENT-SUBMIT] CRITICAL ERROR during additional fallback order creation:', orderCreationError);
+            console.error('[CLIENT-SUBMIT] Additional fallback order creation failed with data:', {
+              userId: user._id,
+              level: levelInfo.num,
+              email
+            });
+            return res.status(500).json({ 
+              error: 'Failed to create additional fallback order', 
+              details: orderCreationError instanceof Error ? orderCreationError.message : 'Unknown error'
+            });
+          }
         }
       }
 
@@ -333,12 +404,32 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     } as any;
 
     order.updatedAt = new Date();
-    await order.save();
+    
+    try {
+      await order.save();
+      console.log('[CLIENT-SUBMIT] Order updated and saved successfully:', order._id);
+    } catch (saveError) {
+      console.error('[CLIENT-SUBMIT] CRITICAL ERROR during order save:', saveError);
+      console.error('[CLIENT-SUBMIT] Order save failed for order:', order._id);
+      return res.status(500).json({ 
+        error: 'Failed to save order', 
+        details: saveError instanceof Error ? saveError.message : 'Unknown save error'
+      });
+    }
 
     res.json({ success: true, order });
   } catch (catchError) {
-    console.error('[CLIENT-SUBMIT] ERREUR BLOQUANTE - Une erreur s\'est produite');
-    res.status(500).json({ error: 'Erreur client-submit', details: 'Erreur interne' });
+    console.error('[CLIENT-SUBMIT] CRITICAL GLOBAL ERROR - Unexpected error occurred:', catchError);
+    console.error('[CLIENT-SUBMIT] Error stack trace:', catchError instanceof Error ? catchError.stack : 'No stack trace');
+    console.error('[CLIENT-SUBMIT] Request context:', {
+      paymentIntentId: req.params.paymentIntentId,
+      hasFiles: !!req.files,
+      bodyKeys: Object.keys(req.body || {})
+    });
+    res.status(500).json({ 
+      error: 'Erreur client-submit', 
+      details: catchError instanceof Error ? catchError.message : 'Erreur interne inconnue'
+    });
   }
 });
 
