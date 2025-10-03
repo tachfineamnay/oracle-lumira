@@ -1,5 +1,4 @@
 import express from 'express';
-import express from 'express';
 import multer from 'multer';
 import { Order } from '../models/Order';
 import { User } from '../models/User';
