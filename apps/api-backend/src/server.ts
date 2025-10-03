@@ -1,4 +1,5 @@
-console.log('✅ [API] server.ts - Script started');
+console.log('[DIAGNOSTIC] server.ts - Top Level - AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID);
+console.log('? [API] server.ts - Script started');
 
 import express from 'express';
 import mongoose from 'mongoose';
@@ -20,7 +21,7 @@ import paymentRoutes from './routes/payments';
 import productRoutes from './routes/products';
 import envDebugRoutes from './routes/env-debug';
 
-console.log('✅ [API] server.ts - Imports loaded');
+console.log('? [API] server.ts - Imports loaded');
 
 dotenv.config();
 
@@ -38,7 +39,7 @@ const logger = createLogger({
   ]
 });
 
-console.log('✅ [API] server.ts - Logger configured');
+console.log('? [API] server.ts - Logger configured');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -64,7 +65,7 @@ app.use(helmet({
   },
 }));
 
-console.log('✅ [API] server.ts - Helmet configured');
+console.log('? [API] server.ts - Helmet configured');
 
 // CORS config from env or defaults
 const envCors = process.env.CORS_ORIGIN?.split(',').map(s => s.trim()).filter(Boolean) || [];
@@ -91,7 +92,7 @@ app.options('*', (req, res) => {
   res.sendStatus(204);
 });
 
-console.log('✅ [API] server.ts - CORS configured for production');
+console.log('? [API] server.ts - CORS configured for production');
 
 // Apply rate limiting
 app.use(limiter);
@@ -127,7 +128,7 @@ app.use((req, res, next) => {
   next();
 });
 
-console.log('✅ [API] server.ts - Middleware configured');
+console.log('? [API] server.ts - Middleware configured');
 
 // Simple healthcheck endpoint for Coolify
 app.get('/api/healthz', (req, res) => {
@@ -162,7 +163,7 @@ if (process.env.NODE_ENV !== 'production') {
   logger.info('Expert test routes disabled in production environment');
 }
 
-console.log('✅ [API] server.ts - Routes configured');
+console.log('? [API] server.ts - Routes configured');
 
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -177,16 +178,16 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  logger.warn('⚠️ MONGODB_URI is not defined - Using mock MongoDB mode for development');
-  console.warn('⚠️ [API] MONGODB_URI is not defined - Using mock MongoDB mode for development');
+  logger.warn('?? MONGODB_URI is not defined - Using mock MongoDB mode for development');
+  console.warn('?? [API] MONGODB_URI is not defined - Using mock MongoDB mode for development');
   
   // Start server without MongoDB in mock mode
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ [API] Server is running on port ${PORT} (all interfaces) - MOCK MODE`);
+    console.log(`? [API] Server is running on port ${PORT} (all interfaces) - MOCK MODE`);
     logger.info(`Server is running on port ${PORT} (all interfaces) - MOCK MODE`);
   });
 } else {
-  console.log('✅ [API] server.ts - Connecting to MongoDB...');
+  console.log('? [API] server.ts - Connecting to MongoDB...');
   logger.info('Connecting to MongoDB...');
 
   // Disable autoIndex in production for performance
@@ -197,18 +198,19 @@ if (!MONGODB_URI) {
 
   mongoose.connect(MONGODB_URI)
     .then(() => {
-      console.log('✅ [API] server.ts - MongoDB connected successfully');
+      console.log('? [API] server.ts - MongoDB connected successfully');
       logger.info('MongoDB connected successfully');
       
       // Listen on all interfaces for Docker compatibility
       app.listen(PORT, '0.0.0.0', () => {
-        console.log(`✅ [API] Server is running on port ${PORT} (all interfaces)`);
+        console.log(`? [API] Server is running on port ${PORT} (all interfaces)`);
         logger.info(`Server is running on port ${PORT} (all interfaces)`);
       });
     })
     .catch(err => {
-      console.error('❌ [API] server.ts - MongoDB connection error:', err.message);
+      console.error('? [API] server.ts - MongoDB connection error:', err.message);
       logger.error('MongoDB connection error:', { error: err.message, stack: err.stack });
       process.exit(1);
     });
 }
+

@@ -153,6 +153,19 @@ export function getS3Service(): S3Service {
       forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
     };
 
+    // ----- DEBUT DU BLOC DE DIAGNOSTIC -----
+    console.log(
+      '[DIAGNOSTIC] getS3Service - Inspecting environment variables:', 
+      JSON.stringify({
+        aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY ? 'SECRET_IS_PRESENT' : 'SECRET_IS_MISSING',
+        aws_region: process.env.AWS_REGION,
+        aws_s3_bucket_name: process.env.AWS_S3_BUCKET_NAME,
+        s3_endpoint: process.env.S3_ENDPOINT,
+      }, null, 2)
+    );
+    // ----- FIN DU BLOC DE DIAGNOSTIC -----
+
     // Validation de la configuration
     if (!config.accessKeyId || !config.secretAccessKey) {
       throw new Error('Configuration S3 manquante: AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis');
