@@ -570,6 +570,45 @@ router.get('/orders/validation-queue', authenticateExpert, async (req: any, res:
   }
 });
 
+// Get all orders assigned to this expert (moved above :id for specificity)
+router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const orders = await Order.find({
+      'expertReview.expertId': req.expert._id.toString()
+    })
+    .populate('userId', 'firstName lastName email phone')
+    .sort({ 'expertReview.assignedAt': -1 }) // Most recent first
+    .skip(skip)
+    .limit(limit);
+
+    const total = await Order.countDocuments({
+      'expertReview.expertId': req.expert._id.toString()
+    });
+
+    res.json({ 
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (error) {
+    console.error('? Get assigned orders error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ 
+      error: 'Erreur lors du chargement des commandes assignées',
+      details: errorMessage 
+    });
+  }
+}); */
+
 // Get single order details
 router.get('/orders/:id([0-9a-fA-F]{24})', authenticateExpert, async (req: any, res: any) => {
   try {
@@ -792,7 +831,7 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
 }); */
 
 // Get all orders assigned to this expert
-router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) => {
+/* router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
