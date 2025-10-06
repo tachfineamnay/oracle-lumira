@@ -571,7 +571,7 @@ router.get('/orders/validation-queue', authenticateExpert, async (req: any, res:
 });
 
 // Get single order details
-router.get('/orders/:id', authenticateExpert, async (req: any, res: any) => {
+router.get('/orders/:id([0-9a-fA-F]{24})', authenticateExpert, async (req: any, res: any) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('userId', 'firstName lastName email phone');
