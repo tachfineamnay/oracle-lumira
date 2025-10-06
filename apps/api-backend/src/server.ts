@@ -102,6 +102,8 @@ app.use(limiter);
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/products/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+// n8n callback requires raw body for HMAC verification
+app.use('/api/expert/n8n-callback', express.raw({ type: 'application/json' }));
 
 // Body parsing middleware (after webhook routes)
 // Skip JSON parsing for upload routes to avoid conflicts with Multer
@@ -213,4 +215,3 @@ if (!MONGODB_URI) {
       process.exit(1);
     });
 }
-

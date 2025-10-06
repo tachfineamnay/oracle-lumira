@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Expert } from '../models/Expert';
 import { Order } from '../models/Order';
@@ -447,10 +448,44 @@ router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => 
   }
 });
 
-// Add callback route for n8n
+// Add callback route for n8n (secured with HMAC signature)
 router.post('/n8n-callback', async (req: any, res: any) => {
   try {
-    const { orderId, success, generatedContent, files, error, isRevision } = req.body;
+    const secret = process.env.N8N_CALLBACK_SECRET || '';
+    const signatureHeader = (req.header('X-N8N-Signature') || req.header('x-n8n-signature') || '').trim();
+
+    if (!secret) {
+      return res.status(503).json({ error: 'Callback not configured (N8N_CALLBACK_SECRET missing)' });
+    }
+
+    if (!signatureHeader) {
+      return res.status(401).json({ error: 'Missing signature' });
+    }
+
+    const rawBody: Buffer = Buffer.isBuffer(req.body)
+      ? req.body
+      : Buffer.from(typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
+
+    // Support optional prefix like 'sha256=...'
+    const provided = signatureHeader.startsWith('sha256=') ? signatureHeader.slice(7) : signatureHeader;
+    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+
+    // Constant-time comparison
+    const a = Buffer.from(provided, 'utf8');
+    const b = Buffer.from(expected, 'utf8');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    // Parse JSON payload after verifying signature
+    let payload: any;
+    try {
+      payload = JSON.parse(rawBody.toString('utf8'));
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON payload' });
+    }
+
+    const { orderId, success, generatedContent, files, error, isRevision } = payload;
     
     console.log('📨 Callback n8n reçu:', { orderId, success, isRevision });
     
