@@ -413,8 +413,6 @@ if (process.env.ENABLE_DEBUG_ROUTES === 'true') {
 }
 
 // Get pending orders for expert
-// Duplicate non-paginated route temporarily disabled to avoid double registration
-if (false) {
 router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -448,7 +446,6 @@ router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => 
     res.status(500).json({ error: 'Erreur lors du chargement des commandes' });
   }
 });
-}
 
 // Add callback route for n8n
 router.post('/n8n-callback', async (req: any, res: any) => {
@@ -605,9 +602,8 @@ router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) =>
     res.status(500).json({ 
       error: 'Erreur lors du chargement des commandes assignées',
       details: errorMessage 
-    });
-  }
-}); */
+});
+});
 
 // Get single order details
 router.get('/orders/:id([0-9a-fA-F]{24})', authenticateExpert, async (req: any, res: any) => {
