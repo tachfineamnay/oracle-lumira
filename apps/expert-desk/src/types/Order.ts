@@ -1,3 +1,20 @@
+export interface OrderFile {
+  // S3 model (preferred)
+  name?: string;
+  url?: string;
+  key?: string;
+  contentType?: string;
+  size: number;
+  type?: 'face_photo' | 'palm_photo';
+  uploadedAt?: string;
+
+  // Legacy model (fallback)
+  filename?: string;
+  originalName?: string;
+  mimetype?: string;
+  path?: string;
+}
+
 export interface Order {
   _id: string;
   orderNumber: string;
@@ -32,12 +49,7 @@ export interface Order {
     rejectionReason?: string;
   };
   revisionCount?: number;
-  files?: Array<{
-    filename: string;
-    originalName: string;
-    mimetype: string;
-    size: number;
-  }>;
+  files?: OrderFile[];
   clientInputs?: {
     birthTime?: string;
     birthPlace?: string;
