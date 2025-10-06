@@ -282,24 +282,29 @@ PERSONNALISATION:
             <span className="text-slate-400 text-xs">Fichiers joints:</span>
             <div className="mt-2 space-y-2">
               {order.files.map((file, index) => {
-                // Nouveau système S3 : utiliser directement file.url
-                const url = (file as any).url || buildFileUrl((file as any).path, file.filename);
-                const isImage = (file.mimetype || '').startsWith('image/') || /\.(png|jpe?g|gif|webp|heic|heif)$/i.test(url);
+                // Préférence S3: utiliser les nouvelles propriétés avec fallback sur l'ancien modèle
+                const fileUrl = (file as any).url || buildFileUrl((file as any).path, (file as any).filename);
+                const displayName = (file as any).name || (file as any).originalName || 'Fichier sans nom';
+                const isImage = (
+                  ((file as any).contentType || (file as any).mimetype || '')
+                    .startsWith('image/')
+                ) || /\.(png|jpe?g|gif|webp|heic|heif)$/i.test(fileUrl || '');
+
                 return (
                   <div key={index} className="flex items-center gap-3 text-xs bg-white/10 border border-white/20 p-2 rounded">
                     {isImage ? (
-                      <a href={url} target="_blank" rel="noreferrer">
-                        <img src={url} alt={file.originalName} className="w-14 h-14 object-cover rounded border border-white/20" />
+                      <a href={fileUrl} target="_blank" rel="noreferrer">
+                        <img src={fileUrl} alt={displayName} className="w-14 h-14 object-cover rounded border border-white/20" />
                       </a>
                     ) : (
                       <FileText className="w-4 h-4 text-amber-400" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="truncate font-medium">{file.originalName}</div>
+                      <div className="truncate font-medium">{displayName}</div>
                       <div className="text-white/60">{formatFileSize(file.size)}</div>
                     </div>
-                    {url && (
-                      <a href={url} target="_blank" rel="noreferrer" className="text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                    {fileUrl && (
+                      <a href={fileUrl} target="_blank" rel="noreferrer" className="text-amber-400 hover:text-amber-300 flex items-center gap-1">
                         <Download className="w-3 h-3" />
                         <span>Télécharger</span>
                       </a>
