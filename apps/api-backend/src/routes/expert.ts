@@ -602,7 +602,8 @@ router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) =>
     res.status(500).json({ 
       error: 'Erreur lors du chargement des commandes assignées',
       details: errorMessage 
-});
+    });
+  }
 });
 
 // Get single order details
@@ -864,6 +865,7 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
     });
   }
 });
+*/
 
 // Assign order to expert (take order)
 router.post('/orders/:orderId/assign', authenticateExpert, async (req: any, res: any) => {
