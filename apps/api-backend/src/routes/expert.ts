@@ -730,7 +730,7 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
 });
 
 // LEGACY (renamed): non-paginated pending orders route kept for debugging; primary route is the paginated version above
-router.get('/orders/pending-legacy', authenticateExpert, async (req: any, res: any) => {
+/* router.get('/orders/pending-legacy', authenticateExpert, async (req: any, res: any) => {
   try {
     console.log('📋 Expert /orders/pending requested by:', req.expert.email);
     
@@ -789,7 +789,7 @@ router.get('/orders/pending-legacy', authenticateExpert, async (req: any, res: a
       details: errorMessage 
     });
   }
-});
+}); */
 
 // Get all orders assigned to this expert
 router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) => {
