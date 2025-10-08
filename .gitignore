@@ -32,3 +32,9 @@ apps/*/pnpm-lock.yaml
 .env
 .env.*
 !.env.example
+
+# Fichiers de configuration sensibles (contenant secrets, clés API, etc.)
+COOLIFY-ENV-CONFIG.md
+*-ENV-CONFIG.md
+*-SECRETS.md
+*.secret.md
