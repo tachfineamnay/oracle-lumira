@@ -122,6 +122,16 @@ const DeskPage: React.FC = () => {
       
       // Actualiser la liste des commandes
       await fetchOrders();
+      // Set assigned order as active to show editor
+      const updatedOrder = (response.data && (response.data as any).order) as Order | undefined;
+      if (updatedOrder) {
+        setSelectedOrder(updatedOrder);
+        setActiveTab('orders');
+      } else {
+        setSelectedOrder(order);
+        setActiveTab('orders');
+      }
+      return;
       
       // Fermer les détails si c'était la commande sélectionnée
       if (selectedOrder?._id === order._id) {
