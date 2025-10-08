@@ -479,11 +479,12 @@ router.post('/n8n-callback', async (req: any, res: any) => {
 
     // Parse JSON payload after verifying signature
     let payload: any;
-    try {
+    /* try {
       payload = JSON.parse(rawBody.toString('utf8'));
     } catch (e) {
       return res.status(400).json({ error: 'Invalid JSON payload' });
     }
+    */
 
     const { orderId, success, generatedContent, files, error, isRevision } = payload;
     
@@ -555,7 +556,54 @@ router.post('/n8n-callback', async (req: any, res: any) => {
       console.error('❌ Échec mise à jour Order:', orderId);
       res.status(500).json({ error: 'Échec mise à jour commande' });
     }
-    
+    /* Retry-enabled webhook call
+    const token = process.env.N8N_WEBHOOK_TOKEN || '';
+    const timeoutMs = parseInt(process.env.N8N_TIMEOUT_MS || '10000', 10);
+    const maxRetries = parseInt(process.env.N8N_MAX_RETRIES || '3', 10);
+    const baseDelayMs = parseInt(process.env.N8N_RETRY_BASE_MS || '1000', 10);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Oracle-Lumira-Expert-Desk/1.0'
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    let lastError: any = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`>> n8n webhook attempt ${attempt}/${maxRetries} for order ${order._id}`);
+        const n8nResponse = await axios.post(webhookUrl, n8nPayload, { timeout: timeoutMs, headers });
+        console.log(`✅ n8n webhook success (status: ${n8nResponse.status}) for order ${order._id} on attempt ${attempt}`);
+        return res.json({
+          success: true,
+          message: 'Commande envoyée avec succès à l\'assistant IA',
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          n8nStatus: n8nResponse.status,
+          attempts: attempt
+        });
+      } catch (webhookError) {
+        lastError = webhookError;
+        const errMsg = webhookError instanceof Error ? webhookError.message : String(webhookError);
+        console.error(`❌ n8n webhook error (attempt ${attempt}/${maxRetries}) for order ${order._id}:`, errMsg);
+        if (attempt < maxRetries) {
+          const delay = baseDelayMs * attempt; // linear backoff
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
+    }
+
+    const finalMessage = lastError instanceof Error ? lastError.message : 'Unknown webhook error';
+    order.status = 'pending';
+    order.errorLog = `n8n webhook failed after ${maxRetries} attempts: ${finalMessage}`;
+    await order.save();
+
+    return res.status(502).json({
+      error: '\u00C9chec de l\'envoi vers l\'assistant IA',
+      details: finalMessage,
+      attempts: maxRetries
+    });
+    */
+
   } catch (error) {
     console.error('❌ Erreur callback n8n:', error);
     res.status(500).json({ error: 'Erreur traitement callback' });
@@ -726,7 +774,47 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
       return res.status(503).json({ error: "Service non configur	 (N8N_WEBHOOK_URL manquant)" });
     }
     
-    try {
+    // Retry-enabled webhook call
+    const token = process.env.N8N_WEBHOOK_TOKEN || '';
+    const timeoutMs = parseInt(process.env.N8N_TIMEOUT_MS || '10000', 10);
+    const maxRetries = parseInt(process.env.N8N_MAX_RETRIES || '3', 10);
+    const baseDelayMs = parseInt(process.env.N8N_RETRY_BASE_MS || '1000', 10);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Oracle-Lumira-Expert-Desk/1.0'
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    let lastError: any = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`>> n8n webhook attempt ${attempt}/${maxRetries} for order ${order._id}`);
+        const n8nResponse = await axios.post(webhookUrl, n8nPayload, { timeout: timeoutMs, headers });
+        console.log(`Webhook success (status: ${n8nResponse.status}) for order ${order._id} on attempt ${attempt}`);
+        return res.json({
+          success: true,
+          message: 'Commande envoyee avec succes a l\'assistant IA',
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          n8nStatus: n8nResponse.status,
+          attempts: attempt
+        });
+      } catch (webhookError) {
+        lastError = webhookError;
+        const errMsg = webhookError instanceof Error ? webhookError.message : String(webhookError);
+        console.error(`Webhook error (attempt ${attempt}/${maxRetries}) for order ${order._id}:`, errMsg);
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, baseDelayMs * attempt));
+        }
+      }
+    }
+    // All attempts failed
+    const finalMessage = lastError instanceof Error ? lastError.message : 'Unknown webhook error';
+    order.status = 'pending';
+    order.errorLog = `n8n webhook failed after ${maxRetries} attempts: ${finalMessage}`;
+    await order.save();
+    return res.status(502).json({ error: 'Echec de l\'envoi vers l\'assistant IA', details: finalMessage, attempts: maxRetries });
+    
+    /* try {
       console.log('🚀 Envoi vers n8n:', webhookUrl);
       const n8nResponse = await axios.post(webhookUrl, n8nPayload, {
         timeout: 10000,
@@ -759,6 +847,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
         details: errorMessage
       });
     }
+    */
 
   } catch (error) {
     console.error('Process order error:', error);

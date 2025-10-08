@@ -69,6 +69,9 @@ export interface IOrder extends Document {
     soulProfile?: string;
   };
   
+  // Processing error log for reliability/debug
+  errorLog?: string;
+  
   // Expert validation
   expertReview?: {
     expertId?: string;
@@ -197,6 +200,9 @@ const orderSchema = new Schema<IOrder>({
     blockagesAnalysis: String,
     soulProfile: String
   },
+  
+  // Processing error log
+  errorLog: { type: String },
   
   expertReview: {
     expertId: String,
