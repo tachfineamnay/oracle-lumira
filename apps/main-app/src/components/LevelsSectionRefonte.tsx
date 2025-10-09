@@ -70,7 +70,7 @@ const LevelsSectionRefonte: React.FC = () => {
         </motion.div>
 
         {/* DESKTOP : Grille classique 4 colonnes */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {products.map((product, index) => (
             <LevelCardRefonte key={product.id} level={product} index={index} />
           ))}
@@ -79,20 +79,20 @@ const LevelsSectionRefonte: React.FC = () => {
         {/* MOBILE : Carrousel horizontal avec snap scroll - REFONTE MAJEURE */}
         <div className="sm:hidden">
           {/* Hint text pour guider l'utilisateur */}
-          <div className="text-center mb-4">
-            <p className="text-white/60 text-sm">
+          <div className="text-center mb-3">
+            <p className="text-white/60 text-xs">
               👈 Glissez pour découvrir tous les niveaux 👉
             </p>
           </div>
 
           {/* Container avec scroll horizontal */}
-          <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-8">
-            <div className="flex gap-4 px-4" style={{ width: 'max-content' }}>
+          <div className="overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-6">
+            <div className="flex gap-3 px-4" style={{ width: 'max-content' }}>
               {products.map((product, index) => (
                 <div
                   key={product.id}
                   className="snap-center"
-                  style={{ width: '320px', minWidth: '320px' }}
+                  style={{ width: '280px', minWidth: '280px' }}
                 >
                   <LevelCardRefonte level={product} index={index} />
                 </div>

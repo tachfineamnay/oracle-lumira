@@ -74,7 +74,7 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
         scale: 1.02,
         transition: { duration: 0.3, type: "spring", stiffness: 300 } 
       }}
-      className={`relative flex flex-col h-full rounded-3xl overflow-hidden transition-all duration-500 group ${
+      className={`relative flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-500 group ${
         isRecommended 
           ? 'scale-100 sm:scale-105 border-2 border-cosmic-gold shadow-[0_0_40px_rgba(255,215,0,0.4)] bg-gradient-to-br from-cosmic-void/95 via-purple-900/20 to-cosmic-gold/10' 
           : 'border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] bg-gradient-to-br from-cosmic-void/90 via-cosmic-void/80 to-cosmic-deep/60 backdrop-blur-sm hover:border-cosmic-gold/40'
@@ -98,9 +98,9 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
                 repeat: Infinity, 
                 ease: "linear" 
               }}
-              className="bg-gradient-to-r from-cosmic-gold via-yellow-300 via-cosmic-gold to-yellow-300 bg-[length:200%_100%] py-3 text-center"
+              className="bg-gradient-to-r from-cosmic-gold via-yellow-300 via-cosmic-gold to-yellow-300 bg-[length:200%_100%] py-2 text-center"
             >
-              <span className="text-cosmic-void font-bold text-sm uppercase tracking-wider drop-shadow-md">
+              <span className="text-cosmic-void font-bold text-xs uppercase tracking-wider drop-shadow-md">
                 ⭐ LE PLUS POPULAIRE ⭐
               </span>
             </motion.div>
@@ -150,12 +150,12 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
       </div>
 
       {/* Contenu de la carte */}
-      <div className={`flex flex-col flex-1 p-8 ${isRecommended ? 'pt-16' : 'pt-8'}`}>
+      <div className={`flex flex-col flex-1 p-6 ${isRecommended ? 'pt-14' : 'pt-6'}`}>
         {/* Header avec icônes - Amélioré avec animations */}
-        <div className="mb-6 text-center relative">
+        <div className="mb-4 text-center relative">
           <motion.div 
-            className="flex justify-center items-center gap-3 mb-4"
-            whileHover={{ scale: 1.1 }}
+            className="flex justify-center items-center gap-2 mb-3"
+            whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             <motion.div
@@ -169,7 +169,7 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
                 repeatDelay: 2 
               }}
             >
-              <Icon1 className={`w-10 h-10 ${
+              <Icon1 className={`w-7 h-7 ${
                 isRecommended 
                   ? 'text-cosmic-gold drop-shadow-[0_0_8px_rgba(255,215,0,0.6)]' 
                   : 'text-cosmic-ethereal'
@@ -187,7 +187,7 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
                 delay: 0.5
               }}
             >
-              <Icon2 className={`w-10 h-10 ${
+              <Icon2 className={`w-7 h-7 ${
                 isRecommended 
                   ? 'text-cosmic-gold drop-shadow-[0_0_8px_rgba(255,215,0,0.6)]' 
                   : 'text-cosmic-ethereal'
@@ -196,23 +196,23 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
           </motion.div>
           
           <motion.h3 
-            className={`text-3xl font-bold mb-1 ${
+            className={`text-xl font-bold mb-1 leading-tight ${
               isRecommended 
                 ? 'text-cosmic-gold drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]' 
                 : 'text-cosmic-ethereal'
             }`}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.03 }}
           >
             {level.name || level.title}
           </motion.h3>
           
-          <p className="text-white/60 text-xs font-medium mb-3">{level.price}€ • {level.duration || 'Accès à vie'}</p>
+          <p className="text-white/50 text-[10px] font-medium mb-2">{level.price}€ • {level.duration || 'Accès à vie'}</p>
           
-          <p className="text-white/80 text-sm mb-4 px-2">{level.description}</p>
+          <p className="text-white/70 text-xs leading-snug px-1">{level.description}</p>
           
           {/* Decorative line */}
           <motion.div
-            className={`h-px w-24 mx-auto ${
+            className={`h-px w-16 mx-auto mt-3 ${
               isRecommended 
                 ? 'bg-gradient-to-r from-transparent via-cosmic-gold to-transparent' 
                 : 'bg-gradient-to-r from-transparent via-cosmic-ethereal/50 to-transparent'
@@ -223,17 +223,17 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
           />
         </div>
 
-        {/* Prix - REFONTE : Taille augmentée + effet brillant */}
-        <div className="mb-8 text-center relative">
+        {/* Prix - REFONTE : Compact mais visible */}
+        <div className="mb-4 text-center relative">
           <motion.div 
-            className="flex items-baseline justify-center gap-2"
-            whileHover={{ scale: 1.08 }}
+            className="flex items-baseline justify-center gap-1"
+            whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             <span className={`font-bold relative ${
               isRecommended 
-                ? 'text-7xl text-cosmic-gold' 
-                : 'text-6xl text-white'
+                ? 'text-5xl text-cosmic-gold' 
+                : 'text-4xl text-white'
             }`}>
               {level.price}€
               {/* Shine effect pour offre recommandée */}
@@ -253,52 +253,52 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
               )}
             </span>
           </motion.div>
-          <p className="text-white/60 text-sm mt-2 font-medium">Paiement unique</p>
+          <p className="text-white/50 text-[10px] mt-1 font-medium">Paiement unique</p>
           
-          {/* Économie badge pour offre premium */}
+          {/* Économie badge pour offre premium - Plus compact */}
           {isRecommended && (
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-              className="inline-block mt-3 px-4 py-1 bg-green-500/20 border border-green-500/50 rounded-full"
+              className="inline-block mt-2 px-3 py-0.5 bg-green-500/20 border border-green-500/50 rounded-full"
             >
-              <span className="text-green-400 text-xs font-semibold">🎁 Meilleur rapport qualité/prix</span>
+              <span className="text-green-400 text-[10px] font-semibold">🎁 Meilleur rapport qualité/prix</span>
             </motion.div>
           )}
         </div>
 
-        {/* Liste des fonctionnalités - REFONTE : Animations d'apparition */}
-        <ul className="space-y-4 mb-8 flex-1">
+        {/* Liste des fonctionnalités - REFONTE : Plus compacte */}
+        <ul className="space-y-2 mb-4 flex-1">
           {level.features.map((feature, idx) => (
             <motion.li 
               key={idx} 
-              className="flex items-start gap-3"
+              className="flex items-start gap-2"
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1, duration: 0.4 }}
-              whileHover={{ x: 5, transition: { duration: 0.2 } }}
+              whileHover={{ x: 3, transition: { duration: 0.2 } }}
             >
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.2 }}
                 transition={{ duration: 0.5 }}
               >
-                <Check className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
                   isRecommended ? 'text-cosmic-gold' : 'text-cosmic-ethereal'
                 }`} />
               </motion.div>
-              <span className="text-white/90 text-sm leading-relaxed group-hover:text-white transition-colors">
+              <span className="text-white/80 text-xs leading-relaxed group-hover:text-white transition-colors">
                 {feature}
               </span>
             </motion.li>
           ))}
         </ul>
 
-        {/* CTA Button - Amélioré avec effet pulse */}
+        {/* CTA Button - Plus compact */}
         <motion.a
           href={`/commande?level=${level.id}`}
-          className={`relative block w-full py-4 rounded-xl text-center font-semibold transition-all duration-300 overflow-hidden group/btn ${
+          className={`relative block w-full py-3 rounded-xl text-center font-semibold text-sm transition-all duration-300 overflow-hidden group/btn ${
             isRecommended
               ? 'bg-gradient-to-r from-cosmic-gold via-yellow-400 to-cosmic-gold bg-[length:200%_100%] text-cosmic-void shadow-[0_0_20px_rgba(255,215,0,0.4)]'
               : 'bg-white/5 border border-white/20 text-cosmic-ethereal hover:bg-white/10 hover:border-cosmic-ethereal/50'
@@ -333,12 +333,12 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
             style={{ borderRadius: '50%' }}
           />
           
-          <span className="relative z-10 flex items-center justify-center gap-2">
+          <span className="relative z-10 flex items-center justify-center gap-2 text-sm">
             {isRecommended ? (
               <>
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4" />
                 {getLevelCTA(level.id)}
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4" />
               </>
             ) : (
               getLevelCTA(level.id)
