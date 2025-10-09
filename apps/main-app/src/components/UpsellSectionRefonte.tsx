@@ -54,7 +54,7 @@ const UpsellSectionRefonte: React.FC = () => {
   ];
 
   return (
-    <section className="py-24 px-6 relative overflow-hidden">
+    <section className="py-20 px-6 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-1/3 right-1/3 w-96 h-96 bg-cosmic-aurora rounded-full filter blur-3xl"></div>
@@ -67,37 +67,37 @@ const UpsellSectionRefonte: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold mb-6">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             <span className="bg-gradient-to-r from-cosmic-aurora via-cosmic-violet to-cosmic-gold bg-clip-text text-transparent">
               Compléments dimensionnels
             </span>
           </h2>
-          <p className="text-xl text-white/80 max-w-3xl mx-auto">
+          <p className="text-lg text-white/80 max-w-3xl mx-auto">
             Amplifie ta résonance avec ces outils vibratoires complémentaires
           </p>
         </motion.div>
 
         {/* MOBILE : Stack vertical simple */}
-        <div className="grid grid-cols-1 gap-6 md:hidden">
+        <div className="grid grid-cols-1 gap-4 md:hidden">
           {upsells.map((upsell, index) => (
             <UpsellCard key={upsell.id} upsell={upsell} index={index} />
           ))}
         </div>
 
         {/* TABLET : Grille 2x2 standard */}
-        <div className="hidden md:grid lg:hidden grid-cols-2 gap-6">
+        <div className="hidden md:grid lg:hidden grid-cols-2 gap-4">
           {upsells.map((upsell, index) => (
             <UpsellCard key={upsell.id} upsell={upsell} index={index} />
           ))}
         </div>
 
         {/* DESKTOP : Bento Grid asymétrique - REFONTE MAJEURE */}
-        <div className="hidden lg:grid gap-6" style={{
+        <div className="hidden lg:grid gap-4" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gridTemplateRows: 'repeat(3, 200px)',
+          gridTemplateRows: 'repeat(3, 180px)',
           gridAutoFlow: 'dense'
         }}>
           {upsells.map((upsell, index) => (
@@ -138,8 +138,8 @@ const UpsellCard: React.FC<UpsellCardProps> = ({ upsell, index, fullHeight }) =>
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6, delay: index * 0.1 }}
-      whileHover={{ scale: 1.02, transition: { duration: 0.3 } }}
-      className={`relative rounded-3xl overflow-hidden border border-white/10 bg-cosmic-void/80 backdrop-blur-sm hover:border-cosmic-gold/30 transition-all duration-300 group ${
+      whileHover={{ scale: 1.01, transition: { duration: 0.3 } }}
+      className={`relative rounded-2xl overflow-hidden border border-white/10 bg-cosmic-void/80 backdrop-blur-sm hover:border-cosmic-gold/30 transition-all duration-300 group ${
         fullHeight ? 'h-full' : ''
       }`}
     >
@@ -154,26 +154,26 @@ const UpsellCard: React.FC<UpsellCardProps> = ({ upsell, index, fullHeight }) =>
       </div>
 
       {/* Contenu */}
-      <div className="relative z-10 p-8 flex flex-col h-full justify-between">
+      <div className="relative z-10 p-6 flex flex-col h-full justify-between">
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <Icon className="w-8 h-8 text-cosmic-gold" />
+          <div className="flex items-center justify-between mb-3">
+            <Icon className="w-6 h-6 text-cosmic-gold" />
             {upsell.discount && (
-              <span className="text-xs bg-cosmic-gold/20 text-cosmic-gold px-3 py-1 rounded-full font-medium">
+              <span className="text-[10px] bg-cosmic-gold/20 text-cosmic-gold px-2 py-0.5 rounded-full font-medium">
                 {upsell.discount}
               </span>
             )}
           </div>
 
-          <h3 className="text-2xl font-bold text-white mb-3">{upsell.title}</h3>
-          <p className="text-white/80 text-sm mb-4">{upsell.description}</p>
+          <h3 className="text-lg font-bold text-white mb-2 leading-tight">{upsell.title}</h3>
+          <p className="text-white/80 text-xs leading-snug mb-3">{upsell.description}</p>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-3xl font-bold text-cosmic-gold">{upsell.price}</span>
+          <span className="text-2xl font-bold text-cosmic-gold">{upsell.price}</span>
           <a
             href={`/commande?upsell=${upsell.id}`}
-            className="px-6 py-3 bg-white/10 hover:bg-cosmic-gold/20 border border-white/20 hover:border-cosmic-gold/50 rounded-xl text-white font-medium transition-all duration-300"
+            className="px-4 py-2 bg-white/10 hover:bg-cosmic-gold/20 border border-white/20 hover:border-cosmic-gold/50 rounded-xl text-white text-sm font-medium transition-all duration-300"
           >
             Ajouter
           </a>
