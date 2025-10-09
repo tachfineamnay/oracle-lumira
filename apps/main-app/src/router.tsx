@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import LandingTemple from './pages/LandingTemple';
+import LandingTempleRefonte from './pages/LandingTempleRefonte';
 import CommandeTempleSPA from './pages/CommandeTempleSPA';
 import ConfirmationTempleSPA from './pages/ConfirmationTempleSPA';
 import ConfirmationPage from './pages/ConfirmationPage';
@@ -22,7 +22,7 @@ const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
 
 const AppRoutes: React.FC = () => (
   <Routes>
-    <Route path="/" element={<LandingTemple />} />
+    <Route path="/" element={<LandingTempleRefonte />} />
     <Route path="/commande" element={<CommandeTempleSPA />} />
     <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
