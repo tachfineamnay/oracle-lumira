@@ -16,38 +16,38 @@ const UpsellSectionRefonte: React.FC = () => {
   const upsells = [
     {
       id: 'mandala',
-      title: 'Mandala Personnalisé',
-      description: 'Ton mandala sacré unique basé sur ta numérologie',
+      title: 'Mandala HD Fractal',
+      description: 'Support visuel à haute fréquence pour tes méditations quotidiennes',
       icon: Sparkles,
-      price: '47€',
+      price: '19€',
       image: 'https://images.pexels.com/photos/4940756/pexels-photo-4940756.jpeg?auto=compress&cs=tinysrgb&w=800',
       gridArea: { desktop: '1 / 1 / 3 / 3', tablet: '1 / 1 / 2 / 2' } // 2x2 sur desktop
     },
     {
       id: 'audio',
-      title: 'Méditations Guidées Audio',
-      description: 'Méditations personnalisées alignées sur ton chemin',
+      title: 'Audio 432 Hz Cosmique',
+      description: 'Fréquence vibratoire calibrée sur ton code énergétique personnel',
       icon: Music,
-      price: '37€',
+      price: '14€',
       image: 'https://images.pexels.com/photos/3771115/pexels-photo-3771115.jpeg?auto=compress&cs=tinysrgb&w=800',
       gridArea: { desktop: '1 / 3 / 2 / 5', tablet: '1 / 2 / 2 / 3' } // 1x2 sur desktop
     },
     {
       id: 'rituel',
-      title: 'Guide des Rituels Sacrés',
-      description: 'Rituels quotidiens pour amplifier ton potentiel',
+      title: 'Rituel sur mesure',
+      description: 'Protocole d\'activation énergétique adapté à ta signature vibratoire',
       icon: BookOpen,
-      price: '27€',
+      price: '22€',
       image: 'https://images.pexels.com/photos/3879072/pexels-photo-3879072.jpeg?auto=compress&cs=tinysrgb&w=800',
       gridArea: { desktop: '2 / 3 / 3 / 5', tablet: '2 / 1 / 3 / 2' } // 1x2 sur desktop
     },
     {
       id: 'pack',
-      title: 'Pack Complet Oracle + Outils',
-      description: 'Tous les outils spirituels réunis : Mandala + Audio + Rituel + Bonus exclusifs',
+      title: 'Pack d\'Intégration Totale',
+      description: 'Mandala HD + Audio 432Hz + Rituel personnalisé + Suivi 15 jours',
       icon: Package,
-      price: '97€',
-      discount: 'Économise 14€',
+      price: '49€',
+      discount: 'Économise 6€',
       image: 'https://images.pexels.com/photos/3618162/pexels-photo-3618162.jpeg?auto=compress&cs=tinysrgb&w=800',
       gridArea: { desktop: '3 / 1 / 4 / 5', tablet: '2 / 2 / 3 / 3' } // 1x4 sur desktop (full width)
     }
@@ -71,11 +71,11 @@ const UpsellSectionRefonte: React.FC = () => {
         >
           <h2 className="text-4xl sm:text-5xl font-bold mb-6">
             <span className="bg-gradient-to-r from-cosmic-aurora via-cosmic-violet to-cosmic-gold bg-clip-text text-transparent">
-              Amplifie ton Éveil Spirituel
+              Compléments dimensionnels
             </span>
           </h2>
           <p className="text-xl text-white/80 max-w-3xl mx-auto">
-            Des outils sacrés complémentaires pour approfondir ton voyage intérieur
+            Amplifie ta résonance avec ces outils vibratoires complémentaires
           </p>
         </motion.div>
 

@@ -29,28 +29,41 @@ interface LevelCardProps {
  * ✅ Box-shadow cosmic pour profondeur
  */
 const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
-  // Déterminer si c'est l'offre recommandée (Mystique = level 2)
-  const isRecommended = level.id === '2' || level.id === 2;
+  // Déterminer si c'est l'offre recommandée (Mystique = id 'mystique')
+  const isRecommended = level.id === 'mystique';
 
   // Mapping des icônes par niveau
-  const getLevelIcons = (levelId: number) => {
+  const getLevelIcons = (levelId: string) => {
     switch (levelId) {
-      case 1: // Initié
+      case 'initie':
         return [Star, Sparkles];
-      case 2: // Mystique
+      case 'mystique':
         return [Crown, Music];
-      case 3: // Profond
+      case 'profond':
         return [Eye, Heart];
-      case 4: // Intégrale
+      case 'integrale':
         return [InfinityIcon, Zap];
       default:
         return [Star, Sparkles];
     }
   };
 
-  const [Icon1, Icon2] = getLevelIcons(parseInt(level.id as string));
+  const getLevelCTA = (levelId: string) => {
+    switch (levelId) {
+      case 'initie':
+        return 'Ouvrir le premier Sceau';
+      case 'mystique':
+        return 'Passer le Deuxième Portail';
+      case 'profond':
+        return 'Pénétrer l\'Ordre Profond';
+      case 'integrale':
+        return 'Activer l\'Intelligence Cosmique';
+      default:
+        return 'Choisir cette offre';
+    }
+  };
 
-  return (
+  const [Icon1, Icon2] = getLevelIcons(level.id);  return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -183,15 +196,17 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
           </motion.div>
           
           <motion.h3 
-            className={`text-3xl font-bold mb-3 ${
+            className={`text-3xl font-bold mb-1 ${
               isRecommended 
                 ? 'text-cosmic-gold drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]' 
                 : 'text-cosmic-ethereal'
             }`}
             whileHover={{ scale: 1.05 }}
           >
-            {level.name}
+            {level.name || level.title}
           </motion.h3>
+          
+          <p className="text-white/60 text-xs font-medium mb-3">{level.price}€ • {level.duration || 'Accès à vie'}</p>
           
           <p className="text-white/80 text-sm mb-4 px-2">{level.description}</p>
           
@@ -322,11 +337,11 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
             {isRecommended ? (
               <>
                 <Sparkles className="w-5 h-5" />
-                Choisir cette offre
+                {getLevelCTA(level.id)}
                 <Sparkles className="w-5 h-5" />
               </>
             ) : (
-              'Choisir cette offre'
+              getLevelCTA(level.id)
             )}
           </span>
         </motion.a>

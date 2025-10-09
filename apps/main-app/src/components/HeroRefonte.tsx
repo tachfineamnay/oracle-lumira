@@ -38,18 +38,6 @@ const HeroRefonte: React.FC = () => {
 
       {/* Contenu principal */}
       <div className="relative z-10 text-center max-w-5xl mx-auto">
-        {/* Badge premium */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-block mb-8 px-6 py-2 bg-cosmic-gold/10 border border-cosmic-gold/30 rounded-full"
-        >
-          <span className="text-cosmic-gold text-sm font-medium uppercase tracking-wider">
-            Oracle de Numérologie Premium
-          </span>
-        </motion.div>
-
         {/* Titre principal */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -69,7 +57,7 @@ const HeroRefonte: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-xl sm:text-2xl md:text-3xl text-white/90 mb-8 leading-relaxed max-w-3xl mx-auto"
         >
-          Découvre ton chemin de vie à travers les mystères de la numérologie sacrée
+          Explore les lois cachées de ton identité cosmique
         </motion.p>
 
         {/* Description */}
@@ -79,8 +67,8 @@ const HeroRefonte: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="text-base sm:text-lg text-white/80 mb-12 max-w-2xl mx-auto"
         >
-          Une analyse complète et personnalisée de ton thème numérologique pour révéler tes dons cachés, 
-          tes défis karmiques et ton potentiel spirituel authentique.
+          Grâce à une cartographie vibratoire personnalisée, Oracle Lumira décrypte les trames subtiles de ton archétype spirituel. 
+          Entre analyse fractale, algorithmes mystiques et résonances stellaires, reçois une lecture unique de ton code originel.
         </motion.p>
 
         {/* CTA Principal */}
@@ -88,15 +76,33 @@ const HeroRefonte: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="mb-16"
+          className="mb-8"
         >
           <a
             href="#levels"
             className="inline-block px-10 py-5 bg-gradient-to-r from-cosmic-gold to-cosmic-aurora text-cosmic-void font-semibold text-lg rounded-full hover:shadow-stellar transition-all duration-300 hover:scale-105"
           >
-            Découvrir les Niveaux d'Oracle
+            Lancer mon exploration cosmique
           </a>
         </motion.div>
+
+        {/* Badges sous le CTA */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1 }}
+          className="text-sm text-cosmic-gold/80 mb-16 flex items-center justify-center gap-2 flex-wrap"
+        >
+          <span className="flex items-center gap-1">
+            <Sparkles className="w-4 h-4" />
+            Analyse sous 24h
+          </span>
+          <span>•</span>
+          <span>PDF initiatique + Audio 432Hz + Mandala fractal</span>
+          <span className="flex items-center gap-1">
+            <Sparkles className="w-4 h-4" />
+          </span>
+        </motion.p>
 
         {/* Points de réassurance - REFONTE : Cards glassmorphiques avec icônes */}
         <motion.div

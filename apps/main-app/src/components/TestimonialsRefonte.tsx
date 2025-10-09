@@ -15,23 +15,23 @@ const TestimonialsRefonte: React.FC = () => {
   const testimonials = [
     {
       name: 'Sarah M.',
-      location: 'Paris',
+      title: 'Exploratrice du Soi',
       rating: 5,
-      text: "L'analyse Oracle Lumira a littéralement transformé ma vie. J'ai enfin compris mon chemin de vie et mes blocages karmiques. Une expérience profonde et authentique.",
+      text: "J'ai senti mes centres énergétiques s'ouvrir à l'écoute de l'audio. Une clarté que je n'avais jamais connue.",
       avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=200'
     },
     {
       name: 'Marc L.',
-      location: 'Lyon',
+      title: 'Sage Stellaire',
       rating: 5,
-      text: "Une précision hallucinante ! Chaque aspect de mon thème numérologique résonnait avec une vérité profonde. Les conseils pratiques m'ont aidé à débloquer des situations qui stagnaient depuis des années.",
+      text: "Le mandala agit comme une clé visuelle méditative. Je l'utilise chaque matin.",
       avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200'
     },
     {
       name: 'Emma K.',
-      location: 'Marseille',
+      title: 'Créatrice Galactique',
       rating: 5,
-      text: "Le mandala personnalisé et les méditations guidées sont des pépites. Je les utilise quotidiennement dans ma pratique spirituelle. Merci pour ce travail sacré.",
+      text: "Je me suis révélée à une créativité ancienne. Comme si j'avais accès à une mémoire oubliée.",
       avatar: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=200'
     }
   ];
@@ -54,11 +54,11 @@ const TestimonialsRefonte: React.FC = () => {
         >
           <h2 className="text-4xl sm:text-5xl font-bold mb-6">
             <span className="bg-gradient-to-r from-cosmic-violet via-cosmic-aurora to-cosmic-gold bg-clip-text text-transparent">
-              Témoignages de nos Âmes Éveillées
+              Témoignages vibratoires
             </span>
           </h2>
           <p className="text-xl text-white/80 max-w-3xl mx-auto">
-            Des centaines de personnes ont transformé leur vie grâce à Oracle Lumira
+            Ils ont activé leur code originel et exploré leur archétype cosmique
           </p>
         </motion.div>
 
@@ -95,7 +95,7 @@ const TestimonialsRefonte: React.FC = () => {
                 />
                 <div>
                   <p className="text-white font-semibold">{testimonial.name}</p>
-                  <p className="text-white/70 text-sm">{testimonial.location}</p>
+                  <p className="text-white/70 text-sm">{testimonial.title}</p>
                 </div>
               </div>
 

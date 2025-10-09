@@ -10,6 +10,9 @@ export interface UploadConfig {
 export interface ProductWithUpload {
   id: 'initie' | 'mystique' | 'profond' | 'integrale';
   title: string;
+  name?: string;
+  description?: string;
+  duration?: string;
   price: number;
   originalPrice?: number;
   badge?: string;
@@ -57,61 +60,67 @@ const LEVEL_UPLOAD_CONFIGS: Record<ProductWithUpload['id'], UploadConfig> = {
 const MOCK_PRODUCTS: ProductWithUpload[] = [
   {
     id: 'initie',
-    title: 'Initié',
-    price: 29,
+    title: 'Le Voile Initiatique',
+    name: 'Niveau I : Le Voile Initiatique',
+    description: 'Introduction aux langages symboliques, aux cycles vibratoires et aux fondements de l\'énergie cosmique.',
+    duration: '3 mois',
+    price: 27,
     features: [
-      'Analyse karmique de base',
-      'Guidance spirituelle personnalisée',
-      'Accès aux outils de divination',
-      'Upload de 3 documents max'
+      'Lexique vibratoire et cosmique',
+      'Méditations d\'ancrage stellaire',
+      'Cercle communautaire d\'Initiés'
     ],
     order: 1,
     uploadConfig: LEVEL_UPLOAD_CONFIGS.initie,
   },
   {
     id: 'mystique',
-    title: 'Mystique',
-    price: 59,
-    originalPrice: 79,
-    badge: 'Populaire',
+    title: 'Le Temple Mystique',
+    name: 'Niveau II : Le Temple Mystique',
+    description: 'Activation des rituels personnels et exploration des cartes archétypales avancées.',
+    duration: '6 mois',
+    price: 47,
+    badge: 'LE PLUS POPULAIRE',
     features: [
-      'Analyse karmique approfondie',
-      'Consultation personnalisée 30min',
-      'Accès prioritaire aux nouveaux outils',
-      'Upload de 5 documents max',
-      'Interprétation de manuscrits'
+      'Accès au contenu Initiatique',
+      'Rituels de transmutation',
+      'Sessions d\'alignement vibratoire',
+      'Portails événementiels prioritaires'
     ],
     order: 2,
     uploadConfig: LEVEL_UPLOAD_CONFIGS.mystique,
   },
   {
     id: 'profond',
-    title: 'Profond',
-    price: 99,
-    originalPrice: 129,
+    title: 'L\'Ordre Profond',
+    name: 'Niveau III : L\'Ordre Profond',
+    description: 'Maîtrise des cycles karmiques et lecture des codes fractals de l\'âme.',
+    duration: '12 mois',
+    price: 67,
     features: [
-      'Analyse karmique experte',
-      'Consultation privée 60min',
-      'Création de mandala personnalisé',
-      'Upload de 8 documents max',
-      'Lecture de cartes personnelles'
+      'Accès illimité aux enseignements',
+      'Mentorat vibratoire personnalisé',
+      'Archives occultes numérologiques',
+      'Certification Oracle Lumira',
+      'Accès au Cercle Fermé'
     ],
     order: 3,
     uploadConfig: LEVEL_UPLOAD_CONFIGS.profond,
   },
   {
     id: 'integrale',
-    title: 'Intégral',
-    price: 199,
-    originalPrice: 249,
-    badge: 'Premium',
+    title: 'L\'Intelligence Intégrale',
+    name: 'Niveau IV : L\'Intelligence Intégrale',
+    description: 'Cartographie complète de ta fréquence d\'âme, analyse karmique et modélisation multidimensionnelle.',
+    duration: '12 mois',
+    price: 97,
+    badge: 'EXPÉRIENCE ULTIME',
     features: [
-      'Analyse karmique master',
-      'Accompagnement personnalisé illimité',
-      'Accès exclusif aux rituels avancés',
-      'Upload de 15 documents max',
-      'Support audio et symboles personnels',
-      'Guidance oracle exclusive'
+      'Lecture des cycles de vie',
+      'Lignée et mémoire karmique',
+      'Synthèse audio vibratoire',
+      'Mandala HD à haute fréquence',
+      'Suivi vibratoire 30 jours'
     ],
     order: 4,
     uploadConfig: LEVEL_UPLOAD_CONFIGS.integrale,

@@ -3,7 +3,6 @@ import { Loader, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import LevelCardRefonte from './LevelCardRefonte';
 import { useProducts } from '../hooks/useProductsSimple';
-import type { ProductWithUpload } from '../hooks/useProductsSimple';
 
 /**
  * LevelsSectionRefonte - Section tarifs avec carrousel mobile
@@ -16,9 +15,9 @@ import type { ProductWithUpload } from '../hooks/useProductsSimple';
  * ✅ Cards 320px de largeur fixe sur mobile
  */
 const LevelsSectionRefonte: React.FC = () => {
-  const { products, loading, error } = useProducts();
+  const { products, isLoading, error } = useProducts();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <section id="levels" className="py-24 px-6">
         <div className="max-w-7xl mx-auto text-center">
@@ -34,7 +33,7 @@ const LevelsSectionRefonte: React.FC = () => {
       <section id="levels" className="py-24 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-400">{error.message}</p>
         </div>
       </section>
     );
@@ -59,11 +58,14 @@ const LevelsSectionRefonte: React.FC = () => {
         >
           <h2 className="text-4xl sm:text-5xl font-bold mb-6">
             <span className="bg-gradient-to-r from-cosmic-gold via-cosmic-aurora to-cosmic-violet bg-clip-text text-transparent">
-              Choisis ton Niveau d'Oracle
+              L'Ascension des Niveaux d'Éveil
             </span>
           </h2>
-          <p className="text-xl text-white/80 max-w-3xl mx-auto">
-            Quatre niveaux d'analyse pour révéler les secrets de ton chemin de vie
+          <p className="text-xl text-white/90 mb-4 max-w-3xl mx-auto">
+            Tu n'achètes pas un produit. Tu ouvres une porte.
+          </p>
+          <p className="text-lg text-white/70 max-w-3xl mx-auto">
+            Chaque niveau est une clef vibratoire pour franchir les couches profondes de ta conscience.
           </p>
         </motion.div>
 
@@ -120,7 +122,7 @@ const LevelsSectionRefonte: React.FC = () => {
           className="text-center mt-16"
         >
           <p className="text-white/60 text-sm">
-            ✨ Toutes les analyses incluent une consultation personnalisée avec nos experts ✨
+            ✨ Accès immédiat à ta cartographie vibratoire personnalisée ✨
           </p>
         </motion.div>
       </div>

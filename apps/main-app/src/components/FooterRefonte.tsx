@@ -55,20 +55,45 @@ const FooterRefonte: React.FC = () => {
               <Sparkles className="w-8 h-8 text-cosmic-gold" />
               <h3 className="text-2xl font-bold text-white">Oracle Lumira</h3>
             </div>
-            <p className="text-white/80 text-sm leading-relaxed">
-              Révèle les mystères de ton âme à travers la sagesse ancestrale de la numérologie sacrée.
+            <p className="text-white/80 text-sm leading-relaxed mb-3">
+              Cartographie mystique personnalisée • Analyse vibratoire avancée • Révélation archétypale
             </p>
+            <a href="mailto:oracle@oraclelumira.com" className="text-cosmic-gold hover:text-cosmic-aurora transition-colors text-sm font-medium">
+              oracle@oraclelumira.com
+            </a>
           </div>
 
-          {/* Colonne 2 : Liens utiles */}
+          {/* Colonne 2 : Informations */}
           <div>
-            <h4 className="text-lg font-semibold text-white mb-4">Liens Rapides</h4>
+            <h4 className="text-lg font-semibold text-white mb-4">Service</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#levels" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
-                  Nos Oracles
-                </a>
+                <p className="text-white/70 text-sm">
+                  ✨ Support 7j/7
+                </p>
               </li>
+              <li>
+                <p className="text-white/70 text-sm">
+                  ⚡ Réponse sous 24h
+                </p>
+              </li>
+              <li>
+                <p className="text-white/70 text-sm">
+                  🔒 Données chiffrées
+                </p>
+              </li>
+              <li>
+                <p className="text-white/70 text-sm">
+                  🛡️ Paiements gardés par les Sceaux
+                </p>
+              </li>
+            </ul>
+          </div>
+
+          {/* Colonne 3 : Légal */}
+          <div>
+            <h4 className="text-lg font-semibold text-white mb-4">Informations Légales</h4>
+            <ul className="space-y-2">
               <li>
                 <a href="/mentions-legales" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
                   Mentions Légales
@@ -76,7 +101,7 @@ const FooterRefonte: React.FC = () => {
               </li>
               <li>
                 <a href="/cgv" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
-                  CGV
+                  Conditions Générales
                 </a>
               </li>
               <li>
@@ -84,27 +109,10 @@ const FooterRefonte: React.FC = () => {
                   Politique de Confidentialité
                 </a>
               </li>
-            </ul>
-          </div>
-
-          {/* Colonne 3 : Contact */}
-          <div>
-            <h4 className="text-lg font-semibold text-white mb-4">Contact</h4>
-            <ul className="space-y-2">
               <li>
-                <a href="mailto:contact@oracle-lumira.com" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
-                  contact@oracle-lumira.com
+                <a href="#levels" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
+                  Nos Niveaux d'Éveil
                 </a>
-              </li>
-              <li>
-                <p className="text-white/70 text-sm">
-                  Support disponible 7j/7
-                </p>
-              </li>
-              <li>
-                <p className="text-white/70 text-sm">
-                  Réponse sous 24h
-                </p>
               </li>
             </ul>
           </div>
