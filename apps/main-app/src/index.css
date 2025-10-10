@@ -51,4 +51,10 @@
   }
   .forest-pan-slow { animation: forest-pan 90s linear infinite; }
   .forest-pan-fast { animation: forest-pan 60s linear infinite; }
+
+  /* Shimmer effect pour les CTA premium */
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
 }
