@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import GlassCard from '../ui/GlassCard';
 import EmptyState from '../ui/EmptyState';
 import { FileText, Headphones, Image } from 'lucide-react';
 import { SecondaryButton } from '../ui/Buttons';
+import AssetsModal from '../sanctuaire/AssetsModal';
+import { sanctuaireService } from '../../services/sanctuaire';
+import { useAudioPlayer } from '../../contexts/AudioPlayerContext';
 
 type Order = {
   id: string;
@@ -14,6 +16,7 @@ type Order = {
   status?: 'new' | 'integrated' | 'in_progress';
   pdfUrl?: string;
   audioUrl?: string;
+  mandalaSvg?: string;
 };
 
 const statusLabel = (s?: Order['status']) => {
@@ -34,26 +37,35 @@ const RawDraws: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [pageSize] = useState(10);
   const navigate = useNavigate();
+  const { play, setTrack } = useAudioPlayer();
+  const [modal, setModal] = useState<{ open: boolean; pdfUrl?: string; mandalaSvg?: string; title?: string }>({ open: false });
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    axios
-      .get<Order[]>('/api/orders?type=draw')
-      .then((res) => {
+    (async () => {
+      try {
+        setLoading(true);
+        const data = await sanctuaireService.getUserCompletedOrders();
         if (!mounted) return;
-        const sorted = (res.data || []).slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const mapped: Order[] = (data.orders || []).map((o: any) => ({
+          id: o.id,
+          title: o.formData?.specificQuestion || 'Tirage spirituel',
+          createdAt: o.deliveredAt || o.createdAt,
+          level: o.level,
+          status: 'integrated',
+          pdfUrl: o.generatedContent?.pdfUrl,
+          audioUrl: o.generatedContent?.audioUrl,
+          mandalaSvg: o.generatedContent?.mandalaSvg,
+        }));
+        const sorted = mapped.slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setOrders(sorted);
-      })
-      .catch(() => {
+      } catch (e) {
         if (mounted) setOrders([]);
-      })
-      .finally(() => {
+      } finally {
         if (mounted) setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
 
   if (loading) {
@@ -85,7 +97,7 @@ const RawDraws: React.FC = () => {
         title="Vos Révélations vous attendent"
         message="L'Oracle prépare vos tirages personnalisés. Chaque révélation vous guidera vers votre vérité intérieure et éclairera votre chemin spirituel."
         action={{
-          label: "Demander un nouveau tirage",
+          label: 'Demander un nouveau tirage',
           onClick: () => navigate('/commande')
         }}
       />
@@ -110,17 +122,26 @@ const RawDraws: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 ml-4">
-            <SecondaryButton onClick={() => o.pdfUrl && window.open(o.pdfUrl, '_blank')}> 
+            <SecondaryButton onClick={async () => {
+              if (!o.pdfUrl) return;
+              const signed = await sanctuaireService.presignFileUrl(o.pdfUrl);
+              setModal({ open: true, pdfUrl: signed, title: o.title || 'Lecture PDF' });
+            }}> 
               <FileText className="w-4 h-4 mr-2 inline" />
-              <span className="hidden sm:inline">Télécharger</span>
+              <span className="hidden sm:inline">Ouvrir</span>
             </SecondaryButton>
 
-            <SecondaryButton onClick={() => o.audioUrl && window.open(o.audioUrl, '_blank')}>
+            <SecondaryButton onClick={async () => {
+              if (!o.audioUrl) return;
+              const signed = await sanctuaireService.presignFileUrl(o.audioUrl);
+              setTrack({ url: signed, title: o.title || 'Lecture audio' });
+              play({ url: signed, title: o.title || 'Lecture audio' });
+            }}>
               <Headphones className="w-4 h-4 mr-2 inline" />
               <span className="hidden sm:inline">Écouter</span>
             </SecondaryButton>
 
-            <SecondaryButton onClick={() => alert('Ouvrir mandala (placeholder)')}>
+            <SecondaryButton onClick={() => setModal({ open: true, mandalaSvg: o.mandalaSvg, title: 'Mandala HD' })}>
               <Image className="w-4 h-4 mr-2 inline" />
               <span className="hidden sm:inline">Mandala</span>
             </SecondaryButton>
@@ -130,13 +151,23 @@ const RawDraws: React.FC = () => {
 
       {orders.length > pageSize && (
         <div className="text-center">
-          <button className="px-4 py-2 rounded-md bg-amber-200 text-amber-900" onClick={() => alert('Voir plus - pagination placeholder')}>
+          <button className="px-4 py-2 rounded-md bg-amber-200 text-amber-900" onClick={() => alert('Voir plus - pagination prochainement')}>
             Voir plus
           </button>
         </div>
       )}
+
+      <AssetsModal
+        open={modal.open}
+        onClose={() => setModal({ open: false })}
+        title={modal.title}
+        pdfUrl={modal.pdfUrl}
+        mandalaSvg={modal.mandalaSvg}
+        onDownload={modal.pdfUrl ? () => sanctuaireService.downloadFile(modal.pdfUrl!, (modal.title || 'lecture') + '.pdf') : undefined}
+      />
     </div>
   );
 };
 
 export default RawDraws;
+

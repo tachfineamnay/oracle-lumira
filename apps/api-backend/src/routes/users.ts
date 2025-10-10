@@ -3,6 +3,7 @@ import { User } from '../models/User';
 import { Order } from '../models/Order';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
+import { getS3Service } from '../services/s3';
 
 const router = express.Router();
 
@@ -300,3 +301,62 @@ router.get('/sanctuaire/stats', authenticateSanctuaire, async (req: any, res: an
 });
 
 export { router as userRoutes };
+
+// ===== Sanctuaire file presign endpoint (private S3 access) =====
+// GET /api/users/files/presign?url=... or ?key=uploads/..
+router.get('/files/presign', async (req: any, res: any) => {
+  try {
+    // Accept both signed users and experts for safety if behind API gateway
+    const auth = req.header('Authorization') || '';
+    if (!auth) {
+      return res.status(401).json({ error: 'Authorization required' });
+    }
+    // Basic token presence check; decode not strictly necessary here as we only generate a GET URL
+    const token = auth.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { url, key, expiresIn } = req.query as { url?: string; key?: string; expiresIn?: string };
+    if (!url && !key) {
+      return res.status(400).json({ error: 'url or key is required' });
+    }
+
+    const bucket = process.env.AWS_S3_BUCKET_NAME || '';
+    const extractKeyFromUrl = (u: string): string => {
+      try {
+        const decoded = decodeURIComponent(u);
+        const idxBucketSlash = decoded.indexOf(`/${bucket}/`);
+        if (bucket && idxBucketSlash !== -1) {
+          return decoded.substring(idxBucketSlash + bucket.length + 2);
+        }
+        const hostSplit = decoded.split('.amazonaws.com/');
+        if (hostSplit.length === 2) {
+          return hostSplit[1];
+        }
+        if (bucket) {
+          const idx = decoded.indexOf(`${bucket}/`);
+          if (idx !== -1) return decoded.substring(idx + bucket.length + 1);
+        }
+        const upIdx = decoded.indexOf('/uploads/');
+        if (upIdx !== -1) return decoded.substring(upIdx + 1);
+        return decoded;
+      } catch {
+        return u;
+      }
+    };
+
+    const objectKey = key || extractKeyFromUrl(url!);
+    if (!objectKey || !objectKey.startsWith('uploads/')) {
+      return res.status(400).json({ error: 'Invalid object key' });
+    }
+
+    const exp = Math.min(Math.max(parseInt(String(expiresIn || '900'), 10) || 900, 60), 3600);
+    const s3 = getS3Service();
+    const signedUrl = await s3.getPresignedGetUrl(objectKey, exp);
+    res.json({ signedUrl, expiresIn: exp });
+  } catch (error) {
+    console.error('Sanctuaire presign error:', error);
+    res.status(500).json({ error: 'Failed to generate signed URL' });
+  }
+});

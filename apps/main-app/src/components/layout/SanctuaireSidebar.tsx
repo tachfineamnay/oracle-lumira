@@ -18,16 +18,16 @@ const NAVIGATION_ITEMS = [
     exact: true 
   },
   { 
-    key: 'spiritualPath', 
-    to: '/sanctuaire/path', 
-    icon: <Star className="w-5 h-5" />, 
-    label: 'Chemin Spirituel' 
-  },
-  { 
     key: 'rawDraws', 
     to: '/sanctuaire/draws', 
     icon: <Book className="w-5 h-5" />, 
     label: 'Tirages & Lectures' 
+  },
+  { 
+    key: 'spiritualPath', 
+    to: '/sanctuaire/path', 
+    icon: <Star className="w-5 h-5" />, 
+    label: 'Chemin Spirituel' 
   },
   { 
     key: 'synthesis', 

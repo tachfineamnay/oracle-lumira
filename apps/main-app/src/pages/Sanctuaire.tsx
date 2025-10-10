@@ -10,6 +10,8 @@ import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeFor
 import { useAuth } from '../hooks/useAuth';
 import { labels } from '../lib/sphereLabels';
 import { useUserLevel } from '../contexts/UserLevelContext';
+import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
+import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
 
 const ProfileIcon: React.FC = () => {
   const navigate = useNavigate();
@@ -330,6 +332,7 @@ const Sanctuaire: React.FC = () => {
       <SanctuaireSidebar progress={[progress, 0, 0, 0]} />
       
       {/* Contenu principal avec marge pour sidebar sur sous-pages */}
+      <AudioPlayerProvider>
       <div className={location.pathname !== '/sanctuaire' ? 'ml-64' : ''}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
@@ -381,6 +384,8 @@ const Sanctuaire: React.FC = () => {
           </motion.div>
         </div>
       </div>
+      <MiniAudioPlayer />
+      </AudioPlayerProvider>
     </PageLayout>
   );
 };
