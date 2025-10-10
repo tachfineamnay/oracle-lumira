@@ -17,8 +17,6 @@ import {
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
 import { useSanctuaire } from '../hooks/useSanctuaire';
-import { AudioPlayerProvider, useAudioPlayer } from '../contexts/AudioPlayerContext';
-import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
 
 interface ReadingCard {
   id: string;
@@ -46,8 +44,6 @@ const SanctuaireSimple: React.FC = () => {
     getOrderContent,
     downloadFile 
   } = useSanctuaire();
-  
-  const { play, setTrack } = useAudioPlayer();
 
   // Redirection si non authentifié
   useEffect(() => {
@@ -74,11 +70,8 @@ const SanctuaireSimple: React.FC = () => {
     try {
       const content = await getOrderContent(reading.id);
       if (content.generatedContent?.audioUrl) {
-        setTrack({
-          title: reading.title,
-          url: content.generatedContent.audioUrl
-        });
-        play();
+        // Ouvrir l'audio dans un nouvel onglet pour l'instant
+        window.open(content.generatedContent.audioUrl, '_blank');
       }
     } catch (error) {
       console.error('Erreur audio:', error);
@@ -130,10 +123,9 @@ const SanctuaireSimple: React.FC = () => {
   }
 
   return (
-    <AudioPlayerProvider>
-      <PageLayout variant="dark">
-        {/* Header Simple */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-mystical-900/95 backdrop-blur-lg border-b border-white/10">
+    <PageLayout variant="dark">
+      {/* Header Simple */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-mystical-900/95 backdrop-blur-lg border-b border-white/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               {/* Logo + Menu */}
@@ -396,11 +388,7 @@ const SanctuaireSimple: React.FC = () => {
           )}
         </div>
       </main>
-
-        {/* Player Audio */}
-        <MiniAudioPlayer />
-      </PageLayout>
-    </AudioPlayerProvider>
+    </PageLayout>
   );
 };
 
