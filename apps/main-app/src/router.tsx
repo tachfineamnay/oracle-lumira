@@ -9,6 +9,7 @@ import CommandeTemple from './pages/CommandeTemple';
 import ConfirmationTemple from './pages/ConfirmationTemple';
 import Sanctuaire from './pages/Sanctuaire';
 import MentionsLegales from './pages/MentionsLegales';
+import LoginSanctuaire from './pages/LoginSanctuaire';
 import ExpertDeskPage from './expert/ExpertDesk';
 import SphereSkeleton from './components/ui/SphereSkeleton';
 
@@ -75,6 +76,7 @@ const AppRoutes: React.FC = () => (
     </Route>
 
     <Route path="/mentions-legales" element={<MentionsLegales />} />
+    <Route path="/login" element={<LoginSanctuaire />} />
     <Route path="/expert" element={<ExpertDeskPage />} />
   </Routes>
 );

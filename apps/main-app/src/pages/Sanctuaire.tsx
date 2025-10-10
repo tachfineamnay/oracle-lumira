@@ -10,6 +10,7 @@ import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeFor
 import { useAuth } from '../hooks/useAuth';
 import { labels } from '../lib/sphereLabels';
 import { useUserLevel } from '../contexts/UserLevelContext';
+import ExistingClientLoginBar from '../components/sanctuaire/ExistingClientLoginBar';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
 
@@ -367,6 +368,7 @@ const Sanctuaire: React.FC = () => {
             {/* Cosmic Header - Supprimé car remplacé par l'icône profil et message de confirmation */}
 
             {/* Contextual Hint */}
+            <ExistingClientLoginBar />
             <ContextualHint />
 
             {/* Content Area - Uniquement pour les sous-pages */}
