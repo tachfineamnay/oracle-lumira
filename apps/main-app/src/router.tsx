@@ -7,7 +7,7 @@ import ConfirmationPage from './pages/ConfirmationPage';
 import SanctuairePage from './pages/SanctuairePage';
 import CommandeTemple from './pages/CommandeTemple';
 import ConfirmationTemple from './pages/ConfirmationTemple';
-import SanctuaireSimple from './pages/SanctuaireSimple';
+import SanctuaireUnified from './pages/SanctuaireUnified';
 import LoginSanctuaireSimple from './pages/LoginSanctuaireSimple';
 import MentionsLegales from './pages/MentionsLegales';
 import ExpertDeskPage from './expert/ExpertDesk';
@@ -32,8 +32,8 @@ const AppRoutes: React.FC = () => (
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     
-    {/* NOUVELLES ROUTES SIMPLIFIÉES */}
-    <Route path="/sanctuaire" element={<SanctuaireSimple />} />
+    {/* ROUTE PRINCIPALE SANCTUAIRE - Gère nouveaux et anciens clients */}
+    <Route path="/sanctuaire" element={<SanctuaireUnified />} />
     <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
     
     {/* ROUTES LEGACY pour compatibilité */}

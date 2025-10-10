@@ -7,7 +7,6 @@ import ProductOrderService from '../services/productOrder';
 import { OrderStatus } from '../types/products';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
-import SectionHeader from '../components/ui/SectionHeader';
 
 const ConfirmationTemple: React.FC = () => {
   const navigate = useNavigate();
@@ -38,7 +37,9 @@ const ConfirmationTemple: React.FC = () => {
             setRedirectCountdown((prev) => {
               if (prev <= 1) {
                 clearInterval(countdown);
-                navigate('/sanctuaire');
+                // Redirect with email for auto-login
+                const email = status.order.customerEmail || searchParams.get('email');
+                navigate(email ? `/sanctuaire?email=${encodeURIComponent(email)}` : '/sanctuaire');
                 return 0;
               }
               return prev - 1;
@@ -70,10 +71,12 @@ const ConfirmationTemple: React.FC = () => {
       clearInterval(pollInterval);
       clearTimeout(stopPolling);
     };
-  }, [orderId, navigate]);
+  }, [orderId, navigate, searchParams]);
 
   const handleGoToSanctuary = () => {
-    navigate('/sanctuaire');
+    // Redirect with email for auto-login
+    const email = orderStatus?.order.customerEmail || searchParams.get('email');
+    navigate(email ? `/sanctuaire?email=${encodeURIComponent(email)}` : '/sanctuaire');
   };
 
   const handleBackToHome = () => {
