@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { 
   Star, 
   Sparkles, 
@@ -28,6 +29,8 @@ interface LevelCardProps {
  * ✅ Badge "LE PLUS POPULAIRE" agrandi et plus visible
  * ✅ Box-shadow cosmic pour profondeur
  */
+const MotionLink = motion(Link);
+
 const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
   // Déterminer si c'est l'offre recommandée (Mystique = id 'mystique')
   const isRecommended = level.id === 'mystique';
@@ -296,8 +299,8 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
         </ul>
 
         {/* CTA Button - Plus compact */}
-        <motion.a
-          href={`/commande?level=${level.id}`}
+        <MotionLink
+          to={`/commande?product=${level.id}`}
           className={`relative block w-full py-3 rounded-xl text-center font-semibold text-sm transition-all duration-300 overflow-hidden group/btn ${
             isRecommended
               ? 'bg-gradient-to-r from-cosmic-gold via-yellow-400 to-cosmic-gold bg-[length:200%_100%] text-cosmic-void shadow-[0_0_20px_rgba(255,215,0,0.4)]'
@@ -344,7 +347,7 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
               getLevelCTA(level.id)
             )}
           </span>
-        </motion.a>
+        </MotionLink>
       </div>
 
       {/* Effet de lueur animé pour l'offre recommandée */}

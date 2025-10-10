@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Sparkles, Music, BookOpen, Package } from 'lucide-react';
 
 /**
@@ -133,6 +134,8 @@ interface UpsellCardProps {
   fullHeight?: boolean;
 }
 
+const MotionLink = motion(Link);
+
 const UpsellCard: React.FC<UpsellCardProps> = ({ upsell, index, fullHeight }) => {
   const Icon = upsell.icon;
 
@@ -206,14 +209,14 @@ const UpsellCard: React.FC<UpsellCardProps> = ({ upsell, index, fullHeight }) =>
             </div>
 
             {/* CTA minimaliste */}
-            <motion.a
-              href={`/commande?upsell=${upsell.id}`}
+            <MotionLink
+              to={`/commande?upsell=${upsell.id}`}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               className="block w-full py-3 px-4 bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 hover:border-white/30 rounded-xl text-center text-sm font-medium text-white transition-all duration-200"
             >
               Ajouter
-            </motion.a>
+            </MotionLink>
           </div>
         </div>
 

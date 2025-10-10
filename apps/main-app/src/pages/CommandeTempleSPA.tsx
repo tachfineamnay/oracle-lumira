@@ -252,7 +252,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 const CommandeTemple: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const productId = searchParams.get('product');
+  // Accept both ?product= and legacy ?level=
+  const productId = searchParams.get('product') || searchParams.get('level');
   const { initializeFromPurchase } = useInitializeUserLevel();
   
   const [clientSecret, setClientSecret] = useState<string>('');
@@ -320,7 +321,7 @@ const CommandeTemple: React.FC = () => {
   };
 
   const handleBackToLevels = () => {
-    navigate('/#niveaux');
+    navigate('/#levels');
   };
 
   if (isLoading) {

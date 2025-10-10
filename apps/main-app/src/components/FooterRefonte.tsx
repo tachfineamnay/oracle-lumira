@@ -1,15 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 /**
  * FooterRefonte - Footer avec accessibilité améliorée
- * 
+ *
  * CHANGEMENTS vs version originale :
- * ✅ Contraste optimisé partout (text-white/80, text-white/70)
- * ✅ Layout 3 colonnes responsive
- * ✅ Divider animé avec gradient
- * ✅ Starfield background animation
+ * - Contraste optimisé partout (text-white/80, text-white/70)
+ * - Layout 3 colonnes responsive
+ * - Divider animé avec gradient
+ * - Starfield background animation
  */
 const FooterRefonte: React.FC = () => {
   return (
@@ -56,7 +57,7 @@ const FooterRefonte: React.FC = () => {
               <h3 className="text-2xl font-bold text-white">Oracle Lumira</h3>
             </div>
             <p className="text-white/80 text-sm leading-relaxed mb-3">
-              Cartographie mystique personnalisée • Analyse vibratoire avancée • Révélation archétypale
+              Cartographie mystique personnalisée · Analyse vibratoire avancée · Révélation archétypale
             </p>
             <a href="mailto:oracle@oraclelumira.com" className="text-cosmic-gold hover:text-cosmic-aurora transition-colors text-sm font-medium">
               oracle@oraclelumira.com
@@ -68,24 +69,16 @@ const FooterRefonte: React.FC = () => {
             <h4 className="text-lg font-semibold text-white mb-4">Service</h4>
             <ul className="space-y-2">
               <li>
-                <p className="text-white/70 text-sm">
-                  ✨ Support 7j/7
-                </p>
+                <p className="text-white/70 text-sm">⭐ Support 7j/7</p>
               </li>
               <li>
-                <p className="text-white/70 text-sm">
-                  ⚡ Réponse sous 24h
-                </p>
+                <p className="text-white/70 text-sm">⚡ Réponse sous 24h</p>
               </li>
               <li>
-                <p className="text-white/70 text-sm">
-                  🔒 Données chiffrées
-                </p>
+                <p className="text-white/70 text-sm">🔒 Données chiffrées</p>
               </li>
               <li>
-                <p className="text-white/70 text-sm">
-                  🛡️ Paiements gardés par les Sceaux
-                </p>
+                <p className="text-white/70 text-sm">💫 Paiements protégés</p>
               </li>
             </ul>
           </div>
@@ -95,21 +88,22 @@ const FooterRefonte: React.FC = () => {
             <h4 className="text-lg font-semibold text-white mb-4">Informations Légales</h4>
             <ul className="space-y-2">
               <li>
-                <a href="/mentions-legales" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
+                <Link to="/mentions-legales" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
                   Mentions Légales
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/cgv" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
+                <Link to="/cgv" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
                   Conditions Générales
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/confidentialite" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
+                <Link to="/confidentialite" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
                   Politique de Confidentialité
-                </a>
+                </Link>
               </li>
               <li>
+                {/* Lien d’ancre intra-page conservé pour un scroll immédiat */}
                 <a href="#levels" className="text-white/70 hover:text-cosmic-gold transition-colors text-sm">
                   Nos Niveaux d'Éveil
                 </a>
@@ -120,12 +114,8 @@ const FooterRefonte: React.FC = () => {
 
         {/* Copyright */}
         <div className="text-center pt-8 border-t border-white/10">
-          <p className="text-white/60 text-sm">
-            © {new Date().getFullYear()} Oracle Lumira. Tous droits réservés.
-          </p>
-          <p className="text-white/50 text-xs mt-2">
-            Fait avec ✨ pour éveiller les âmes
-          </p>
+          <p className="text-white/60 text-sm">© {new Date().getFullYear()} Oracle Lumira. Tous droits réservés.</p>
+          <p className="text-white/50 text-xs mt-2">Fait avec 💜 pour éveiller les âmes</p>
         </div>
       </div>
     </footer>
@@ -133,3 +123,4 @@ const FooterRefonte: React.FC = () => {
 };
 
 export default FooterRefonte;
+
