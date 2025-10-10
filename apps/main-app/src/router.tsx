@@ -7,18 +7,21 @@ import ConfirmationPage from './pages/ConfirmationPage';
 import SanctuairePage from './pages/SanctuairePage';
 import CommandeTemple from './pages/CommandeTemple';
 import ConfirmationTemple from './pages/ConfirmationTemple';
-import Sanctuaire from './pages/Sanctuaire';
+import SanctuaireSimple from './pages/SanctuaireSimple';
+import LoginSanctuaireSimple from './pages/LoginSanctuaireSimple';
 import MentionsLegales from './pages/MentionsLegales';
-import LoginSanctuaire from './pages/LoginSanctuaire';
 import ExpertDeskPage from './expert/ExpertDesk';
+
+// Garder l'ancien Sanctuaire pour compatibilité legacy
+import Sanctuaire from './pages/Sanctuaire';
+import LoginSanctuaire from './pages/LoginSanctuaire';
 import SphereSkeleton from './components/ui/SphereSkeleton';
 
-// note: keep direct imports for legacy direct links, but prefer lazy children under /sanctuaire
+// Lazy imports pour l'ancien système (legacy)
 const LazySpiritualPath = React.lazy(() => import('./components/spheres/SpiritualPath'));
 const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
 const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
 const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
-
 const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
 
 const AppRoutes: React.FC = () => (
@@ -28,9 +31,15 @@ const AppRoutes: React.FC = () => (
     <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
+    
+    {/* NOUVELLES ROUTES SIMPLIFIÉES */}
+    <Route path="/sanctuaire" element={<SanctuaireSimple />} />
+    <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
+    
+    {/* ROUTES LEGACY pour compatibilité */}
     <Route path="/commande-legacy" element={<CommandeTemple />} />
     <Route path="/confirmation-legacy" element={<ConfirmationTemple />} />
-    <Route path="/sanctuaire" element={<Sanctuaire />}>
+    <Route path="/sanctuaire-legacy" element={<Sanctuaire />}>
       {/* nested children rendered inside Sanctuaire's <Outlet /> */}
       <Route
         path="path"
@@ -64,7 +73,6 @@ const AppRoutes: React.FC = () => (
           </React.Suspense>
         }
       />
-
       <Route
         path="profile"
         element={
