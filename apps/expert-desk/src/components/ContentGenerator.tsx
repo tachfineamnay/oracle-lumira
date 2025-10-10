@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { 
-  Send, 
-  Wand2, 
-  FileText, 
-  User, 
+import {
+  Send,
+  Wand2,
+  FileText,
+  User,
   Calendar,
   MapPin,
   Clock,
   Download,
-  ExternalLink
+  ExternalLink,
+  X as CloseIcon
 } from 'lucide-react';
 import { LoadingSpinner } from './LoadingSpinner';
 import type { Order } from '../types/Order';
-import { api } from '../utils/api';
+import { api, endpoints } from '../utils/api';
 import toast from 'react-hot-toast';
 
 interface ContentGeneratorProps {
@@ -20,9 +21,9 @@ interface ContentGeneratorProps {
   onOrderUpdate: () => void;
 }
 
-const ContentGenerator: React.FC<ContentGeneratorProps> = ({ 
-  order, 
-  onOrderUpdate 
+const ContentGenerator: React.FC<ContentGeneratorProps> = ({
+  order,
+  onOrderUpdate
 }) => {
   const [expertPrompt, setExpertPrompt] = useState('');
   const [expertInstructions, setExpertInstructions] = useState('');
@@ -38,6 +39,67 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
     if (path.startsWith('http')) return path;
     // Sinon, construire l'URL locale (fallback)
     return `${hostBase}${path}`;
+  };
+
+  // Signed image URL cache and preview modal state
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null);
+
+  const resolveSignedUrl = async (urlOrPath: string): Promise<string> => {
+    try {
+      const u = urlOrPath?.startsWith('http') ? urlOrPath : buildFileUrl(urlOrPath);
+      if (!u) return '';
+      const { data } = await api.get(endpoints.expert.presignFile, { params: { url: u } });
+      return data.signedUrl as string;
+    } catch (e) {
+      console.warn('Failed to presign URL, falling back to raw:', e);
+      return urlOrPath;
+    }
+  };
+
+  // Load signed URLs for thumbnails when order changes
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!order?.files?.length) { setImageUrls({}); return; }
+      const next: Record<string, string> = {};
+      for (const f of order.files) {
+        const fileUrl = (f as any).url || buildFileUrl((f as any).path, (f as any).filename);
+        const contentType = (f as any).contentType || (f as any).mimetype || '';
+        const isImage = (contentType.startsWith('image/')) || /\.(png|jpe?g|gif|webp|heic|heif)$/i.test(fileUrl || '');
+        if (fileUrl && isImage) {
+          try {
+            const signed = await resolveSignedUrl(fileUrl);
+            if (!mounted) return;
+            next[fileUrl] = signed;
+          } catch {}
+        }
+      }
+      if (mounted) setImageUrls(next);
+    })();
+    return () => { mounted = false; };
+  }, [order?._id]);
+
+  const openPreview = async (fileUrl: string, name: string) => {
+    const signed = imageUrls[fileUrl] || await resolveSignedUrl(fileUrl);
+    setPreview({ url: signed, name });
+  };
+
+  const triggerDownload = async (fileUrl: string) => {
+    try {
+      const signed = await resolveSignedUrl(fileUrl);
+      if (!signed) return;
+      const a = document.createElement('a');
+      a.href = signed;
+      a.target = '_blank';
+      a.rel = 'noreferrer';
+      a.download = '';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      toast.error("Échec du téléchargement");
+    }
   };
 
   // Reset form when order changes
@@ -82,7 +144,7 @@ CONSIGNES POUR LA LECTURE ${level.toUpperCase()}:
 - Focus sur le message principal de guidance
 - PDF 2 pages avec la carte et l'interprétation`;
         break;
-        
+
       case 'Intuitive':
         template += `
 - Établir le profil de l'âme basé sur la date de naissance
@@ -91,7 +153,7 @@ CONSIGNES POUR LA LECTURE ${level.toUpperCase()}:
 - Audio 5 minutes avec voix chaleureuse
 - PDF 4 pages détaillé`;
         break;
-        
+
       case 'Alchimique':
         template += `
 - Analyser les blocages énergétiques actuels
@@ -100,7 +162,7 @@ CONSIGNES POUR LA LECTURE ${level.toUpperCase()}:
 - Audio 12 minutes avec méditation guidée
 - PDF 6-8 pages avec rituel détaillé`;
         break;
-        
+
       case 'Intégrale':
         template += `
 - Cartographie complète du chemin de vie
@@ -126,78 +188,71 @@ PERSONNALISATION:
       return;
     }
 
-    setSending(true);
-    
     try {
+      setSending(true);
+
       const payload = {
         orderId: order._id,
-        expertPrompt: expertPrompt.trim(),
-        expertInstructions: expertInstructions.trim(),
-        n8nWebhookUrl: n8nWebhookUrl.trim() || undefined
+        expertPrompt,
+        expertInstructions,
+        n8nWebhookUrl: n8nWebhookUrl || undefined
       };
 
-      await api.post('/expert/process-order', payload);
-      
-      toast.success(`Commande #${order.orderNumber} envoyée à l'assistant IA ! 🚀`);
-      onOrderUpdate();
-      
-      // Reset form
-      setExpertPrompt('');
-      setExpertInstructions('');
-      
+      const response = await api.post(endpoints.expert.processOrder, payload);
+      if (response.data?.success) {
+        toast.success('Commande envoyée à l\'assistant IA');
+        onOrderUpdate();
+      } else {
+        toast.error(response.data?.error || 'Échec de l\'envoi');
+      }
     } catch (error: any) {
-      console.error('Send to assistant error:', error);
-      toast.error(error.response?.data?.error || 'Erreur lors de l\'envoi');
+      toast.error(error?.response?.data?.error || 'Erreur réseau');
     } finally {
       setSending(false);
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes || bytes <= 0) return '—';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = bytes;
+    let unit = 0;
+    while (size >= 1024 && unit < units.length - 1) {
+      size /= 1024;
+      unit++;
+    }
+    return `${size.toFixed(2)} ${units[unit]}`;
   };
 
   if (!order) {
     return (
-      <div className="card h-fit">
-        <div className="text-center py-12 text-slate-400">
-          <Wand2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg mb-2">Sélectionnez une commande</p>
-          <p className="text-sm">Choisissez une commande dans la queue pour commencer</p>
-        </div>
+      <div className="p-6 text-slate-400">
+        Sélectionnez une commande pour commencer.
       </div>
     );
   }
 
   return (
-    <div className="card h-fit">
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Wand2 className="w-5 h-5 text-amber-400" />
-          Générateur de Contenu
+          <Wand2 className="w-5 h-5 text-amber-400" /> Génération du contenu
         </h2>
-        <div className="text-xs text-slate-400 font-mono">
-          #{order.orderNumber}
-        </div>
       </div>
 
-      {/* Client Info Card */}
-      <div className="bg-white/10 rounded-lg p-4 mb-6 border border-white/20">
-        <h3 className="font-semibold text-amber-400 mb-3 flex items-center gap-2">
-          <User className="w-4 h-4" />
-          Informations Client
+      {/* Client Summary */}
+      <div className="space-y-3 bg-slate-900/40 border border-white/10 rounded-lg p-4">
+        <h3 className="text-slate-200 font-semibold flex items-center gap-2">
+          <User className="w-4 h-4" /> {order.formData.firstName} {order.formData.lastName}
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div>
             <span className="text-slate-400">Nom:</span>
             <p className="font-medium">{order.formData.firstName} {order.formData.lastName}</p>
           </div>
-          
+
           <div>
             <span className="text-slate-400">Email:</span>
             <p className="font-medium">{order.formData.email}</p>
@@ -247,7 +302,6 @@ PERSONNALISATION:
             <span className="text-slate-400 text-xs">Fichiers joints:</span>
             <div className="mt-2 space-y-2">
               {order.files.map((file, index) => {
-                // Préférence S3: utiliser les nouvelles propriétés avec fallback sur l'ancien modèle
                 const fileUrl = (file as any).url || buildFileUrl((file as any).path, (file as any).filename);
                 const displayName = (file as any).name || (file as any).originalName || 'Fichier sans nom';
                 const isImage = (
@@ -258,21 +312,21 @@ PERSONNALISATION:
                 return (
                   <div key={index} className="flex items-center gap-3 text-xs bg-white/10 border border-white/20 p-2 rounded">
                     {isImage ? (
-                      <a href={fileUrl} target="_blank" rel="noreferrer">
-                        <img src={fileUrl} alt={displayName} className="w-14 h-14 object-cover rounded border border-white/20" />
-                      </a>
+                      <button type="button" onClick={() => openPreview(fileUrl!, displayName)} className="focus:outline-none" title="Aperçu">
+                        <img src={imageUrls[fileUrl] || ''} alt={displayName} className="w-14 h-14 object-cover rounded border border-white/20" />
+                      </button>
                     ) : (
                       <FileText className="w-4 h-4 text-amber-400" />
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="truncate font-medium">{displayName}</div>
-                      <div className="text-white/60">{formatFileSize(file.size)}</div>
+                      <div className="text-white/60">{formatFileSize((file as any).size)}</div>
                     </div>
                     {fileUrl && (
-                      <a href={fileUrl} target="_blank" rel="noreferrer" className="text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                      <button type="button" onClick={() => triggerDownload(fileUrl)} className="text-amber-400 hover:text-amber-300 flex items-center gap-1">
                         <Download className="w-3 h-3" />
                         <span>Télécharger</span>
-                      </a>
+                      </button>
                     )}
                   </div>
                 );
@@ -281,6 +335,26 @@ PERSONNALISATION:
           </div>
         )}
       </div>
+
+      {/* Image Preview Modal */}
+      {preview && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 p-4" onClick={() => setPreview(null)}>
+          <div className="relative max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setPreview(null)}
+              className="absolute -top-3 -right-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full p-1"
+              aria-label="Fermer"
+            >
+              <CloseIcon className="w-5 h-5 text-white" />
+            </button>
+            <div className="bg-[#121826] rounded-lg border border-white/10 p-3">
+              <div className="text-white/80 text-sm mb-2 truncate" title={preview.name}>{preview.name}</div>
+              <img src={preview.url} alt={preview.name} className="max-h-[75vh] w-full object-contain rounded" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Prompt Form */}
       <div className="space-y-4">
@@ -358,3 +432,4 @@ PERSONNALISATION:
 };
 
 export default ContentGenerator;
+

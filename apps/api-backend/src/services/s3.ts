@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface S3Config {
@@ -136,6 +137,18 @@ export class S3Service {
       console.error('Test connexion S3 échoué:', error);
       return false;
     }
+  }
+
+  /**
+   * Générer une URL signée (GET) temporaire pour accéder à un objet privé
+   */
+  async getPresignedGetUrl(key: string, expiresInSeconds: number = 900): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+    const url = await awsGetSignedUrl(this.s3Client, command, { expiresIn: expiresInSeconds });
+    return url;
   }
 }
 

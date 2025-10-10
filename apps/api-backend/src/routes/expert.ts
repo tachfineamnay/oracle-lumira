@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import Joi from 'joi';
 import axios from 'axios';
 import bcrypt from 'bcryptjs';
+import { getS3Service } from '../services/s3';
 
 const router = express.Router();
 
@@ -445,6 +446,60 @@ router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => 
   } catch (error) {
     console.error('Get pending orders error:', error);
     res.status(500).json({ error: 'Erreur lors du chargement des commandes' });
+  }
+});
+
+// Get a presigned URL for a private S3 object so experts can preview/download uploads safely
+router.get('/files/presign', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const { url, key, expiresIn } = req.query as { url?: string; key?: string; expiresIn?: string };
+    if (!url && !key) {
+      return res.status(400).json({ error: 'url or key is required' });
+    }
+
+    const bucket = process.env.AWS_S3_BUCKET_NAME || '';
+    const extractKeyFromUrl = (u: string): string => {
+      try {
+        // Normalize
+        const decoded = decodeURIComponent(u);
+        // Case 1: ...amazonaws.com/<bucket>/<key>
+        const idxBucketSlash = decoded.indexOf(`/${bucket}/`);
+        if (bucket && idxBucketSlash !== -1) {
+          return decoded.substring(idxBucketSlash + bucket.length + 2); // +2 for the surrounding slashes
+        }
+        // Case 2: <bucket>.s3.<region>.amazonaws.com/<key>
+        const hostSplit = decoded.split('.amazonaws.com/');
+        if (hostSplit.length === 2) {
+          return hostSplit[1];
+        }
+        // Case 3: custom endpoint .../<bucket>/<key>
+        if (bucket) {
+          const idx = decoded.indexOf(`${bucket}/`);
+          if (idx !== -1) return decoded.substring(idx + bucket.length + 1);
+        }
+        // Fallback: find first occurrence of '/uploads/' and use the rest
+        const upIdx = decoded.indexOf('/uploads/');
+        if (upIdx !== -1) return decoded.substring(upIdx + 1); // drop leading slash
+        // Otherwise treat the whole string as key
+        return decoded;
+      } catch {
+        return u;
+      }
+    };
+
+    const objectKey = key || extractKeyFromUrl(url!);
+    if (!objectKey || !objectKey.startsWith('uploads/')) {
+      // Basic safety: only allow objects in uploads/
+      return res.status(400).json({ error: 'Invalid object key' });
+    }
+
+    const expires = Math.min(Math.max(parseInt(expiresIn || '900', 10) || 900, 60), 3600);
+    const s3 = getS3Service();
+    const signedUrl = await s3.getPresignedGetUrl(objectKey, expires);
+    res.json({ signedUrl, expiresIn: expires });
+  } catch (error) {
+    console.error('Failed to presign S3 URL:', error);
+    res.status(500).json({ error: 'Failed to generate signed URL' });
   }
 });
 

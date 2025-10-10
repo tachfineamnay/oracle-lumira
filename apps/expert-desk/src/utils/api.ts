@@ -57,7 +57,8 @@ export const endpoints = {
     validationQueue: '/expert/orders/validation-queue',
     validateContent: '/expert/validate-content',
     orderDetails: (id: string) => `/expert/orders/${id}`,
-    processOrder: '/expert/process-order'
+    processOrder: '/expert/process-order',
+    presignFile: '/expert/files/presign'
   }
 };
 
