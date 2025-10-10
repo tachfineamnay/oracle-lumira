@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Eye
 } from 'lucide-react';
+import { api, endpoints } from '../utils/api';
 
 interface ContentValidatorProps {
   order: Order | null;
@@ -36,6 +37,30 @@ const ContentValidator: React.FC<ContentValidatorProps> = ({
   const [rejectionReason, setRejectionReason] = useState('');
   const [activeTab, setActiveTab] = useState<'reading' | 'pdf' | 'audio' | 'mandala'>('reading');
   const [isValidating, setIsValidating] = useState(false);
+  const [signedPdfUrl, setSignedPdfUrl] = useState('');
+  const [signedAudioUrl, setSignedAudioUrl] = useState('');
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setSignedPdfUrl('');
+      setSignedAudioUrl('');
+      const content = order?.generatedContent;
+      try {
+        if (content?.pdfUrl) {
+          const { data } = await api.get(endpoints.expert.presignFile, { params: { url: content.pdfUrl } });
+          if (mounted) setSignedPdfUrl(data.signedUrl || '');
+        }
+      } catch {}
+      try {
+        if (content?.audioUrl) {
+          const { data } = await api.get(endpoints.expert.presignFile, { params: { url: content.audioUrl } });
+          if (mounted) setSignedAudioUrl(data.signedUrl || '');
+        }
+      } catch {}
+    })();
+    return () => { mounted = false; };
+  }, [order?._id]);
 
   if (!order) {
     return (
@@ -228,7 +253,7 @@ const ContentValidator: React.FC<ContentValidatorProps> = ({
                     <Download className="w-12 h-12 mx-auto mb-4 text-amber-400" />
                     <p className="text-lg font-medium mb-4">PDF généré</p>
                     <a
-                      href={order.generatedContent.pdfUrl}
+                      href={signedPdfUrl || order.generatedContent.pdfUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-primary inline-flex items-center gap-2"
@@ -244,7 +269,7 @@ const ContentValidator: React.FC<ContentValidatorProps> = ({
                     <Headphones className="w-12 h-12 mx-auto mb-4 text-amber-400" />
                     <p className="text-lg font-medium mb-4">Audio généré</p>
                     <audio controls className="mx-auto">
-                      <source src={order.generatedContent.audioUrl} type="audio/mpeg" />
+                      <source src={signedAudioUrl || order.generatedContent.audioUrl} type="audio/mpeg" />
                       Votre navigateur ne supporte pas l'élément audio.
                     </audio>
                   </div>
@@ -342,3 +367,4 @@ const ContentValidator: React.FC<ContentValidatorProps> = ({
 };
 
 export default ContentValidator;
+
