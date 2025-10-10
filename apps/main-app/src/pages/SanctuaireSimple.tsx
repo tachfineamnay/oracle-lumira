@@ -73,11 +73,10 @@ const SanctuaireSimple: React.FC = () => {
     
     try {
       const content = await getOrderContent(reading.id);
-      if (content.audioUrl) {
+      if (content.generatedContent?.audioUrl) {
         setTrack({
           title: reading.title,
-          url: content.audioUrl,
-          isPlaying: false
+          url: content.generatedContent.audioUrl
         });
         play();
       }
@@ -91,8 +90,8 @@ const SanctuaireSimple: React.FC = () => {
     
     try {
       const content = await getOrderContent(reading.id);
-      if (content.pdfUrl) {
-        downloadFile(content.pdfUrl, `lecture-${reading.id}.pdf`);
+      if (content.generatedContent?.pdfUrl) {
+        downloadFile(content.generatedContent.pdfUrl, `lecture-${reading.id}.pdf`);
       }
     } catch (error) {
       console.error('Erreur téléchargement:', error);
