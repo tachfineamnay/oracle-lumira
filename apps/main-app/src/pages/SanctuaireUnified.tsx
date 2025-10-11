@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -95,19 +95,22 @@ const SanctuaireUnified: React.FC = () => {
   }, [isAuthenticated, loading, navigate, searchParams]);
 
   // Détection si nouveau client (première visite ou profil incomplet)
-  // IMPORTANT: Vérifier d'abord le token, puis userLevel
+  // IMPORTANT: Vérifier d'abord le token, puis userLevel avec useMemo pour éviter re-render
   const hasFirstVisitToken = sessionStorage.getItem('first_visit') === 'true';
-  const hasIncompleteProfile = userLevel?.profile && !userLevel.profile.profileCompleted;
-  const hasNoProfile = !userLevel?.profile || Object.keys(userLevel.profile).length === 0;
   
-  const isNewClient = hasFirstVisitToken || hasIncompleteProfile || hasNoProfile;
+  const isNewClient = useMemo(() => {
+    const hasIncompleteProfile = userLevel?.profile && !userLevel.profile.profileCompleted;
+    const hasNoProfile = !userLevel?.profile || Object.keys(userLevel.profile).length === 0;
+    
+    return hasFirstVisitToken || hasIncompleteProfile || hasNoProfile;
+  }, [hasFirstVisitToken, userLevel?.profile]);
 
   // Nettoyer le flag première visite après chargement
   useEffect(() => {
     if (isAuthenticated && userLevel?.profile?.profileCompleted) {
       sessionStorage.removeItem('first_visit');
     }
-  }, [isAuthenticated, userLevel]);
+  }, [isAuthenticated, userLevel?.profile?.profileCompleted]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('sanctuaire_email');
@@ -115,6 +118,20 @@ const SanctuaireUnified: React.FC = () => {
     logout();
     navigate('/sanctuaire/login');
   };
+
+  // Debug log - UNE SEULE FOIS au lieu de boucle infinie
+  useEffect(() => {
+    console.log('🔍 SanctuaireUnified Debug:', {
+      isAuthenticated,
+      hasFirstVisitToken,
+      isNewClient,
+      userLevelProfile: userLevel?.profile?.profileCompleted,
+      sessionEmail: sessionStorage.getItem('sanctuaire_email'),
+      urlEmail: searchParams.get('email'),
+      urlToken: searchParams.get('token')
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNewClient]); // Ignorer missing dependencies pour éviter la boucle
 
   // Mapping des commandes vers les cartes de lecture
   const readings: ReadingCard[] = orders.map(order => {
@@ -170,19 +187,6 @@ const SanctuaireUnified: React.FC = () => {
       </PageLayout>
     );
   }
-
-  // Debug log
-  console.log('🔍 SanctuaireUnified Debug:', {
-    isAuthenticated,
-    hasFirstVisitToken,
-    hasIncompleteProfile,
-    hasNoProfile,
-    isNewClient,
-    userLevelProfile: userLevel?.profile,
-    sessionEmail: sessionStorage.getItem('sanctuaire_email'),
-    urlEmail: searchParams.get('email'),
-    urlToken: searchParams.get('token')
-  });
 
   // Erreur
   if (error) {
@@ -260,6 +264,13 @@ const SanctuaireUnified: React.FC = () => {
                 <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
               </div>
             </motion.div>
+
+            {/* Mandala visuel discret */}
+            <div className="flex justify-center mb-10">
+              <div className="w-56 h-56 opacity-90">
+                <MandalaNav progress={[0,0,0,0,0]} effects="minimal" />
+              </div>
+            </div>
 
             {/* Formulaire */}
             <SanctuaireWelcomeForm />
@@ -395,6 +406,12 @@ const SanctuaireUnified: React.FC = () => {
       {/* Contenu */}
       <main className="pt-16 min-h-screen">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Mandala entête */}
+          <div className="flex justify-center mb-8">
+            <div className="w-64 h-64">
+              <MandalaNav progress={[0,0,0,0,0]} effects="minimal" />
+            </div>
+          </div>
           
           {/* Vue Profil */}
           {selectedView === 'profile' && (

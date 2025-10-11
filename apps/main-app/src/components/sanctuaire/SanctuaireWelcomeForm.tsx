@@ -136,8 +136,14 @@ export const SanctuaireWelcomeForm: React.FC = () => {
         submittedAt: new Date()
       });
 
+      try {
+        // Marquer la première visite comme terminée pour permettre l'accès au dashboard
+        sessionStorage.removeItem('first_visit');
+      } catch {}
+
+      // Laisser le parent (SanctuaireUnified) re-rendre vers le dashboard
       setFormState('submitted');
-      setShowConfirmation(true);
+      setShowConfirmation(false);
       console.log('[SANCTUAIRE] Form submission completed successfully');
       
     } catch (error) {
@@ -166,9 +172,9 @@ export const SanctuaireWelcomeForm: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Message de confirmation */}
+      {/* Message de confirmation - FORCÉ CACHÉ POUR DEBUG */}
       <AnimatePresence>
-        {showConfirmation && (
+        {false && showConfirmation && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
