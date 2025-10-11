@@ -260,9 +260,10 @@ const CommandeTemple: React.FC = () => {
   const [orderId, setOrderId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [customerEmail, setCustomerEmail] = useState<string>('');
-  const [customerName, setCustomerName] = useState<string>('');      // 🆕 Customer full name
+  const [customerFirstName, setCustomerFirstName] = useState<string>('');
+  const [customerLastName, setCustomerLastName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');    // 🆕 Customer phone
+  const [customerEmail, setCustomerEmail] = useState<string>('');
   const [catalog, setCatalog] = useState<Product[] | null>(null);
   const product = productId && catalog ? catalog.find(p => p.id === productId) || null : null;
 
@@ -292,8 +293,8 @@ const CommandeTemple: React.FC = () => {
       return;
     }
 
-    // Ne pas initialiser le paiement tant que l'email n'est pas VALIDE (regex)
-    if (!customerName || !customerPhone || !customerEmail || !ProductOrderService.validateEmail(customerEmail)) {
+    // Ne pas initialiser le paiement tant que les champs requis ne sont pas valides
+    if (!customerFirstName || !customerLastName || !customerPhone || !ProductOrderService.validateEmail(customerEmail)) {
       setIsLoading(false);
       return;
     }
@@ -303,7 +304,7 @@ const CommandeTemple: React.FC = () => {
         const paymentData = await ProductOrderService.createPaymentIntent(
           productId,
           customerEmail,
-          customerName,      // 🆕 Pass customer name
+          `${customerFirstName} ${customerLastName}`.trim(),      // 🆕 Pass customer name
           customerPhone      // 🆕 Pass customer phone
         );
 
@@ -318,7 +319,7 @@ const CommandeTemple: React.FC = () => {
     };
 
     initializePayment();
-  }, [productId, product, customerEmail, customerName, customerPhone, catalog]);
+  }, [productId, product, customerEmail, customerFirstName, customerLastName, customerPhone, catalog]);
 
   const handlePaymentSuccess = () => {
     // Initialiser le niveau utilisateur après paiement réussi
@@ -541,20 +542,31 @@ const CommandeTemple: React.FC = () => {
               
               <h3 className="text-xl font-bold text-white/95 mb-6 tracking-wide relative z-10">Finaliser votre commande</h3>
               
-              {/* 🆕 Nom complet Input */}
+              {/* Nom / Prénom Inputs */}
               <div className="mb-4 relative z-10">
                 <label className="block text-sm font-medium text-gray-300/90 mb-2 tracking-wide">
-                  Nom complet <span className="text-red-400">*</span>
+                  Informations client <span className="text-red-400">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Jean Dupont"
-                  required
-                  className="w-full px-4 py-3 placeholder-[#9CA3AF] rounded-[12px] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-300 tracking-wide"
-                  style={stripeInputStyle}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={customerFirstName}
+                    onChange={(e) => setCustomerFirstName(e.target.value)}
+                    placeholder="Prénom"
+                    required
+                    className="w-full px-4 py-3 placeholder-[#9CA3AF] rounded-[12px] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-300 tracking-wide"
+                    style={stripeInputStyle}
+                  />
+                  <input
+                    type="text"
+                    value={customerLastName}
+                    onChange={(e) => setCustomerLastName(e.target.value)}
+                    placeholder="Nom"
+                    required
+                    className="w-full px-4 py-3 placeholder-[#9CA3AF] rounded-[12px] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-300 tracking-wide"
+                    style={stripeInputStyle}
+                  />
+                </div>
               </div>
 
               {/* 🆕 Téléphone Input */}
@@ -593,25 +605,30 @@ const CommandeTemple: React.FC = () => {
                 </p>
               </div>
 
-              {/* Stripe Elements */}
-              {!customerName || !customerPhone || !customerEmail || !ProductOrderService.validateEmail(customerEmail) ? (
-                <div className="relative z-10 p-4 bg-mystical-gold/10 border border-mystical-gold/30 rounded-lg">
-                  <p className="text-sm text-cosmic-gold text-center flex items-center justify-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Veuillez remplir tous les champs requis pour continuer
-                  </p>
-                </div>
-              ) : clientSecret && (
+              {/* Stripe Elements - placeholder until valid */}
+              {clientSecret && customerFirstName && customerLastName && customerPhone && ProductOrderService.validateEmail(customerEmail) ? (
                 <div className="relative z-10">
-                <Elements stripe={stripePromise} options={elementsOptions}>
-                  <CheckoutForm
-                    clientSecret={clientSecret}
-                    orderId={orderId}
-                    productName={product.name}
-                    amount={product.amountCents}
-                    onSuccess={handlePaymentSuccess}
-                  />
-                </Elements>
+                  <Elements stripe={stripePromise} options={elementsOptions}>
+                    <CheckoutForm
+                      clientSecret={clientSecret}
+                      orderId={orderId}
+                      productName={product.name}
+                      amount={product.amountCents}
+                      onSuccess={handlePaymentSuccess}
+                    />
+                  </Elements>
+                </div>
+              ) : (
+                <div className="relative z-10">
+                  <div className="space-y-3 animate-[pulse_2s_ease-in-out_infinite]">
+                    <div className="h-12 rounded-lg" style={{...stripeInputStyle, opacity: 0.6}} />
+                    <div className="rounded-xl p-4 space-y-3" style={{...stripeInputStyle, height: 220, opacity: 0.6}}>
+                      <div className="h-10 rounded-md" style={{backgroundColor: 'rgba(255,255,255,0.06)'}} />
+                      <div className="h-10 rounded-md" style={{backgroundColor: 'rgba(255,255,255,0.06)'}} />
+                      <div className="h-10 rounded-md" style={{backgroundColor: 'rgba(255,255,255,0.06)'}} />
+                    </div>
+                    <p className="text-sm text-cosmic-gold/80 text-center">Complétez vos informations pour activer le paiement.</p>
+                  </div>
                 </div>
               )}
             </div>
