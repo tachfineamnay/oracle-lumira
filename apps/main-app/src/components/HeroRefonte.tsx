@@ -1,6 +1,7 @@
 import React from 'react';
-import { Clock, Sparkles, Shield } from 'lucide-react';
+import { Clock, Sparkles, Shield, LogIn } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * HeroRefonte - Hero section modernisée avec glassmorphisme
@@ -10,10 +11,46 @@ import { motion } from 'framer-motion';
  * ✅ Contraste optimisé (text-white/90 au lieu de text-cosmic-ethereal)
  * ✅ Icônes thématiques (Clock, Sparkles, Shield)
  * ✅ Responsive : text-xl → text-3xl sur mobile
+ * ✅ Bouton flottant "Déjà client ?" en haut à droite
  */
 const HeroRefonte: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="min-h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
+      {/* Bouton Flottant "Déjà client ?" - Discret et élégant */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.2, duration: 0.5 }}
+        className="absolute top-6 right-6 z-50"
+      >
+        <motion.button
+          onClick={() => navigate('/sanctuaire/login')}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="group flex items-center gap-2 px-4 py-2.5 bg-white/5 backdrop-blur-md border border-white/10 hover:border-cosmic-gold/40 rounded-full transition-all duration-300 hover:bg-white/10"
+        >
+          <LogIn className="w-4 h-4 text-cosmic-gold/80 group-hover:text-cosmic-gold transition-colors" />
+          <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
+            Déjà client ?
+          </span>
+          {/* Petit point lumineux discret */}
+          <motion.div
+            animate={{ 
+              opacity: [0.3, 0.8, 0.3],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ 
+              repeat: Infinity, 
+              duration: 2,
+              ease: "easeInOut"
+            }}
+            className="w-1.5 h-1.5 bg-cosmic-gold rounded-full"
+          />
+        </motion.button>
+      </motion.div>
+
       {/* Mandala cosmique premium en arrière-plan */}
       <div className="absolute inset-0 flex items-center justify-center opacity-15">
         <motion.div 
