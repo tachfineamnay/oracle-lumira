@@ -37,9 +37,10 @@ const ConfirmationTemple: React.FC = () => {
             setRedirectCountdown((prev) => {
               if (prev <= 1) {
                 clearInterval(countdown);
-                // Redirect with email for auto-login
+                // Redirect with email and first-visit token for auto-login
                 const email = status.order.customerEmail || searchParams.get('email');
-                navigate(email ? `/sanctuaire?email=${encodeURIComponent(email)}` : '/sanctuaire');
+                const token = `fv_${Date.now()}`;
+                navigate(email ? `/sanctuaire?email=${encodeURIComponent(email)}&token=${token}` : '/sanctuaire');
                 return 0;
               }
               return prev - 1;
@@ -74,9 +75,10 @@ const ConfirmationTemple: React.FC = () => {
   }, [orderId, navigate, searchParams]);
 
   const handleGoToSanctuary = () => {
-    // Redirect with email for auto-login
+    // Redirect with email and first-visit token for auto-login
     const email = orderStatus?.order.customerEmail || searchParams.get('email');
-    navigate(email ? `/sanctuaire?email=${encodeURIComponent(email)}` : '/sanctuaire');
+    const token = `fv_${Date.now()}`;
+    navigate(email ? `/sanctuaire?email=${encodeURIComponent(email)}&token=${token}` : '/sanctuaire');
   };
 
   const handleBackToHome = () => {

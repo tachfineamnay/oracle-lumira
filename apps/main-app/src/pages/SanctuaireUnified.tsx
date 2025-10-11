@@ -13,7 +13,8 @@ import {
   X,
   Star,
   Clock,
-  Sparkles
+  Sparkles,
+  Home
 } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
@@ -54,20 +55,52 @@ const SanctuaireUnified: React.FC = () => {
   // Auto-login si email dans URL (nouveau client après paiement)
   useEffect(() => {
     const email = searchParams.get('email');
+    const token = searchParams.get('token');
+    const sessionEmail = sessionStorage.getItem('sanctuaire_email');
+    
     if (email && !isAuthenticated && !loading) {
+      // Nouveau client avec email dans URL
+      sessionStorage.setItem('sanctuaire_email', email);
+      if (token?.startsWith('fv_')) {
+        // Marquer comme première visite
+        sessionStorage.setItem('first_visit', 'true');
+      }
       authenticateWithEmail(email).catch(console.error);
+    } else if (sessionEmail && !isAuthenticated && !loading) {
+      // Client qui revient avec session active
+      authenticateWithEmail(sessionEmail).catch(console.error);
     }
   }, [searchParams, isAuthenticated, loading, authenticateWithEmail]);
 
-  // Redirection login si non authentifié
+  // Redirection login si non authentifié et pas de session
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      const timer = setTimeout(() => {
-        navigate('/sanctuaire/login');
-      }, 1000);
-      return () => clearTimeout(timer);
+      const sessionEmail = sessionStorage.getItem('sanctuaire_email');
+      if (!sessionEmail) {
+        const timer = setTimeout(() => {
+          navigate('/sanctuaire/login');
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [isAuthenticated, loading, navigate]);
+
+  // Détection si nouveau client (première visite ou profil incomplet)
+  const isNewClient = sessionStorage.getItem('first_visit') === 'true' || !userLevel?.profile?.profileCompleted;
+
+  // Nettoyer le flag première visite après chargement
+  useEffect(() => {
+    if (isAuthenticated && userLevel?.profile?.profileCompleted) {
+      sessionStorage.removeItem('first_visit');
+    }
+  }, [isAuthenticated, userLevel]);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('sanctuaire_email');
+    sessionStorage.removeItem('first_visit');
+    logout();
+    navigate('/sanctuaire/login');
+  };
 
   // Mapping des commandes vers les cartes de lecture
   const readings: ReadingCard[] = orders.map(order => ({
@@ -129,7 +162,10 @@ const SanctuaireUnified: React.FC = () => {
           <GlassCard className="p-8 text-center max-w-md">
             <p className="text-red-400 mb-4">{error}</p>
             <button 
-              onClick={() => navigate('/sanctuaire/login')}
+              onClick={() => {
+                sessionStorage.removeItem('sanctuaire_email');
+                navigate('/sanctuaire/login');
+              }}
               className="px-6 py-2 bg-amber-400 text-mystical-900 rounded-lg hover:bg-amber-500 transition-all"
             >
               Retour à la connexion
@@ -141,8 +177,6 @@ const SanctuaireUnified: React.FC = () => {
   }
 
   // NOUVEAU CLIENT : Formulaire de bienvenue
-  const isNewClient = !userLevel.profile?.profileCompleted;
-  
   if (isNewClient) {
     return (
       <PageLayout variant="dark">
@@ -151,7 +185,7 @@ const SanctuaireUnified: React.FC = () => {
             {/* Header simple */}
             <div className="flex justify-end mb-6">
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 text-white/70 hover:text-white transition-colors"
               >
                 <LogOut className="w-4 h-4" />
@@ -214,7 +248,7 @@ const SanctuaireUnified: React.FC = () => {
             <div className="flex items-center gap-4">
               <span className="text-white/70 text-sm hidden sm:inline">{user?.email}</span>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="flex items-center gap-2 px-3 py-2 text-white/70 hover:text-white transition-colors"
               >
                 <LogOut className="w-4 h-4" />
@@ -293,6 +327,14 @@ const SanctuaireUnified: React.FC = () => {
                     <ShoppingCart className="w-5 h-5" />
                     <span>Nouvelle Lecture</span>
                   </button>
+
+                  <a
+                    href="/"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition-all text-left text-white/70"
+                  >
+                    <Home className="w-5 h-5" />
+                    <span>Retour à l'accueil</span>
+                  </a>
                 </nav>
               </div>
             </motion.div>

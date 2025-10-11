@@ -69,6 +69,11 @@ const FooterRefonte: React.FC = () => {
             <h4 className="text-lg font-semibold text-white mb-4">Service</h4>
             <ul className="space-y-2">
               <li>
+                <Link to="/sanctuaire/login" className="text-cosmic-gold hover:text-cosmic-aurora transition-colors text-sm font-medium flex items-center gap-2">
+                  🔮 Mon Sanctuaire
+                </Link>
+              </li>
+              <li>
                 <p className="text-white/70 text-sm">⭐ Support 7j/7</p>
               </li>
               <li>
