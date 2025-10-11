@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
+import MandalaNav from '../components/mandala/MandalaNav';
 import { useSanctuaire } from '../hooks/useSanctuaire';
 import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeForm';
 import { useUserLevel } from '../contexts/UserLevelContext';
@@ -248,6 +249,18 @@ const SanctuaireUnified: React.FC = () => {
               </p>
             </motion.div>
 
+            {/* Mandala Central - Nouveau client */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="mb-12 flex justify-center"
+            >
+              <div className="w-64 h-64">
+                <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
+              </div>
+            </motion.div>
+
             {/* Formulaire */}
             <SanctuaireWelcomeForm />
           </div>
@@ -428,6 +441,18 @@ const SanctuaireUnified: React.FC = () => {
                   Retrouvez toutes vos révélations personnalisées
                 </p>
               </div>
+
+              {/* Mandala Central - Client existant */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+                className="mb-12 flex justify-center"
+              >
+                <div className="w-80 h-80">
+                  <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
+                </div>
+              </motion.div>
 
               {/* État vide */}
               {readings.length === 0 && (
