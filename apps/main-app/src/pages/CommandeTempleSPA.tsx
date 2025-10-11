@@ -292,8 +292,8 @@ const CommandeTemple: React.FC = () => {
       return;
     }
 
-    // Ne pas initialiser le paiement si tous les champs requis ne sont pas fournis
-    if (!customerName || !customerPhone || !customerEmail || !customerEmail.includes('@')) {
+    // Ne pas initialiser le paiement tant que l'email n'est pas VALIDE (regex)
+    if (!customerName || !customerPhone || !customerEmail || !ProductOrderService.validateEmail(customerEmail)) {
       setIsLoading(false);
       return;
     }
@@ -594,7 +594,7 @@ const CommandeTemple: React.FC = () => {
               </div>
 
               {/* Stripe Elements */}
-              {!customerName || !customerPhone || !customerEmail || !customerEmail.includes('@') ? (
+              {!customerName || !customerPhone || !customerEmail || !ProductOrderService.validateEmail(customerEmail) ? (
                 <div className="relative z-10 p-4 bg-mystical-gold/10 border border-mystical-gold/30 rounded-lg">
                   <p className="text-sm text-cosmic-gold text-center flex items-center justify-center gap-2">
                     <AlertCircle className="w-4 h-4" />
