@@ -76,17 +76,25 @@ const SanctuaireUnified: React.FC = () => {
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       const sessionEmail = sessionStorage.getItem('sanctuaire_email');
-      if (!sessionEmail) {
+      const hasEmailInUrl = searchParams.get('email');
+      
+      // Ne pas rediriger si email dans URL (nouveau client en cours d'auth)
+      if (!sessionEmail && !hasEmailInUrl) {
         const timer = setTimeout(() => {
           navigate('/sanctuaire/login');
         }, 1000);
         return () => clearTimeout(timer);
       }
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, searchParams]);
 
   // Détection si nouveau client (première visite ou profil incomplet)
-  const isNewClient = sessionStorage.getItem('first_visit') === 'true' || !userLevel?.profile?.profileCompleted;
+  // IMPORTANT: Vérifier d'abord le token, puis userLevel
+  const hasFirstVisitToken = sessionStorage.getItem('first_visit') === 'true';
+  const hasIncompleteProfile = userLevel?.profile && !userLevel.profile.profileCompleted;
+  const hasNoProfile = !userLevel?.profile || Object.keys(userLevel.profile).length === 0;
+  
+  const isNewClient = hasFirstVisitToken || hasIncompleteProfile || hasNoProfile;
 
   // Nettoyer le flag première visite après chargement
   useEffect(() => {
@@ -153,6 +161,19 @@ const SanctuaireUnified: React.FC = () => {
       </PageLayout>
     );
   }
+
+  // Debug log
+  console.log('🔍 SanctuaireUnified Debug:', {
+    isAuthenticated,
+    hasFirstVisitToken,
+    hasIncompleteProfile,
+    hasNoProfile,
+    isNewClient,
+    userLevelProfile: userLevel?.profile,
+    sessionEmail: sessionStorage.getItem('sanctuaire_email'),
+    urlEmail: searchParams.get('email'),
+    urlToken: searchParams.get('token')
+  });
 
   // Erreur
   if (error) {
