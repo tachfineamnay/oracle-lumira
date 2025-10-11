@@ -544,7 +544,7 @@ const CommandeTemple: React.FC = () => {
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Jean Dupont"
                   required
-                  className="w-full px-4 py-3 bg-neutral-900/80 text-gray-100 placeholder-gray-400 border border-[rgba(212,175,55,0.3)] rounded-lg focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-500 tracking-wide"
+                  className="w-full px-4 py-3 bg-[rgba(15,11,25,0.8)] text-[#E5E7EB] placeholder:text-[#9CA3AF] border border-[rgba(212,175,55,0.3)] rounded-[12px] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-500 tracking-wide"
                 />
               </div>
 
@@ -559,7 +559,7 @@ const CommandeTemple: React.FC = () => {
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   placeholder="+33 6 12 34 56 78"
                   required
-                  className="w-full px-4 py-3 bg-neutral-900/80 text-gray-100 placeholder-gray-400 border border-[rgba(212,175,55,0.3)] rounded-lg focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-500 tracking-wide"
+                  className="w-full px-4 py-3 bg-[rgba(15,11,25,0.8)] text-[#E5E7EB] placeholder:text-[#9CA3AF] border border-[rgba(212,175,55,0.3)] rounded-[12px] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-500 tracking-wide"
                 />
               </div>
 
@@ -574,7 +574,7 @@ const CommandeTemple: React.FC = () => {
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="votre@email.com"
                   required
-                  className="w-full px-4 py-3 bg-neutral-900/80 text-gray-100 placeholder-gray-400 border border-[rgba(212,175,55,0.3)] rounded-lg focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-500 tracking-wide"
+                  className="w-full px-4 py-3 bg-[rgba(15,11,25,0.8)] text-[#E5E7EB] placeholder:text-[#9CA3AF] border border-[rgba(212,175,55,0.3)] rounded-[12px] focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[rgba(212,175,55,0.3)] transition-all duration-500 tracking-wide"
                 />
                 <p className="text-xs text-cosmic-gold/80 mt-1 tracking-wide flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
