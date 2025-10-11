@@ -7,6 +7,7 @@ import ProductOrderService from '../services/productOrder';
 import { OrderStatus } from '../types/products';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
+import { useInitializeUserLevel } from '../contexts/UserLevelContext';
 
 const ConfirmationTemple: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const ConfirmationTemple: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
+  const { initializeFromPurchase } = useInitializeUserLevel();
 
   useEffect(() => {
     if (!orderId) {
@@ -33,6 +35,23 @@ const ConfirmationTemple: React.FC = () => {
 
         // If payment is successful, start countdown for auto-redirect
         if (status.accessGranted) {
+          // Alimente le contexte et localStorage pour synchroniser l'order_id côté Sanctuaire
+          const productData = {
+            id: status.product.id,
+            name: status.product.name,
+            level: status.product.level as any,
+            amountCents: status.order.amount,
+            currency: status.order.currency,
+            description: `Niveau ${status.product.level}`,
+            features: [],
+            metadata: {},
+          };
+          try {
+            if (orderId) {
+              initializeFromPurchase(productData, orderId);
+            }
+          } catch {}
+
           const countdown = setInterval(() => {
             setRedirectCountdown((prev) => {
               if (prev <= 1) {
@@ -40,7 +59,11 @@ const ConfirmationTemple: React.FC = () => {
                 // Redirect with email and first-visit token for auto-login
                 const email = status.order.customerEmail || searchParams.get('email');
                 const token = `fv_${Date.now()}`;
-                navigate(email ? `/sanctuaire?email=${encodeURIComponent(email)}&token=${token}` : '/sanctuaire');
+                const orderQuery = orderId ? `&order_id=${encodeURIComponent(orderId)}` : '';
+                navigate(email 
+                  ? `/sanctuaire?email=${encodeURIComponent(email)}&token=${token}${orderQuery}` 
+                  : (orderId ? `/sanctuaire?order_id=${encodeURIComponent(orderId)}` : '/sanctuaire')
+                );
                 return 0;
               }
               return prev - 1;
@@ -78,7 +101,11 @@ const ConfirmationTemple: React.FC = () => {
     // Redirect with email and first-visit token for auto-login
     const email = orderStatus?.order.customerEmail || searchParams.get('email');
     const token = `fv_${Date.now()}`;
-    navigate(email ? `/sanctuaire?email=${encodeURIComponent(email)}&token=${token}` : '/sanctuaire');
+    const orderQuery = orderId ? `&order_id=${encodeURIComponent(orderId)}` : '';
+    navigate(email 
+      ? `/sanctuaire?email=${encodeURIComponent(email)}&token=${token}${orderQuery}` 
+      : (orderId ? `/sanctuaire?order_id=${encodeURIComponent(orderId)}` : '/sanctuaire')
+    );
   };
 
   const handleBackToHome = () => {

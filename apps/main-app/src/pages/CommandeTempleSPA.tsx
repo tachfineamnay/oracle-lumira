@@ -113,7 +113,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           clientSecret,
           confirmParams: {
             payment_method: event.paymentMethod.id,
-            return_url: `${window.location.origin}/payment-confirmation?order_id=${orderId}`,
+            return_url: `${window.location.origin}/confirmation?order_id=${orderId}`,
           },
           redirect: 'if_required'
         });
@@ -261,6 +261,8 @@ const CommandeTemple: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [customerName, setCustomerName] = useState<string>('');      // 🆕 Customer full name
+  const [customerPhone, setCustomerPhone] = useState<string>('');    // 🆕 Customer phone
   const [catalog, setCatalog] = useState<Product[] | null>(null);
   const product = productId && catalog ? catalog.find(p => p.id === productId) || null : null;
 
@@ -290,8 +292,8 @@ const CommandeTemple: React.FC = () => {
       return;
     }
 
-    // Ne pas initialiser le paiement si l'email n'est pas fourni
-    if (!customerEmail || !customerEmail.includes('@')) {
+    // Ne pas initialiser le paiement si tous les champs requis ne sont pas fournis
+    if (!customerName || !customerPhone || !customerEmail || !customerEmail.includes('@')) {
       setIsLoading(false);
       return;
     }
@@ -300,7 +302,9 @@ const CommandeTemple: React.FC = () => {
       try {
         const paymentData = await ProductOrderService.createPaymentIntent(
           productId,
-          customerEmail
+          customerEmail,
+          customerName,      // 🆕 Pass customer name
+          customerPhone      // 🆕 Pass customer phone
         );
 
         setClientSecret(paymentData.clientSecret);
@@ -314,16 +318,19 @@ const CommandeTemple: React.FC = () => {
     };
 
     initializePayment();
-  }, [productId, product, customerEmail, catalog]);
+  }, [productId, product, customerEmail, customerName, customerPhone, catalog]);
 
   const handlePaymentSuccess = () => {
     // Initialiser le niveau utilisateur après paiement réussi
     if (product) {
       initializeFromPurchase(product, orderId);
     }
-    
-    // Redirection vers le Sanctuaire Upload avec le niveau acheté
-    navigate(`/upload-sanctuaire?level=${product?.level}&order_id=${orderId}`);
+    // Redirection unifiée vers le Sanctuaire avec email + token de première visite
+    const token = `fv_${Date.now()}`;
+    const query = customerEmail && customerEmail.includes('@')
+      ? `?email=${encodeURIComponent(customerEmail)}&token=${token}`
+      : '';
+    navigate(`/sanctuaire${query}`);
   };
 
   const handleBackToLevels = () => {
@@ -526,6 +533,36 @@ const CommandeTemple: React.FC = () => {
               
               <h3 className="text-xl font-bold text-white/95 mb-6 tracking-wide relative z-10">Finaliser votre commande</h3>
               
+              {/* 🆕 Nom complet Input */}
+              <div className="mb-4 relative z-10">
+                <label className="block text-sm font-medium text-gray-300/90 mb-2 tracking-wide">
+                  Nom complet <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Jean Dupont"
+                  required
+                  className="w-full px-4 py-3 bg-mystical-deep-blue/80 border border-mystical-gold/40 rounded-lg text-white/95 placeholder-gray-500/80 focus:border-mystical-gold-light focus:outline-none focus:ring-2 focus:ring-mystical-gold/30 transition-all duration-500 tracking-wide"
+                />
+              </div>
+
+              {/* 🆕 Téléphone Input */}
+              <div className="mb-4 relative z-10">
+                <label className="block text-sm font-medium text-gray-300/90 mb-2 tracking-wide">
+                  Numéro de téléphone <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="+33 6 12 34 56 78"
+                  required
+                  className="w-full px-4 py-3 bg-mystical-deep-blue/80 border border-mystical-gold/40 rounded-lg text-white/95 placeholder-gray-500/80 focus:border-mystical-gold-light focus:outline-none focus:ring-2 focus:ring-mystical-gold/30 transition-all duration-500 tracking-wide"
+                />
+              </div>
+
               {/* Email Input - OBLIGATOIRE pour accès Sanctuaire */}
               <div className="mb-6 relative z-10">
                 <label className="block text-sm font-medium text-gray-300/90 mb-2 tracking-wide">
@@ -546,11 +583,11 @@ const CommandeTemple: React.FC = () => {
               </div>
 
               {/* Stripe Elements */}
-              {!customerEmail || !customerEmail.includes('@') ? (
+              {!customerName || !customerPhone || !customerEmail || !customerEmail.includes('@') ? (
                 <div className="relative z-10 p-4 bg-mystical-gold/10 border border-mystical-gold/30 rounded-lg">
                   <p className="text-sm text-cosmic-gold text-center flex items-center justify-center gap-2">
                     <AlertCircle className="w-4 h-4" />
-                    Veuillez saisir votre email pour continuer
+                    Veuillez remplir tous les champs requis pour continuer
                   </p>
                 </div>
               ) : clientSecret && (

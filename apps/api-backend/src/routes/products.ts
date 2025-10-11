@@ -62,7 +62,7 @@ router.post(
         return;
       }
 
-      const { productId, customerEmail, metadata = {} } = req.body as CreatePaymentIntentRequest;
+      const { productId, customerEmail, customerName, customerPhone, metadata = {} } = req.body as CreatePaymentIntentRequest;
       
       // Detailed input validation
       if (!productId) {
@@ -135,11 +135,15 @@ router.post(
       const paymentData = await StripeService.createPaymentIntent({
         productId,
         customerEmail,
+        customerName,      // 🆕 Pass customer name
+        customerPhone,     // 🆕 Pass customer phone
         metadata: {
           ...metadata,
           source: 'spa-checkout',
           timestamp: new Date().toISOString(),
           requestId,
+          customerName: customerName || '',    // 🆕 Add to metadata for webhook
+          customerPhone: customerPhone || '',   // 🆕 Add to metadata for webhook
         },
       });
 
@@ -469,6 +473,49 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
       console.log('Order updated to completed:', orderDoc.paymentIntentId);
     } else {
       console.warn('Order not found in DB for paymentIntent:', paymentIntent.id);
+    }
+
+    // 🆕 AUTO-CREATE SANCTUAIRE PROFILE from payment data
+    const customerEmail = (paymentIntent.metadata?.customerEmail || '').toLowerCase();
+    const customerName = paymentIntent.metadata?.customerName || '';
+    const customerPhone = paymentIntent.metadata?.customerPhone || '';
+    
+    if (customerEmail && customerEmail.includes('@')) {
+      try {
+        // Split name into first/last
+        const nameParts = customerName.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Create or update user profile
+        const user = await User.findOneAndUpdate(
+          { email: customerEmail },
+          {
+            email: customerEmail,
+            firstName: firstName || undefined,
+            lastName: lastName || undefined,
+            phone: customerPhone || undefined,
+            profileCompleted: false, // Will complete spiritual form in Sanctuaire
+            updatedAt: new Date()
+          },
+          { 
+            upsert: true, 
+            new: true,
+            setDefaultsOnInsert: true
+          }
+        );
+        
+        console.log('✅ Sanctuaire profile auto-created/updated:', {
+          email: customerEmail,
+          firstName,
+          lastName,
+          phone: customerPhone,
+          userId: user._id
+        });
+      } catch (profileError) {
+        console.error('⚠️ Error creating sanctuaire profile:', profileError);
+        // Don't fail the payment if profile creation fails
+      }
     }
 
     // Grant access via Stripe service

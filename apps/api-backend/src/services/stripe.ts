@@ -34,7 +34,7 @@ export class StripeService {
    * Create a PaymentIntent for a product
    */
   static async createPaymentIntent(request: CreatePaymentIntentRequest) {
-    const { productId, customerEmail, metadata = {} } = request;
+    const { productId, customerEmail, customerName, customerPhone, metadata = {} } = request;
 
     // Validate product exists
     const product = getProductById(productId);
@@ -55,6 +55,8 @@ export class StripeService {
           productName: product.name,
           level: product.level,
           customerEmail: customerEmail || '',
+          customerName: customerName || '',        // 🆕 Store customer name
+          customerPhone: customerPhone || '',      // 🆕 Store customer phone
           ...metadata,
         },
         description: `Oracle Lumira - ${product.name}`,

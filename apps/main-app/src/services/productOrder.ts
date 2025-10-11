@@ -8,7 +8,9 @@ export class ProductOrderService {
    */
   static async createPaymentIntent(
     productId: string,
-    customerEmail?: string
+    customerEmail?: string,
+    customerName?: string,      // 🆕 Customer full name
+    customerPhone?: string       // 🆕 Customer phone
   ): Promise<CreatePaymentIntentResponse> {
     try {
       const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true';
@@ -19,6 +21,8 @@ export class ProductOrderService {
         body: JSON.stringify({
           productId,
           customerEmail,
+          customerName,      // 🆕 Pass to backend
+          customerPhone,     // 🆕 Pass to backend
           metadata: {
             source: 'spa-checkout',
             timestamp: new Date().toISOString(),

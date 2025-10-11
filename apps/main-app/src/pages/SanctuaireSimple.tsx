@@ -53,16 +53,19 @@ const SanctuaireSimple: React.FC = () => {
   }, [isAuthenticated, loading, navigate]);
 
   // Mapping des commandes vers les cartes de lecture
-  const readings: ReadingCard[] = orders.map(order => ({
-    id: order.id,
-    title: order.formData?.specificQuestion || `Lecture Niveau ${order.level}`,
-    date: new Date(order.deliveredAt || order.createdAt).toLocaleDateString('fr-FR'),
-    status: order.status === 'completed' ? 'completed' : 'processing',
-    hasAudio: !!order.generatedContent?.audioUrl,
-    hasPdf: !!order.generatedContent?.pdfUrl,
-    level: order.level,
-    preview: order.generatedContent?.reading?.substring(0, 150) + '...' || 'Votre lecture personnalisée vous attend...'
-  }));
+  const readings: ReadingCard[] = orders.map(order => {
+    const readingText = order.generatedContent?.reading;
+    return {
+      id: order.id,
+      title: order.formData?.specificQuestion || `Lecture Niveau ${order.level}`,
+      date: new Date(order.deliveredAt || order.createdAt).toLocaleDateString('fr-FR'),
+      status: order.status === 'completed' ? 'completed' : 'processing',
+      hasAudio: !!order.generatedContent?.audioUrl,
+      hasPdf: !!order.generatedContent?.pdfUrl,
+      level: order.level,
+      preview: readingText ? readingText.substring(0, 150) + '...' : 'Votre lecture personnalisée vous attend...'
+    };
+  });
 
   const handlePlayAudio = async (reading: ReadingCard) => {
     if (!reading.hasAudio) return;

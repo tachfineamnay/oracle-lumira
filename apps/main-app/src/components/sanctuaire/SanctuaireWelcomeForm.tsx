@@ -4,8 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Upload, 
   User, 
-  Mail, 
-  Phone, 
   Calendar, 
   Clock, 
   Target,
@@ -23,8 +21,6 @@ import { getApiBaseUrl } from '../../lib/apiBase';
 import GlassCard from '../ui/GlassCard';
 
 interface FormData {
-  email: string;
-  phone: string;
   birthDate: string;
   birthTime: string;
   objective: string;
@@ -39,8 +35,6 @@ export const SanctuaireWelcomeForm: React.FC = () => {
   const { userLevel, updateUserProfile } = useUserLevel();
   const [formState, setFormState] = useState<FormState>('active');
   const [formData, setFormData] = useState<FormData>({
-    email: '',
-    phone: '',
     birthDate: '',
     birthTime: '',
     objective: '',
@@ -82,8 +76,6 @@ export const SanctuaireWelcomeForm: React.FC = () => {
           } catch {}
 
           formDataToSend.append('formData', JSON.stringify({
-            email: formData.email,
-            phone: formData.phone,
             dateOfBirth: formData.birthDate || undefined,
             specificQuestion: formData.objective || undefined,
             level: levelFromUrl,
@@ -134,8 +126,6 @@ export const SanctuaireWelcomeForm: React.FC = () => {
       
       // Mettre à jour le profil utilisateur avec les fichiers
       updateUserProfile({
-        email: formData.email,
-        phone: formData.phone,
         birthDate: formData.birthDate,
         birthTime: formData.birthTime,
         objective: formData.objective,
@@ -171,7 +161,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: file }));
   };
 
-  const isFormValid = formData.email && formData.birthDate && formData.objective && formData.facePhoto && formData.palmPhoto;
+  const isFormValid = formData.birthDate && formData.objective && formData.facePhoto && formData.palmPhoto;
   const isReadOnly = formState === 'submitted';
 
   return (
@@ -244,12 +234,12 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                       <span>Votre lecture vibratoire est en cours de préparation par nos Oracles</span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
-                      <Mail className="w-4 h-4 text-blue-400" />
-                      <span>Vous recevrez votre révélation dans les 24 prochaines heures</span>
+                      <Sparkles className="w-4 h-4 text-blue-400" />
+                      <span>Votre révélation arrivera dans les 24 prochaines heures</span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span>Consultez vos emails et l'espace Messages du Sanctuaire</span>
+                      <span>Consultez l'espace Messages du Sanctuaire</span>
                     </div>
                   </div>
 
@@ -314,47 +304,6 @@ export const SanctuaireWelcomeForm: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  <Mail className="w-4 h-4 inline mr-2" />
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  required
-                  disabled={isReadOnly}
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border transition-all ${
-                    isReadOnly 
-                      ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
-                      : 'bg-white/5 border-amber-400/30 text-white placeholder-white/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
-                  }`}
-                  placeholder="votre@email.com"
-                />
-              </div>
-
-              {/* Téléphone */}
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
-                  <Phone className="w-4 h-4 inline mr-2" />
-                  Téléphone
-                </label>
-                <input
-                  type="tel"
-                  disabled={isReadOnly}
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border transition-all ${
-                    isReadOnly 
-                      ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
-                      : 'bg-white/5 border-amber-400/30 text-white placeholder-white/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
-                  }`}
-                  placeholder="+33 6 12 34 56 78"
-                />
-              </div>
-
               {/* Date de naissance */}
               <div>
                 <label className="block text-sm font-medium text-white/90 mb-2">

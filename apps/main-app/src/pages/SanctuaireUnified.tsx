@@ -62,13 +62,17 @@ const SanctuaireUnified: React.FC = () => {
       // Nouveau client avec email dans URL
       sessionStorage.setItem('sanctuaire_email', email);
       if (token?.startsWith('fv_')) {
-        // Marquer comme première visite
+        // Marquer comme première visite ET ne pas tenter d'auth immédiatement
         sessionStorage.setItem('first_visit', 'true');
+      } else {
+        authenticateWithEmail(email).catch(console.error);
       }
-      authenticateWithEmail(email).catch(console.error);
     } else if (sessionEmail && !isAuthenticated && !loading) {
       // Client qui revient avec session active
-      authenticateWithEmail(sessionEmail).catch(console.error);
+      const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
+      if (!isFirstVisit) {
+        authenticateWithEmail(sessionEmail).catch(console.error);
+      }
     }
   }, [searchParams, isAuthenticated, loading, authenticateWithEmail]);
 
@@ -77,9 +81,10 @@ const SanctuaireUnified: React.FC = () => {
     if (!loading && !isAuthenticated) {
       const sessionEmail = sessionStorage.getItem('sanctuaire_email');
       const hasEmailInUrl = searchParams.get('email');
+      const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
       
-      // Ne pas rediriger si email dans URL (nouveau client en cours d'auth)
-      if (!sessionEmail && !hasEmailInUrl) {
+      // Ne pas rediriger si email dans URL OU mode première visite (guest)
+      if (!sessionEmail && !hasEmailInUrl && !isFirstVisit) {
         const timer = setTimeout(() => {
           navigate('/sanctuaire/login');
         }, 1000);
@@ -111,16 +116,19 @@ const SanctuaireUnified: React.FC = () => {
   };
 
   // Mapping des commandes vers les cartes de lecture
-  const readings: ReadingCard[] = orders.map(order => ({
-    id: order.id,
-    title: order.formData?.specificQuestion || `Lecture Niveau ${order.level}`,
-    date: new Date(order.deliveredAt || order.createdAt).toLocaleDateString('fr-FR'),
-    status: order.status === 'completed' ? 'completed' : 'processing',
-    hasAudio: !!order.generatedContent?.audioUrl,
-    hasPdf: !!order.generatedContent?.pdfUrl,
-    level: order.level,
-    preview: order.generatedContent?.reading?.substring(0, 150) + '...' || 'Votre lecture personnalisée vous attend...'
-  }));
+  const readings: ReadingCard[] = orders.map(order => {
+    const readingText = order.generatedContent?.reading;
+    return {
+      id: order.id,
+      title: order.formData?.specificQuestion || `Lecture Niveau ${order.level}`,
+      date: new Date(order.deliveredAt || order.createdAt).toLocaleDateString('fr-FR'),
+      status: order.status === 'completed' ? 'completed' : 'processing',
+      hasAudio: !!order.generatedContent?.audioUrl,
+      hasPdf: !!order.generatedContent?.pdfUrl,
+      level: order.level,
+      preview: readingText ? readingText.substring(0, 150) + '...' : 'Votre lecture personnalisée vous attend...'
+    };
+  });
 
   const handlePlayAudio = async (reading: ReadingCard) => {
     if (!reading.hasAudio) return;

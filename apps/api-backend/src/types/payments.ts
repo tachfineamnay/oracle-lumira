@@ -3,6 +3,8 @@
 export interface CreatePaymentIntentRequest {
   productId: string;
   customerEmail?: string;
+  customerName?: string;      // 🆕 Customer full name
+  customerPhone?: string;     // 🆕 Customer phone number
   metadata?: Record<string, string>;
 }
 
