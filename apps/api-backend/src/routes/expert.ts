@@ -131,6 +131,10 @@ router.post('/register', async (req: any, res: any) => {
     console.log('✅ New expert registered:', expert.email);
 
     // Generate JWT
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Server configuration error: JWT secret missing' });
+    }
     const token = jwt.sign(
       { 
         expertId: expert._id, 
@@ -138,7 +142,7 @@ router.post('/register', async (req: any, res: any) => {
         name: expert.name,
         role: expert.role 
       },
-      process.env.JWT_SECRET || 'fallback_secret',
+      secret,
       { expiresIn: '24h' }
     );
 

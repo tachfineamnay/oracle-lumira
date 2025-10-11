@@ -1,4 +1,3 @@
-console.log('[DIAGNOSTIC] server.ts - Top Level - AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID);
 console.log('? [API] server.ts - Script started');
 
 import express from 'express';

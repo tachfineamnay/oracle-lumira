@@ -697,7 +697,11 @@ const authenticateSanctuaire = async (req: any, res: any, next: any) => {
       return res.status(401).json({ error: 'Token d\'authentification requis' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Server configuration error: JWT secret missing' });
+    }
+    const decoded = jwt.verify(token, secret) as any;
     
     if (decoded.type !== 'sanctuaire_access') {
       return res.status(401).json({ error: 'Token invalide pour le sanctuaire' });

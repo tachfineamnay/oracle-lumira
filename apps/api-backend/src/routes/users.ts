@@ -160,13 +160,17 @@ router.post('/auth/sanctuaire', async (req: any, res: any) => {
     }
     
     // Générer token temporaire (24h)
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Server configuration error: JWT secret missing' });
+    }
     const token = jwt.sign(
       { 
         userId: user._id, 
         email: user.email,
         type: 'sanctuaire_access'
       },
-      process.env.JWT_SECRET || 'fallback_secret',
+      secret,
       { expiresIn: '24h' }
     );
     
@@ -197,7 +201,11 @@ const authenticateSanctuaire = async (req: any, res: any, next: any) => {
       return res.status(401).json({ error: 'Token d\'authentification requis' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Server configuration error: JWT secret missing' });
+    }
+    const decoded = jwt.verify(token, secret) as any;
     
     if (decoded.type !== 'sanctuaire_access') {
       return res.status(401).json({ error: 'Token invalide pour le sanctuaire' });
@@ -306,15 +314,24 @@ export { router as userRoutes };
 // GET /api/users/files/presign?url=... or ?key=uploads/..
 router.get('/files/presign', async (req: any, res: any) => {
   try {
-    // Accept both signed users and experts for safety if behind API gateway
+    // Require valid JWT (sanctuaire client or expert)
     const auth = req.header('Authorization') || '';
     if (!auth) {
       return res.status(401).json({ error: 'Authorization required' });
     }
-    // Basic token presence check; decode not strictly necessary here as we only generate a GET URL
     const token = auth.replace('Bearer ', '');
     if (!token) {
       return res.status(401).json({ error: 'Invalid token' });
+    }
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Server configuration error: JWT secret missing' });
+    }
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, secret) as any;
+    } catch {
+      return res.status(401).json({ error: 'Token invalide' });
     }
 
     const { url, key, expiresIn } = req.query as { url?: string; key?: string; expiresIn?: string };
@@ -349,6 +366,41 @@ router.get('/files/presign', async (req: any, res: any) => {
     const objectKey = key || extractKeyFromUrl(url!);
     if (!objectKey || !objectKey.startsWith('uploads/')) {
       return res.status(400).json({ error: 'Invalid object key' });
+    }
+
+    // Authorization: experts can presign any uploads/*; sanctuaire clients only for their delivered/approved content
+    const isExpert = !!decoded?.expertId;
+    const isSanctuaire = decoded?.type === 'sanctuaire_access' && !!decoded?.userId;
+
+    if (!isExpert && !isSanctuaire) {
+      return res.status(401).json({ error: 'Unauthorized token' });
+    }
+
+    if (isSanctuaire) {
+      // Load user orders and verify requested key matches one of the generatedContent assets
+      const userId = decoded.userId;
+      const orders = await Order.find({
+        userId,
+        status: 'completed',
+        'expertValidation.validationStatus': 'approved'
+      });
+
+      const bucket = process.env.AWS_S3_BUCKET_NAME || '';
+      const collectedKeys = new Set<string>();
+      const addKey = (u?: string) => {
+        if (!u) return;
+        const k = extractKeyFromUrl(u);
+        if (k && k.startsWith('uploads/')) collectedKeys.add(k);
+      };
+      for (const o of orders) {
+        addKey(o.generatedContent?.pdfUrl as any);
+        addKey(o.generatedContent?.audioUrl as any);
+        addKey(o.generatedContent?.mandalaSvg as any);
+      }
+
+      if (!collectedKeys.has(objectKey)) {
+        return res.status(403).json({ error: 'Access denied for requested object' });
+      }
     }
 
     const exp = Math.min(Math.max(parseInt(String(expiresIn || '900'), 10) || 900, 60), 3600);
