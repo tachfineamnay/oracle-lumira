@@ -290,11 +290,17 @@ const CommandeTemple: React.FC = () => {
       return;
     }
 
+    // Ne pas initialiser le paiement si l'email n'est pas fourni
+    if (!customerEmail || !customerEmail.includes('@')) {
+      setIsLoading(false);
+      return;
+    }
+
     const initializePayment = async () => {
       try {
         const paymentData = await ProductOrderService.createPaymentIntent(
           productId,
-          customerEmail || undefined
+          customerEmail
         );
 
         setClientSecret(paymentData.clientSecret);
@@ -520,25 +526,34 @@ const CommandeTemple: React.FC = () => {
               
               <h3 className="text-xl font-bold text-white/95 mb-6 tracking-wide relative z-10">Finaliser votre commande</h3>
               
-              {/* Email Input */}
+              {/* Email Input - OBLIGATOIRE pour accès Sanctuaire */}
               <div className="mb-6 relative z-10">
                 <label className="block text-sm font-medium text-gray-300/90 mb-2 tracking-wide">
-                  Adresse email (optionnel)
+                  Adresse email <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="email"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="votre@email.com"
+                  required
                   className="w-full px-4 py-3 bg-mystical-deep-blue/80 border border-mystical-gold/40 rounded-lg text-white/95 placeholder-gray-500/80 focus:border-mystical-gold-light focus:outline-none focus:ring-2 focus:ring-mystical-gold/30 transition-all duration-500 tracking-wide"
                 />
-                <p className="text-xs text-gray-400/80 mt-1 tracking-wide">
-                  Pour recevoir votre confirmation et vos accès
+                <p className="text-xs text-cosmic-gold/80 mt-1 tracking-wide flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Requis pour accéder à votre Sanctuaire et recevoir vos lectures
                 </p>
               </div>
 
               {/* Stripe Elements */}
-              {clientSecret && (
+              {!customerEmail || !customerEmail.includes('@') ? (
+                <div className="relative z-10 p-4 bg-mystical-gold/10 border border-mystical-gold/30 rounded-lg">
+                  <p className="text-sm text-cosmic-gold text-center flex items-center justify-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Veuillez saisir votre email pour continuer
+                  </p>
+                </div>
+              ) : clientSecret && (
                 <div className="relative z-10">
                 <Elements stripe={stripePromise} options={elementsOptions}>
                   <CheckoutForm
