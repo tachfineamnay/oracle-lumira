@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, 
-  LogOut, 
-  FileText, 
-  Calendar, 
-  Download, 
-  Play, 
+import {
+  User,
+  LogOut,
+  FileText,
+  Calendar,
+  Download,
+  Play,
   ShoppingCart,
   Menu,
   X,
@@ -19,6 +19,7 @@ import {
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
 import MandalaNav from '../components/mandala/MandalaNav';
+import SphereSkeleton from '../components/ui/SphereSkeleton';
 import { useSanctuaire } from '../hooks/useSanctuaire';
 import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeForm';
 import { useUserLevel } from '../contexts/UserLevelContext';
@@ -38,14 +39,14 @@ const SanctuaireUnified: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedView, setSelectedView] = useState<'readings' | 'profile'>('readings');
+  const [selectedView, setSelectedView] = useState<'readings' | 'profile' | 'synthesis'>('readings');
   const { userLevel } = useUserLevel();
-  
-  const { 
-    isAuthenticated, 
-    user, 
-    orders, 
-    loading, 
+
+  const {
+    isAuthenticated,
+    user,
+    orders,
+    loading,
     error,
     logout,
     getOrderContent,
@@ -53,23 +54,23 @@ const SanctuaireUnified: React.FC = () => {
     authenticateWithEmail
   } = useSanctuaire();
 
+  // Lazy-load de la Synthèse (réutilisation du composant legacy)
+  const LazySynthesis = useMemo(() => React.lazy(() => import('../components/spheres/Synthesis')), []);
+
   // Auto-login si email dans URL (nouveau client après paiement)
   useEffect(() => {
     const email = searchParams.get('email');
     const token = searchParams.get('token');
     const sessionEmail = sessionStorage.getItem('sanctuaire_email');
-    
+
     if (email && !isAuthenticated && !loading) {
-      // Nouveau client avec email dans URL
       sessionStorage.setItem('sanctuaire_email', email);
       if (token?.startsWith('fv_')) {
-        // Marquer comme première visite ET ne pas tenter d'auth immédiatement
         sessionStorage.setItem('first_visit', 'true');
       } else {
         authenticateWithEmail(email).catch(console.error);
       }
     } else if (sessionEmail && !isAuthenticated && !loading) {
-      // Client qui revient avec session active
       const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
       if (!isFirstVisit) {
         authenticateWithEmail(sessionEmail).catch(console.error);
@@ -83,8 +84,7 @@ const SanctuaireUnified: React.FC = () => {
       const sessionEmail = sessionStorage.getItem('sanctuaire_email');
       const hasEmailInUrl = searchParams.get('email');
       const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
-      
-      // Ne pas rediriger si email dans URL OU mode première visite (guest)
+
       if (!sessionEmail && !hasEmailInUrl && !isFirstVisit) {
         const timer = setTimeout(() => {
           navigate('/sanctuaire/login');
@@ -95,17 +95,15 @@ const SanctuaireUnified: React.FC = () => {
   }, [isAuthenticated, loading, navigate, searchParams]);
 
   // Détection si nouveau client (première visite ou profil incomplet)
-  // IMPORTANT: Vérifier d'abord le token, puis userLevel avec useMemo pour éviter re-render
   const hasFirstVisitToken = sessionStorage.getItem('first_visit') === 'true';
-  
+
   const isNewClient = useMemo(() => {
     const hasIncompleteProfile = userLevel?.profile && !userLevel.profile.profileCompleted;
     const hasNoProfile = !userLevel?.profile || Object.keys(userLevel.profile).length === 0;
-    
     return hasFirstVisitToken || hasIncompleteProfile || hasNoProfile;
   }, [hasFirstVisitToken, userLevel?.profile]);
 
-  // Nettoyer le flag première visite après chargement
+  // Nettoyer le flag première visite après profil complété
   useEffect(() => {
     if (isAuthenticated && userLevel?.profile?.profileCompleted) {
       sessionStorage.removeItem('first_visit');
@@ -119,21 +117,21 @@ const SanctuaireUnified: React.FC = () => {
     navigate('/sanctuaire/login');
   };
 
-  // Debug log - UNE SEULE FOIS au lieu de boucle infinie
+  // Log debug limité
   useEffect(() => {
-    console.log('🔍 SanctuaireUnified Debug:', {
+    console.log('🔎 SanctuaireUnified Debug:', {
       isAuthenticated,
       hasFirstVisitToken,
       isNewClient,
-      userLevelProfile: userLevel?.profile?.profileCompleted,
+      userLevelProfileCompleted: userLevel?.profile?.profileCompleted,
       sessionEmail: sessionStorage.getItem('sanctuaire_email'),
       urlEmail: searchParams.get('email'),
       urlToken: searchParams.get('token')
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNewClient]); // Ignorer missing dependencies pour éviter la boucle
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNewClient]);
 
-  // Mapping des commandes vers les cartes de lecture
+  // Mapping des commandes vers cartes UI
   const readings: ReadingCard[] = orders.map(order => {
     const readingText = order.generatedContent?.reading;
     return {
@@ -150,7 +148,6 @@ const SanctuaireUnified: React.FC = () => {
 
   const handlePlayAudio = async (reading: ReadingCard) => {
     if (!reading.hasAudio) return;
-    
     try {
       const content = await getOrderContent(reading.id);
       if (content.generatedContent?.audioUrl) {
@@ -163,7 +160,6 @@ const SanctuaireUnified: React.FC = () => {
 
   const handleDownloadPdf = async (reading: ReadingCard) => {
     if (!reading.hasPdf) return;
-    
     try {
       const content = await getOrderContent(reading.id);
       if (content.generatedContent?.pdfUrl) {
@@ -174,7 +170,7 @@ const SanctuaireUnified: React.FC = () => {
     }
   };
 
-  // État de chargement
+  // Loading
   if (loading) {
     return (
       <PageLayout variant="dark">
@@ -195,7 +191,7 @@ const SanctuaireUnified: React.FC = () => {
         <div className="flex items-center justify-center min-h-screen">
           <GlassCard className="p-8 text-center max-w-md">
             <p className="text-red-400 mb-4">{error}</p>
-            <button 
+            <button
               onClick={() => {
                 sessionStorage.removeItem('sanctuaire_email');
                 navigate('/sanctuaire/login');
@@ -210,7 +206,7 @@ const SanctuaireUnified: React.FC = () => {
     );
   }
 
-  // NOUVEAU CLIENT : Formulaire de bienvenue
+  // NOUVEAU CLIENT : Formulaire
   if (isNewClient) {
     return (
       <PageLayout variant="dark">
@@ -241,7 +237,7 @@ const SanctuaireUnified: React.FC = () => {
               >
                 <Sparkles className="w-10 h-10 text-amber-400" />
               </motion.div>
-              
+
               <h1 className="text-4xl font-playfair italic text-amber-400 mb-4">
                 Bienvenue dans votre Sanctuaire
               </h1>
@@ -253,22 +249,10 @@ const SanctuaireUnified: React.FC = () => {
               </p>
             </motion.div>
 
-            {/* Mandala Central - Nouveau client */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-              className="mb-12 flex justify-center"
-            >
-              <div className="w-64 h-64">
-                <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
-              </div>
-            </motion.div>
-
             {/* Mandala visuel discret */}
             <div className="flex justify-center mb-10">
               <div className="w-56 h-56 opacity-90">
-                <MandalaNav progress={[0,0,0,0,0]} effects="minimal" />
+                <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
               </div>
             </div>
 
@@ -280,7 +264,7 @@ const SanctuaireUnified: React.FC = () => {
     );
   }
 
-  // CLIENT EXISTANT : Interface lectures
+  // CLIENT EXISTANT : Dashboard
   return (
     <PageLayout variant="dark">
       {/* Header */}
@@ -372,6 +356,23 @@ const SanctuaireUnified: React.FC = () => {
 
                   <button
                     onClick={() => {
+                      setSelectedView('synthesis');
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+                      selectedView === 'synthesis'
+                        ? 'bg-amber-400/10 border border-amber-400/20'
+                        : 'hover:bg-white/5'
+                    }`}
+                  >
+                    <Star className={`w-5 h-5 ${selectedView === 'synthesis' ? 'text-amber-400' : 'text-white/70'}`} />
+                    <span className={selectedView === 'synthesis' ? 'text-amber-400 font-medium' : 'text-white/70'}>
+                      Synthèse
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => {
                       setSidebarOpen(false);
                       navigate('/commande');
                     }}
@@ -409,10 +410,10 @@ const SanctuaireUnified: React.FC = () => {
           {/* Mandala entête */}
           <div className="flex justify-center mb-8">
             <div className="w-64 h-64">
-              <MandalaNav progress={[0,0,0,0,0]} effects="minimal" />
+              <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
             </div>
           </div>
-          
+
           {/* Vue Profil */}
           {selectedView === 'profile' && (
             <motion.div
@@ -442,6 +443,20 @@ const SanctuaireUnified: React.FC = () => {
             </motion.div>
           )}
 
+          {/* Vue Synthèse */}
+          {selectedView === 'synthesis' && (
+            <motion.div
+              key="synthesis"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazySynthesis />
+              </React.Suspense>
+            </motion.div>
+          )}
+
           {/* Vue Lectures */}
           {selectedView === 'readings' && (
             <motion.div
@@ -459,19 +474,6 @@ const SanctuaireUnified: React.FC = () => {
                 </p>
               </div>
 
-              {/* Mandala Central - Client existant */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.8 }}
-                className="mb-12 flex justify-center"
-              >
-                <div className="w-80 h-80">
-                  <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
-                </div>
-              </motion.div>
-
-              {/* État vide */}
               {readings.length === 0 && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -486,7 +488,7 @@ const SanctuaireUnified: React.FC = () => {
                       Votre première lecture vous attend
                     </h3>
                     <p className="text-white/70 mb-6">
-                      Vos lectures sont en cours de préparation par nos Oracles. Elles seront bientôt disponibles.
+                      Commencez votre voyage spirituel avec une lecture personnalisée de l'Oracle.
                     </p>
                     <button
                       onClick={() => navigate('/commande')}
@@ -498,7 +500,6 @@ const SanctuaireUnified: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Grille des lectures */}
               {readings.length > 0 && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -521,8 +522,8 @@ const SanctuaireUnified: React.FC = () => {
                               </div>
                             </div>
                             <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              reading.status === 'completed' 
-                                ? 'bg-green-400/20 text-green-400' 
+                              reading.status === 'completed'
+                                ? 'bg-green-400/20 text-green-400'
                                 : 'bg-amber-400/20 text-amber-400'
                             }`}>
                               {reading.status === 'completed' ? 'Disponible' : 'En cours'}
@@ -594,3 +595,4 @@ const SanctuaireUnified: React.FC = () => {
 };
 
 export default SanctuaireUnified;
+
