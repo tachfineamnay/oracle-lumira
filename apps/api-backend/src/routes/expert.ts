@@ -81,7 +81,13 @@ router.post('/create-debug', async (req, res) => {
   }
 });
 
-// Rate limiting for auth
+/**
+ * Rate Limiting pour l'authentification Expert
+ * Protection contre les attaques par force brute et les tentatives de connexion abusives
+ * Configuration: 10 tentatives maximum par IP dans une fenêtre de 15 minutes
+ * @security ANTI-BRUTE-FORCE - Protection renforcée contre les attaques automatisées
+ * @standard OWASP - Conforme aux recommandations OWASP pour la sécurité des authentifications
+ */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // limite chaque IP à 10 tentatives par fenêtre de 15 minutes

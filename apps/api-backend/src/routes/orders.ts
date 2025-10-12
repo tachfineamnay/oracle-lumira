@@ -8,7 +8,14 @@ import { getS3Service } from '../services/s3';
 
 const router = express.Router();
 
-// Fonction de validation stricte des fichiers avec vérification des "magic numbers"
+/**
+ * Validation stricte des fichiers par analyse des "magic numbers" (signatures binaires)
+ * Empêche l'injection de fichiers malveillants déguisés avec de faux mimetypes
+ * @param buffer - Buffer du fichier uploadé
+ * @param mimetype - Type MIME déclaré
+ * @returns true si le fichier est authentique, false sinon
+ * @security CRITICAL - Protection contre les attaques par upload de fichiers falsifiés
+ */
 const validateFileHeader = (buffer: Buffer, mimetype: string): boolean => {
   const magicNumbers: Record<string, number[]> = {
     'image/jpeg': [0xFF, 0xD8, 0xFF],
@@ -35,7 +42,13 @@ const validateFileHeader = (buffer: Buffer, mimetype: string): boolean => {
   return true;
 };
 
-// Configuration Multer sécurisée pour upload de fichiers
+/**
+ * Configuration Multer sécurisée avec validation multicouche
+ * Couche 1: Validation du mimetype et de l'extension
+ * Couche 2: Limitation de taille (5MB max)
+ * Couche 3: Validation des magic numbers (via middleware validateFileContent)
+ * @security HARDENED - Triple validation pour sécurité maximale
+ */
 const secureUpload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
@@ -61,7 +74,15 @@ const secureUpload = multer({
   }
 });
 
-// Middleware de validation des magic numbers (appliqué après multer)
+/**
+ * Middleware de validation des magic numbers (couche de sécurité finale)
+ * Appliqué après Multer pour vérifier le contenu réel du fichier
+ * @param req - Request Express avec fichiers uploadés
+ * @param res - Response Express
+ * @param next - Next middleware
+ * @returns 400 si fichier falsifié détecté, sinon continue
+ * @security DEFENSE-IN-DEPTH - Validation post-upload du contenu binaire
+ */
 const validateFileContent = (req: any, res: any, next: any) => {
   try {
     if (req.files) {
