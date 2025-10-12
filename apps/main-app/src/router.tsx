@@ -33,7 +33,49 @@ const AppRoutes: React.FC = () => (
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     
     {/* ROUTE PRINCIPALE SANCTUAIRE - revenir au legacy stable */}
-    <Route path="/sanctuaire" element={<Sanctuaire />} />
+    <Route path="/sanctuaire" element={<Sanctuaire />}>
+      {/* nested children rendered inside Sanctuaire's <Outlet /> */}
+      <Route
+        path="path"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazySpiritualPath />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="draws"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazyRawDraws />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="synthesis"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazySynthesis />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="chat"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazyConversations />
+          </React.Suspense>
+        }
+      />
+      <Route
+        path="profile"
+        element={
+          <React.Suspense fallback={<SphereSkeleton />}> 
+            <LazyProfile />
+          </React.Suspense>
+        }
+      />
+    </Route>
     {/* Garder la nouvelle version pour tests et référence */}
     <Route path="/sanctuaire-unified" element={<SanctuaireUnified />} />
     <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
