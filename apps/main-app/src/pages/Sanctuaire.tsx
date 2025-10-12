@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, Download, Play, Calendar, Home, Clock, User, FileText, Settings, CreditCard, Eye } from 'lucide-react';
+import { Star, Download, Play, Calendar, Home, Clock, User, FileText, Settings, CreditCard, Eye, Lock, Crown } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
 import MandalaNav from '../components/mandala/MandalaNav';
 import SanctuaireSidebar from '../components/layout/SanctuaireSidebar';
@@ -14,16 +14,31 @@ import ExistingClientLoginBar from '../components/sanctuaire/ExistingClientLogin
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
 import { useSanctuaire } from '../hooks/useSanctuaire';
+import { useEntitlements } from '../hooks/useEntitlements';
+import { CapabilityGuard, LockedCard } from '../components/auth/CapabilityGuard';
 
 const ProfileIcon: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { userLevel } = useUserLevel();
+  const { highestLevel, levelMetadata, hasCapability } = useEntitlements();
 
   const hasProfileData = userLevel.profile?.profileCompleted;
 
   return (
     <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
+      {/* Badge de Niveau */}
+      {highestLevel && levelMetadata && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="px-4 py-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-md rounded-full border border-blue-400/30"
+        >
+          <span className="text-sm font-medium text-blue-200">
+            {levelMetadata.icon} {levelMetadata.name}
+          </span>
+        </motion.div>
+      )}
       {/* Bouton Accueil */}
       <button
         onClick={() => navigate('/sanctuaire')}
@@ -207,91 +222,246 @@ const ContextualHint: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Dashboard Cards */}
+        {/* Dashboard Cards Modulaire Intelligent */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {/* Dernière Lecture Card */}
-          <div className="bg-gradient-to-br from-green-400/10 to-blue-400/10 backdrop-blur-sm border border-green-400/20 rounded-2xl p-6">
+          {/* Carte Mon Profil - Toujours accessible */}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-gradient-to-br from-blue-400/10 to-purple-400/10 backdrop-blur-sm border border-blue-400/20 rounded-2xl p-6 cursor-pointer"
+            onClick={() => navigate('/sanctuaire/profile')}
+          >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-400/20 rounded-full flex items-center justify-center">
-                  <Star className="w-5 h-5 text-green-400" />
+                <div className="w-10 h-10 bg-blue-400/20 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-playfair italic text-xl font-medium text-green-400">
-                    Dernière Lecture
+                  <h3 className="font-playfair italic text-xl font-medium text-blue-400">
+                    Mon Profil
                   </h3>
                   <p className="font-inter text-sm text-white/60">
-                    Niveau Chercheur Cosmique
+                    Gestion de votre identité spirituelle
                   </p>
                 </div>
               </div>
-              <div className="flex space-x-2">
-                <button className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors">
-                  <Download className="w-4 h-4 text-white/70" />
-                </button>
-                <button className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors">
-                  <Play className="w-4 h-4 text-white/70" />
-                </button>
-              </div>
             </div>
-            <p className="font-inter text-sm text-white/80 mb-4 line-clamp-3">
-              Une révélation profonde sur votre chemin de vie vous attend dans cette analyse personnalisée de vos énergies cosmiques...
+            <p className="font-inter text-sm text-white/80 mb-4">
+              Consultez et modifiez vos informations personnelles, votre parcours spirituel et vos préférences.
             </p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-white/50">
-                <Calendar className="w-4 h-4" />
-                <span className="font-inter text-xs">Reçu le 15 mars 2024</span>
-              </div>
-            </div>
-          </div>
+          </motion.div>
 
-          {/* Actions Rapides Card */}
-          <div className="bg-gradient-to-br from-amber-400/10 to-purple-400/10 backdrop-blur-sm border border-amber-400/20 rounded-2xl p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-amber-400/20 rounded-full flex items-center justify-center">
-                <Star className="w-5 h-5 text-amber-400" />
+          {/* Carte Mes Lectures - Protégée par CapabilityGuard */}
+          <CapabilityGuard
+            requires="sanctuaire.sphere.readings"
+            fallback={
+              <LockedCard
+                level="Initié"
+                message="Accédez à vos lectures Oracle personnalisées"
+                action={{
+                  label: "Débloquer l'accès",
+                  onClick: () => navigate('/commande')
+                }}
+              />
+            }
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="bg-gradient-to-br from-green-400/10 to-emerald-400/10 backdrop-blur-sm border border-green-400/20 rounded-2xl p-6 cursor-pointer"
+              onClick={() => navigate('/sanctuaire/draws')}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-400/20 rounded-full flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-playfair italic text-xl font-medium text-green-400">
+                      Mes Lectures
+                    </h3>
+                    <p className="font-inter text-sm text-white/60">
+                      Vos révélations personnalisées
+                    </p>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <button className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors">
+                    <Download className="w-4 h-4 text-white/70" />
+                  </button>
+                  <button className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors">
+                    <Play className="w-4 h-4 text-white/70" />
+                  </button>
+                </div>
               </div>
-              <div>
-                <h3 className="font-playfair italic text-xl font-medium text-amber-400">
-                  Actions Rapides
-                </h3>
-                <p className="font-inter text-sm text-white/60">
-                  Gérez votre parcours spirituel
-                </p>
+              <p className="font-inter text-sm text-white/80 mb-4">
+                Consultez toutes vos lectures Oracle, téléchargez les PDF et écoutez les versions audio.
+              </p>
+            </motion.div>
+          </CapabilityGuard>
+
+          {/* Carte Rituels - Protégée pour niveau Mystique */}
+          <CapabilityGuard
+            requires="sanctuaire.sphere.rituals"
+            fallback={
+              <LockedCard
+                level="Mystique"
+                message="Accédez aux rituels personnalisés et pratiques avancées"
+                action={{
+                  label: "Passer au niveau Mystique",
+                  onClick: () => navigate('/commande?product=mystique')
+                }}
+              />
+            }
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="bg-gradient-to-br from-purple-400/10 to-pink-400/10 backdrop-blur-sm border border-purple-400/20 rounded-2xl p-6 cursor-pointer"
+              onClick={() => navigate('/sanctuaire/rituals')}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-400/20 rounded-full flex items-center justify-center">
+                    <Star className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-playfair italic text-xl font-medium text-purple-400">
+                      Rituels Sacrés
+                    </h3>
+                    <p className="font-inter text-sm text-white/60">
+                      Pratiques spirituelles personnalisées
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => navigate('/sanctuaire/profile')}
-                className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-all text-left"
-              >
-                <User className="w-4 h-4 text-white/70" />
-                <span className="text-sm text-white/80">Mon profil complet</span>
-              </button>
-              
-              <button
-                onClick={() => navigate('/sanctuaire/draws')}
-                className="w-full flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-all text-left"
-              >
-                <FileText className="w-4 h-4 text-white/70" />
-                <span className="text-sm text-white/80">Mes lectures et tirages</span>
-              </button>
-              
-              <button
-                onClick={() => navigate('/commande')}
-                className="w-full flex items-center gap-3 p-3 bg-amber-400/10 hover:bg-amber-400/20 rounded-lg transition-all text-left border border-amber-400/20"
-              >
-                <CreditCard className="w-4 h-4 text-amber-400" />
-                <span className="text-sm text-amber-400 font-medium">Nouvelle lecture</span>
-              </button>
-            </div>
-          </div>
+              <p className="font-inter text-sm text-white/80 mb-4">
+                Découvrez vos rituels personnalisés, méditations guidées et pratiques spirituelles avancées.
+              </p>
+            </motion.div>
+          </CapabilityGuard>
+
+          {/* Carte Mandala HD - Protégée pour niveau Profond */}
+          <CapabilityGuard
+            requires="sanctuaire.sphere.mandala"
+            fallback={
+              <LockedCard
+                level="Profond"
+                message="Accédez à votre Mandala personnalisé en haute définition"
+                action={{
+                  label: "Débloquer le niveau Profond",
+                  onClick: () => navigate('/commande?product=profond')
+                }}
+              />
+            }
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="bg-gradient-to-br from-amber-400/10 to-orange-400/10 backdrop-blur-sm border border-amber-400/20 rounded-2xl p-6 cursor-pointer"
+              onClick={() => navigate('/sanctuaire/mandala')}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-amber-400/20 rounded-full flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-playfair italic text-xl font-medium text-amber-400">
+                      Mandala Personnel
+                    </h3>
+                    <p className="font-inter text-sm text-white/60">
+                      Votre symbole sacré unique
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p className="font-inter text-sm text-white/80 mb-4">
+                Contemplez votre mandala personnalisé créé spécifiquement pour votre énergie unique.
+              </p>
+            </motion.div>
+          </CapabilityGuard>
+
+          {/* Carte Synthèse - Protégée pour niveau Profond */}
+          <CapabilityGuard
+            requires="sanctuaire.sphere.synthesis"
+            fallback={
+              <LockedCard
+                level="Profond"
+                message="Accédez à l'analyse synthétique complète de votre parcours"
+                action={{
+                  label: "Accéder au niveau Profond",
+                  onClick: () => navigate('/commande?product=profond')
+                }}
+              />
+            }
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="bg-gradient-to-br from-teal-400/10 to-cyan-400/10 backdrop-blur-sm border border-teal-400/20 rounded-2xl p-6 cursor-pointer"
+              onClick={() => navigate('/sanctuaire/synthesis')}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-teal-400/20 rounded-full flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-teal-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-playfair italic text-xl font-medium text-teal-400">
+                      Synthèse Spirituelle
+                    </h3>
+                    <p className="font-inter text-sm text-white/60">
+                      Analyse complète de votre évolution
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p className="font-inter text-sm text-white/80 mb-4">
+                Une vision d'ensemble de votre parcours spirituel avec insights et recommandations.
+              </p>
+            </motion.div>
+          </CapabilityGuard>
+
+          {/* Carte Guidance - Protégée pour niveau Intégral */}
+          <CapabilityGuard
+            requires="sanctuaire.sphere.guidance"
+            fallback={
+              <LockedCard
+                level="Intégral"
+                message="Accédez à la guidance personnalisée et au mentorat exclusif"
+                action={{
+                  label: "Niveau Intégral",
+                  onClick: () => navigate('/commande?product=integrale')
+                }}
+              />
+            }
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="bg-gradient-to-br from-indigo-400/10 to-violet-400/10 backdrop-blur-sm border border-indigo-400/20 rounded-2xl p-6 cursor-pointer"
+              onClick={() => navigate('/sanctuaire/guidance')}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-indigo-400/20 rounded-full flex items-center justify-center">
+                    <Star className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-playfair italic text-xl font-medium text-indigo-400">
+                      Guidance Sacrée
+                    </h3>
+                    <p className="font-inter text-sm text-white/60">
+                      Mentorat spirituel personnalisé
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p className="font-inter text-sm text-white/80 mb-4">
+                Bénéficiez d'un accompagnement spirituel personnalisé et d'un suivi de 30 jours.
+              </p>
+            </motion.div>
+          </CapabilityGuard>
         </motion.div>
       </motion.div>
     );
