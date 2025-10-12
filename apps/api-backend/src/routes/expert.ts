@@ -84,7 +84,7 @@ router.post('/create-debug', async (req, res) => {
 // Rate limiting for auth
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 10, // limite chaque IP à 10 tentatives par fenêtre de 15 minutes
   message: 'Trop de tentatives de connexion, réessayez dans 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,
