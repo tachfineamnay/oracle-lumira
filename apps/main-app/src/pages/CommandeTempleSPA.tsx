@@ -35,7 +35,8 @@ interface Product {
 const CommandeTempleSPA = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const productId = searchParams.get('productId') || '6786dd7a44dd7fc8cd05d94d';
+  // Support both 'product' and 'productId' URL params
+  const productParam = searchParams.get('product') || searchParams.get('productId') || '6786dd7a44dd7fc8cd05d94d';
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,10 +48,25 @@ const CommandeTempleSPA = () => {
       try {
         setLoading(true);
         const catalog = await ProductOrderService.getCatalog();
-        const foundProduct = catalog.find(p => p._id === productId);
+        
+        // Try to find product by:
+        // 1. Exact _id match
+        // 2. Case-insensitive name match (for slugs like "mystique")
+        let foundProduct = catalog.find(p => p._id === productParam);
+        
+        if (!foundProduct) {
+          // Try matching by name (case-insensitive)
+          const normalizedParam = productParam.toLowerCase();
+          foundProduct = catalog.find(p => 
+            p.name.toLowerCase().includes(normalizedParam) ||
+            p.name.toLowerCase().replace(/\s+/g, '-') === normalizedParam
+          );
+        }
+        
         if (foundProduct) {
           setProduct(foundProduct);
         } else {
+          console.error('Product not found. Available products:', catalog.map(p => ({ id: p._id, name: p.name })));
           setError('Produit non trouvé');
         }
       } catch (err) {
@@ -62,7 +78,7 @@ const CommandeTempleSPA = () => {
     };
 
     fetchProduct();
-  }, [productId]);
+  }, [productParam]);
 
   // Handle payment success
   const handlePaymentSuccess = (orderId: string, email: string) => {
