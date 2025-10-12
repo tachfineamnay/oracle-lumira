@@ -51,22 +51,32 @@ const CommandeTempleSPA = () => {
         
         // Try to find product by:
         // 1. Exact _id match
-        // 2. Case-insensitive name match (for slugs like "mystique")
+        // 2. Case-insensitive name match (for slugs like "initie", "mystique")
         let foundProduct = catalog.find(p => p._id === productParam);
         
         if (!foundProduct) {
-          // Try matching by name (case-insensitive)
+          // Try matching by name (case-insensitive) - with safety checks
           const normalizedParam = productParam.toLowerCase();
-          foundProduct = catalog.find(p => 
-            p.name.toLowerCase().includes(normalizedParam) ||
-            p.name.toLowerCase().replace(/\s+/g, '-') === normalizedParam
-          );
+          foundProduct = catalog.find(p => {
+            if (!p.name || typeof p.name !== 'string') return false;
+            const productName = p.name.toLowerCase();
+            return (
+              productName.includes(normalizedParam) ||
+              productName.replace(/\s+/g, '-') === normalizedParam ||
+              productName.replace(/\s+/g, '') === normalizedParam
+            );
+          });
         }
         
         if (foundProduct) {
           setProduct(foundProduct);
         } else {
-          console.error('Product not found. Available products:', catalog.map(p => ({ id: p._id, name: p.name })));
+          console.error('Product not found. Search term:', productParam);
+          console.error('Available products:', catalog.map(p => ({ 
+            id: p._id, 
+            name: p.name || 'NO_NAME',
+            active: p.active 
+          })));
           setError('Produit non trouvé');
         }
       } catch (err) {
