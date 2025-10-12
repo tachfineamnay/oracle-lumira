@@ -14,7 +14,7 @@ import {
   validateName,
   formatPhoneNumber,
 } from '../../hooks/useValidationDebounce';
-import { ProductOrderService } from '../../services/productOrder.service';
+import ProductOrderService from '../../services/productOrder';
 import { cn } from '../../lib/utils';
 
 // Initialize Stripe

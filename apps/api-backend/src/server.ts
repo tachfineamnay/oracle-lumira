@@ -43,13 +43,21 @@ console.log('? [API] server.ts - Logger configured');
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting - Increased limit to handle higher traffic spikes
+const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 500, // Increased from 100 to 500 to handle traffic spikes
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Use a more specific key if behind a proxy, otherwise fallback to IP
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor && typeof forwardedFor === 'string') {
+      return forwardedFor.split(',')[0].trim();
+    }
+    return req.ip;
+  },
 });
 
 // Security middleware
@@ -93,8 +101,8 @@ app.options('*', (req, res) => {
 
 console.log('? [API] server.ts - CORS configured for production');
 
-// Apply rate limiting
-app.use(limiter);
+// Apply general rate limiting to all requests
+app.use(apiLimiter);
 
 // Webhook routes MUST come before body parsing middleware
 // Stripe webhooks need raw body for signature verification
