@@ -157,6 +157,33 @@ let s3ServiceInstance: S3Service | null = null;
 
 export function getS3Service(): S3Service {
   if (!s3ServiceInstance) {
+    // Mock mode: bypass real S3 interactions entirely
+    if (process.env.S3_MOCK_MODE === 'true') {
+      console.warn('[S3] S3_MOCK_MODE enabled - using in-memory/mock S3 service');
+      class MockS3 extends S3Service {
+        constructor() {
+          super({
+            accessKeyId: 'mock',
+            secretAccessKey: 'mock',
+            region: 'us-east-1',
+            bucketName: process.env.AWS_S3_BUCKET_NAME || 'qa-test-bucket',
+          } as any);
+        }
+        async uploadFile(buffer: Buffer, originalName: string, contentType: string, type: 'face_photo' | 'palm_photo') {
+          const timestamp = Date.now();
+          const key = `uploads/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${timestamp}-${type}-${originalName}`;
+          const url = `https://mock-s3.local/${process.env.AWS_S3_BUCKET_NAME || 'qa-test-bucket'}/${key}`;
+          return { url, key, size: buffer.length };
+        }
+        async deleteFile(_key: string): Promise<boolean> { return true; }
+        async getPresignedGetUrl(key: string, _expiresInSeconds: number = 900): Promise<string> {
+          const url = `https://mock-s3.local/${process.env.AWS_S3_BUCKET_NAME || 'qa-test-bucket'}/${key}?signature=mock&expires=900`;
+          return url;
+        }
+      }
+      s3ServiceInstance = new MockS3();
+      return s3ServiceInstance;
+    }
     const config: S3Config = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.LUMIRA_ACCESS_KEY || '',
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || process.env.LUMIRA_SECRET_KEY || '',
@@ -179,7 +206,7 @@ export function getS3Service(): S3Service {
     );
     // ----- FIN DU BLOC DE DIAGNOSTIC -----
 
-    // Validation de la configuration
+    // Validation de la configuration (skip when using explicit mock mode only)
     if (!config.accessKeyId || !config.secretAccessKey) {
       throw new Error('Configuration S3 manquante: AWS_ACCESS_KEY_ID et AWS_SECRET_ACCESS_KEY requis');
     }
