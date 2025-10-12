@@ -229,8 +229,8 @@ const CheckoutFormInner = ({
         whileTap={{ scale: processing ? 1 : 0.98 }}
         className={cn(
           'w-full py-4 rounded-xl font-bold text-lg',
-          'bg-gradient-to-r from-mystical-gold to-cosmic-gold',
-          'text-mystical-night shadow-spiritual',
+          'bg-gradient-to-r from-[#D4AF37] to-[#DAA520]',
+          'text-[#0F0B19] shadow-lg',
           'transition-all duration-300',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'relative overflow-hidden'
@@ -324,18 +324,17 @@ export const UnifiedCheckoutForm = ({
   useValidationDebounce(email, setEmail, validateEmail, 300);
   useValidationDebounce(phone, setPhone, validatePhone, 300);
 
-  // Initialize PaymentIntent immediately
+  // Initialize PaymentIntent immediately (only once)
   useEffect(() => {
     const initPaymentIntent = async () => {
       try {
-        const result = await ProductOrderService.createOrderWithPaymentIntent({
+        // Use the existing createPaymentIntent method with placeholder data
+        const result = await ProductOrderService.createPaymentIntent(
           productId,
-          amountCents,
-          metadata: {
-            source: 'unified_checkout',
-            productName,
-          },
-        });
+          'placeholder@example.com', // Placeholder email
+          'Client', // Placeholder name
+          '0000000000' // Placeholder phone
+        );
 
         setClientSecret(result.clientSecret);
         setOrderId(result.orderId);
@@ -347,27 +346,9 @@ export const UnifiedCheckoutForm = ({
     };
 
     initPaymentIntent();
-  }, [productId, amountCents, productName]);
+  }, [productId]);
 
-  // Update customer info progressively
-  useEffect(() => {
-    if (
-      orderId &&
-      email.valid &&
-      phone.valid &&
-      firstName.trim() &&
-      lastName.trim()
-    ) {
-      ProductOrderService.updateOrderCustomer(orderId, {
-        email: email.value,
-        phone: phone.value,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-      }).catch((err) => {
-        console.error('Failed to update customer info:', err);
-      });
-    }
-  }, [orderId, email.valid, phone.valid, firstName, lastName, email.value, phone.value]);
+  // Note: Customer info will be sent with the payment confirmation
 
   // Stripe Elements options
   const elementsOptions: StripeElementsOptions = {
@@ -379,7 +360,32 @@ export const UnifiedCheckoutForm = ({
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto p-6">
-        <CheckoutSkeleton />
+        <div className="space-y-6 animate-pulse">
+          {/* Product Summary Skeleton */}
+          <div className="bg-gray-700/50 rounded-xl p-6 space-y-4">
+            <div className="h-6 bg-gray-600/50 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-600/50 rounded w-1/2"></div>
+            <div className="space-y-2">
+              <div className="h-3 bg-gray-600/50 rounded"></div>
+              <div className="h-3 bg-gray-600/50 rounded w-5/6"></div>
+            </div>
+          </div>
+          
+          {/* Form Skeleton */}
+          <div className="bg-gray-700/50 rounded-xl p-6 space-y-4">
+            <div className="h-4 bg-gray-600/50 rounded w-1/3"></div>
+            <div className="space-y-3">
+              <div className="h-12 bg-gray-600/50 rounded-xl"></div>
+              <div className="h-12 bg-gray-600/50 rounded-xl"></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-12 bg-gray-600/50 rounded-xl"></div>
+                <div className="h-12 bg-gray-600/50 rounded-xl"></div>
+              </div>
+              <div className="h-20 bg-gray-600/50 rounded-xl"></div>
+              <div className="h-12 bg-gray-600/50 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
