@@ -13,7 +13,9 @@ import {
   Edit3,
   X,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { useUserLevel } from '../../contexts/UserLevelContext';
 import { apiRequest } from '../../utils/api';
@@ -21,6 +23,8 @@ import { getApiBaseUrl } from '../../lib/apiBase';
 import GlassCard from '../ui/GlassCard';
 
 interface FormData {
+  email: string;
+  phone: string;
   birthDate: string;
   birthTime: string;
   objective: string;
@@ -35,6 +39,8 @@ export const SanctuaireWelcomeForm: React.FC = () => {
   const { userLevel, updateUserProfile } = useUserLevel();
   const [formState, setFormState] = useState<FormState>('active');
   const [formData, setFormData] = useState<FormData>({
+    email: '',
+    phone: '',
     birthDate: '',
     birthTime: '',
     objective: '',
@@ -53,17 +59,20 @@ export const SanctuaireWelcomeForm: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Try to attach submission to last order if available
-      let lastOrderId: string | null = null;
+      // Try to resolve PaymentIntentId reliably (URL -> localStorage -> legacy)
+      let paymentIntentId: string | null = null;
       try {
-        const urlOrder = new URLSearchParams(window.location.search).get('order_id');
+        const params = new URLSearchParams(window.location.search);
+        const urlPi = params.get('payment_intent');
+        const storedPi = localStorage.getItem('oraclelumira_last_payment_intent_id');
+        const urlOrder = params.get('order_id');
         const storedOrder = localStorage.getItem('oraclelumira_last_order_id');
-        lastOrderId = urlOrder || storedOrder;
-        console.log('[SANCTUAIRE] LastOrderId found:', lastOrderId);
+        paymentIntentId = urlPi || storedPi || urlOrder || storedOrder;
+        console.log('[SANCTUAIRE] Resolved PaymentIntentId:', paymentIntentId);
       } catch {}
 
-      if (lastOrderId) {
-        console.log('[SANCTUAIRE] Attempting client-submit to:', `/orders/by-payment-intent/${lastOrderId}/client-submit`);
+      if (paymentIntentId) {
+        console.log('[SANCTUAIRE] Attempting client-submit to:', `/orders/by-payment-intent/${paymentIntentId}/client-submit`);
         try {
           // Utiliser FormData pour envoyer les fichiers
           const formDataToSend = new FormData();
@@ -76,6 +85,8 @@ export const SanctuaireWelcomeForm: React.FC = () => {
           } catch {}
 
           formDataToSend.append('formData', JSON.stringify({
+            email: (formData as any).email || undefined,
+            phone: (formData as any).phone || undefined,
             dateOfBirth: formData.birthDate || undefined,
             specificQuestion: formData.objective || undefined,
             level: levelFromUrl,
@@ -97,7 +108,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
           console.log('[SANCTUAIRE] FormData prepared, sending request...');
           
           // 🚀 INSTRUMENTATION GPS - TRACAGE COMPLET
-          const targetUrl = `/orders/by-payment-intent/${lastOrderId}/client-submit`;
+          const targetUrl = `/orders/by-payment-intent/${paymentIntentId}/client-submit`;
           const fullApiUrl = getApiBaseUrl();
           const finalUrl = `${fullApiUrl}${targetUrl}`;
           
@@ -126,6 +137,8 @@ export const SanctuaireWelcomeForm: React.FC = () => {
       
       // Mettre à jour le profil utilisateur avec les fichiers
       updateUserProfile({
+        email: (formData as any).email,
+        phone: (formData as any).phone,
         birthDate: formData.birthDate,
         birthTime: formData.birthTime,
         objective: formData.objective,
@@ -167,7 +180,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: file }));
   };
 
-  const isFormValid = formData.birthDate && formData.objective && formData.facePhoto && formData.palmPhoto;
+  const isFormValid = formData.email && formData.phone && formData.birthDate && formData.objective && formData.facePhoto && formData.palmPhoto;
   const isReadOnly = formState === 'submitted';
 
   return (
@@ -309,6 +322,47 @@ export const SanctuaireWelcomeForm: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Coordonnées de contact */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  <Mail className="w-4 h-4 inline mr-2" />
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  required
+                  disabled={isReadOnly}
+                  value={(formData as any).email}
+                  onChange={(e) => handleInputChange('email' as any, e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                    isReadOnly 
+                      ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
+                      : 'bg-white/5 border-amber-400/30 text-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
+                  }`}
+                />
+              </div>
+              {/* Téléphone */}
+              <div>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  <Phone className="w-4 h-4 inline mr-2" />
+                  Téléphone *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  disabled={isReadOnly}
+                  value={(formData as any).phone}
+                  onChange={(e) => handleInputChange('phone' as any, e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                    isReadOnly 
+                      ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
+                      : 'bg-white/5 border-amber-400/30 text-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
+                  }`}
+                />
+              </div>
+            </div>
             <div className="grid md:grid-cols-2 gap-6">
               {/* Date de naissance */}
               <div>

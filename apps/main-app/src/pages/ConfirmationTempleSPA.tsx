@@ -50,6 +50,13 @@ const ConfirmationTemple: React.FC = () => {
             if (orderId) {
               initializeFromPurchase(productData, orderId);
             }
+            // Stocker le PaymentIntentId pour l'upload côté Sanctuaire
+            try {
+              const pi = status.order.paymentIntentId;
+              if (pi) {
+                localStorage.setItem('oraclelumira_last_payment_intent_id', pi);
+              }
+            } catch {}
           } catch {}
 
           const countdown = setInterval(() => {
@@ -59,11 +66,14 @@ const ConfirmationTemple: React.FC = () => {
                 // Redirect with email and first-visit token for auto-login
                 const email = status.order.customerEmail || searchParams.get('email');
                 const token = `fv_${Date.now()}`;
-                const orderQuery = orderId ? `&order_id=${encodeURIComponent(orderId)}` : '';
-                navigate(email 
-                  ? `/sanctuaire?email=${encodeURIComponent(email)}&token=${token}${orderQuery}` 
-                  : (orderId ? `/sanctuaire?order_id=${encodeURIComponent(orderId)}` : '/sanctuaire')
-                );
+                const pi = status.order.paymentIntentId;
+                const parts: string[] = [];
+                if (email) parts.push(`email=${encodeURIComponent(email)}`);
+                parts.push(`token=${token}`);
+                if (orderId) parts.push(`order_id=${encodeURIComponent(orderId)}`);
+                if (pi) parts.push(`payment_intent=${encodeURIComponent(pi)}`);
+                const qs = parts.length ? `?${parts.join('&')}` : '';
+                navigate(`/sanctuaire${qs}`);
                 return 0;
               }
               return prev - 1;
@@ -101,11 +111,16 @@ const ConfirmationTemple: React.FC = () => {
     // Redirect with email and first-visit token for auto-login
     const email = orderStatus?.order.customerEmail || searchParams.get('email');
     const token = `fv_${Date.now()}`;
-    const orderQuery = orderId ? `&order_id=${encodeURIComponent(orderId)}` : '';
-    navigate(email 
-      ? `/sanctuaire?email=${encodeURIComponent(email)}&token=${token}${orderQuery}` 
-      : (orderId ? `/sanctuaire?order_id=${encodeURIComponent(orderId)}` : '/sanctuaire')
-    );
+    const pi = orderStatus?.order.paymentIntentId;
+    const parts: string[] = [];
+    if (email) parts.push(`email=${encodeURIComponent(email)}`);
+    parts.push(`token=${token}`);
+    if (orderId) parts.push(`order_id=${encodeURIComponent(orderId)}`);
+    if (pi) parts.push(`payment_intent=${encodeURIComponent(pi)}`);
+    const qs = parts.length ? `?${parts.join('&')}` : '';
+    // Stocker PI pour robustesse
+    try { if (pi) localStorage.setItem('oraclelumira_last_payment_intent_id', pi); } catch {}
+    navigate(`/sanctuaire${qs}`);
   };
 
   const handleBackToHome = () => {

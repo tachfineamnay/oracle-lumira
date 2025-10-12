@@ -84,17 +84,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
-  // Stable options for PaymentRequestButtonElement to avoid prop-mutation warnings
-  const prStyle = React.useMemo(() => ({
-    paymentRequestButton: {
-      theme: 'dark' as const,
-      height: '48px',
-      type: 'default' as const,
-    },
-  }), []);
-  const prOptions = React.useMemo(() => (
-    paymentRequest ? ({ paymentRequest, style: prStyle }) : undefined
-  ), [paymentRequest, prStyle]);
 
   // Initialize Payment Request Button (Apple Pay, Google Pay, etc.)
   useEffect(() => {
@@ -191,7 +180,18 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <Smartphone className="w-5 h-5" />
             <span className="text-sm font-medium">Paiement express</span>
           </div>
-          <PaymentRequestButtonElement options={prOptions!} />
+          <PaymentRequestButtonElement 
+            options={{ 
+              paymentRequest,
+              style: {
+                paymentRequestButton: {
+                  theme: 'dark',
+                  height: '48px',
+                  type: 'default',
+                },
+              },
+            }} 
+          />
           <div className="mt-4 flex items-center">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-cosmic-gold/30 to-transparent"></div>
             <span className="px-4 text-sm text-gray-400">ou</span>
@@ -608,7 +608,7 @@ const CommandeTemple: React.FC = () => {
               {/* Stripe Elements - placeholder until valid */}
               {clientSecret && customerFirstName && customerLastName && customerPhone && ProductOrderService.validateEmail(customerEmail) ? (
                 <div className="relative z-10">
-                  <Elements stripe={stripePromise} options={elementsOptions} key={clientSecret}>
+                  <Elements stripe={stripePromise} options={elementsOptions}>
                     <CheckoutForm
                       clientSecret={clientSecret}
                       orderId={orderId}

@@ -32,8 +32,10 @@ const AppRoutes: React.FC = () => (
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     
-    {/* ROUTE PRINCIPALE SANCTUAIRE - Gère nouveaux et anciens clients */}
-    <Route path="/sanctuaire" element={<SanctuaireUnified />} />
+    {/* ROUTE PRINCIPALE SANCTUAIRE - revenir au legacy stable */}
+    <Route path="/sanctuaire" element={<Sanctuaire />} />
+    {/* Garder la nouvelle version pour tests et référence */}
+    <Route path="/sanctuaire-unified" element={<SanctuaireUnified />} />
     <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
     
     {/* ROUTES LEGACY pour compatibilité */}

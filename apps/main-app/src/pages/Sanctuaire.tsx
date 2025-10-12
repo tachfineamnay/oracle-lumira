@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, Download, Play, Calendar, Home, Clock, User, FileText, Settings, CreditCard, Eye } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
@@ -13,6 +13,7 @@ import { useUserLevel } from '../contexts/UserLevelContext';
 import ExistingClientLoginBar from '../components/sanctuaire/ExistingClientLoginBar';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
+import { useSanctuaire } from '../hooks/useSanctuaire';
 
 const ProfileIcon: React.FC = () => {
   const navigate = useNavigate();
@@ -322,6 +323,43 @@ const Sanctuaire: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { userLevel } = useUserLevel();
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated, loading, authenticateWithEmail } = useSanctuaire();
+
+  // Effet 1: Auto-login via email/token depuis l'URL ou session
+  React.useEffect(() => {
+    const email = searchParams.get('email');
+    const token = searchParams.get('token');
+    const sessionEmail = sessionStorage.getItem('sanctuaire_email');
+
+    if (email && !isAuthenticated && !loading) {
+      sessionStorage.setItem('sanctuaire_email', email);
+      if (token?.startsWith('fv_')) {
+        sessionStorage.setItem('first_visit', 'true');
+      } else {
+        authenticateWithEmail(email).catch(console.error);
+      }
+    } else if (sessionEmail && !isAuthenticated && !loading) {
+      const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
+      if (!isFirstVisit) {
+        authenticateWithEmail(sessionEmail).catch(console.error);
+      }
+    }
+  }, [searchParams, isAuthenticated, loading, authenticateWithEmail]);
+
+  // Effet 2: Redirection vers /sanctuaire/login si aucune info d'auth disponible
+  React.useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      const sessionEmail = sessionStorage.getItem('sanctuaire_email');
+      const hasEmailInUrl = searchParams.get('email');
+      const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
+
+      if (!sessionEmail && !hasEmailInUrl && !isFirstVisit) {
+        const t = setTimeout(() => navigate('/sanctuaire/login'), 1000);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [isAuthenticated, loading, navigate, searchParams]);
 
   const progress = Math.round(((Number(userLevel.currentLevel) || 1) / 4) * 100);
   return (

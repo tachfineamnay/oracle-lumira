@@ -307,7 +307,7 @@ const CommandeTemple: React.FC = () => {
               <h2 className="text-lg sm:text-2xl font-bold text-white/95 mb-4 sm:mb-6">Paiement sécurisé</h2>
 
               {clientSecret && orderId && stripePromise && (
-                <Elements stripe={stripePromise} options={stripeOptions}>
+                <Elements stripe={stripePromise} options={stripeOptions} key={clientSecret!}>
                   <CheckoutForm
                     orderId={orderId}
                     amount={currentService.price}
