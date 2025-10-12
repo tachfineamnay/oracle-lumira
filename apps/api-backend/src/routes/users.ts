@@ -1,9 +1,11 @@
 import express from 'express';
 import { User } from '../models/User';
 import { Order } from '../models/Order';
+import { ProductOrder } from '../models/ProductOrder';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import { getS3Service } from '../services/s3';
+import { aggregateCapabilities, getHighestLevel, getLevelMetadata } from '../config/entitlements';
 
 const router = express.Router();
 
@@ -305,6 +307,86 @@ router.get('/sanctuaire/stats', authenticateSanctuaire, async (req: any, res: an
   } catch (error) {
     console.error('Get sanctuaire stats error:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });
+  }
+});
+
+// =================== ENDPOINT ENTITLEMENTS - SOURCE DE VÉRITÉ ===================
+// GET /api/users/entitlements - Récupère les capacités débloquées de l'utilisateur
+router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const userId = req.user._id;
+    const userEmail = req.user.email;
+    
+    console.log('[ENTITLEMENTS] Requête pour userId:', userId, 'email:', userEmail);
+    
+    // Récupérer toutes les commandes complétées de l'utilisateur
+    const completedOrders = await Order.find({
+      userId: userId,
+      status: 'completed'
+    }).select('level orderNumber paymentIntentId');
+    
+    // Récupérer aussi les ProductOrder complétées (nouveau système)
+    const completedProductOrders = await ProductOrder.find({
+      customerEmail: userEmail.toLowerCase(),
+      status: 'completed'
+    }).select('productId paymentIntentId');
+    
+    console.log('[ENTITLEMENTS] Orders trouvées:', completedOrders.length);
+    console.log('[ENTITLEMENTS] ProductOrders trouvées:', completedProductOrders.length);
+    
+    // Mapper les niveaux des Order vers productId
+    const levelToProductId: Record<number, string> = {
+      1: 'initie',
+      2: 'mystique',
+      3: 'profond',
+      4: 'integrale'
+    };
+    
+    const orderProductIds = completedOrders
+      .map(order => levelToProductId[order.level])
+      .filter(Boolean);
+    
+    const productOrderIds = completedProductOrders
+      .map(po => po.productId.toLowerCase());
+    
+    // Fusionner les deux listes et dédupliquer
+    const allProductIds = [...new Set([...orderProductIds, ...productOrderIds])];
+    
+    console.log('[ENTITLEMENTS] Produits détectés:', allProductIds);
+    
+    // Si aucun produit, retourner un tableau vide
+    if (allProductIds.length === 0) {
+      return res.json({
+        capabilities: [],
+        products: [],
+        highestLevel: null,
+        levelMetadata: null,
+        message: 'Aucune commande complétée trouvée'
+      });
+    }
+    
+    // Agréger toutes les capacités
+    const capabilities = aggregateCapabilities(allProductIds);
+    
+    // Déterminer le niveau le plus élevé
+    const highestLevel = getHighestLevel(allProductIds);
+    const levelMetadata = highestLevel ? getLevelMetadata(highestLevel) : null;
+    
+    console.log('[ENTITLEMENTS] Capacités débloquées:', capabilities.length);
+    console.log('[ENTITLEMENTS] Niveau le plus élevé:', highestLevel);
+    
+    res.json({
+      capabilities,
+      products: allProductIds,
+      highestLevel,
+      levelMetadata,
+      orderCount: completedOrders.length,
+      productOrderCount: completedProductOrders.length
+    });
+    
+  } catch (error) {
+    console.error('[ENTITLEMENTS] Erreur:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des entitlements' });
   }
 });
 
