@@ -33,20 +33,20 @@ export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
           {...props}
           value={value}
           className={cn(
-            // Base styles
+            // Base styles - Match Stripe Elements appearance
             'peer w-full px-4 pt-6 pb-2',
-            'bg-mystical-night/40 backdrop-blur-sm',
-            'border border-mystical-gold/40 rounded-xl',
-            'text-white text-base',
+            'bg-[#0F0B19] backdrop-blur-sm',
+            'border border-[#D4AF37]/30 rounded-xl',
+            'text-gray-100 text-base',
             'placeholder-transparent',
             'transition-all duration-300 ease-out',
 
             // Focus states
-            'focus:border-mystical-gold focus:outline-none',
-            'focus:ring-2 focus:ring-mystical-gold/30',
+            'focus:border-[#D4AF37] focus:outline-none',
+            'focus:ring-2 focus:ring-[#D4AF37]/30',
 
             // Hover state
-            'hover:border-mystical-gold/60',
+            'hover:border-[#D4AF37]/60',
 
             // Validation states
             error && 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30',
@@ -72,7 +72,7 @@ export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
             'tracking-wide',
 
             // Float up on focus or when has value
-            'peer-focus:top-2 peer-focus:text-xs peer-focus:text-mystical-gold peer-focus:font-medium',
+            'peer-focus:top-2 peer-focus:text-xs peer-focus:text-[#D4AF37] peer-focus:font-medium',
             (hasValue || showFloatingLabel) && 'top-2 text-xs font-medium',
 
             // Validation colors when floating
