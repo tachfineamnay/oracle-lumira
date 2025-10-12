@@ -16,9 +16,10 @@ import {
 } from '../../hooks/useValidationDebounce';
 import ProductOrderService from '../../services/productOrder';
 import { cn } from '../../lib/utils';
+import { validateStripeKey } from '../../utils/api';
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Initialize Stripe (robust key resolution + validation)
+const stripePromise = loadStripe(validateStripeKey());
 
 // Stripe Appearance Config - Match Mystical Theme
 const stripeAppearance: Appearance = {

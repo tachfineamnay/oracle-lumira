@@ -57,16 +57,21 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
  * Validate Stripe publishable key at startup
  */
 export function validateStripeKey(): string {
-  const pk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  
+  // Prefer standard VITE_STRIPE_PUBLISHABLE_KEY, but support legacy VITE_STRIPE_PUBLIC_KEY
+  const pk =
+    import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
   if (!pk) {
-    throw new Error('VITE_STRIPE_PUBLISHABLE_KEY is required but not set');
+    throw new Error(
+      'Stripe publishable key missing: set VITE_STRIPE_PUBLISHABLE_KEY (or legacy VITE_STRIPE_PUBLIC_KEY)'
+    );
   }
-  
+
   if (!/^pk_(test|live)_[a-zA-Z0-9]+$/.test(pk)) {
     throw new Error(`Invalid Stripe publishable key format: ${pk.substring(0, 10)}...`);
   }
-  
+
   if (import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true') {
     console.log(`Stripe key validated: ${pk.substring(0, 15)}...`);
   }
