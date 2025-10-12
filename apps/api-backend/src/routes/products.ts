@@ -368,6 +368,115 @@ router.get('/order/:orderId', ...getOrderValidators, getOrderHandler);
 // Alias for frontend compatibility
 router.get('/orders/:orderId', ...getOrderValidators, getOrderHandler);
 
+/**
+ * PATCH /api/products/orders/:orderId/customer
+ * Persist customer details for an existing product order
+ */
+router.patch('/orders/:orderId/customer', async (req: Request, res: Response): Promise<void> => {
+  const requestId = `customer_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+
+  try {
+    const { orderId } = req.params;
+    const { email, phone, firstName, lastName } = req.body || {};
+
+    if (!orderId) {
+      res.status(400).json({
+        error: 'Order ID is required',
+        code: 'MISSING_ORDER_ID',
+        timestamp: new Date().toISOString(),
+        requestId,
+      });
+      return;
+    }
+
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({
+        error: 'Invalid email',
+        code: 'INVALID_EMAIL',
+        message: 'A valid customer email is required',
+        timestamp: new Date().toISOString(),
+        requestId,
+      });
+      return;
+    }
+
+    if (!firstName || typeof firstName !== 'string' || firstName.trim().length < 2) {
+      res.status(400).json({
+        error: 'Invalid first name',
+        code: 'INVALID_FIRST_NAME',
+        message: 'First name must contain at least 2 characters',
+        timestamp: new Date().toISOString(),
+        requestId,
+      });
+      return;
+    }
+
+    if (!lastName || typeof lastName !== 'string' || lastName.trim().length < 2) {
+      res.status(400).json({
+        error: 'Invalid last name',
+        code: 'INVALID_LAST_NAME',
+        message: 'Last name must contain at least 2 characters',
+        timestamp: new Date().toISOString(),
+        requestId,
+      });
+      return;
+    }
+
+    const normalizedPhone = typeof phone === 'string' ? phone.replace(/\D/g, '') : undefined;
+
+    const orderDoc = await ProductOrder.findOne({ paymentIntentId: orderId });
+
+    if (!orderDoc) {
+      res.status(404).json({
+        error: 'Order not found',
+        code: 'ORDER_NOT_FOUND',
+        message: `No order found for paymentIntent ${orderId}`,
+        timestamp: new Date().toISOString(),
+        requestId,
+      });
+      return;
+    }
+
+    orderDoc.customerEmail = email.toLowerCase();
+    orderDoc.metadata = {
+      ...(orderDoc.metadata || {}),
+      customerEmail: email.toLowerCase(),
+      customerPhone: normalizedPhone,
+      customerFirstName: firstName.trim(),
+      customerLastName: lastName.trim(),
+      customerName: `${firstName} ${lastName}`.trim(),
+      updatedAt: new Date().toISOString(),
+    };
+    orderDoc.updatedAt = new Date();
+
+    await orderDoc.save();
+
+    res.json({
+      success: true,
+      requestId,
+      order: {
+        paymentIntentId: orderDoc.paymentIntentId,
+        customerEmail: orderDoc.customerEmail,
+        metadata: orderDoc.metadata,
+        updatedAt: orderDoc.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to update product order customer info:', {
+      requestId,
+      error,
+    });
+    const sanitized = sanitizeError(error);
+    res.status(500).json({
+      error: 'Failed to update order customer info',
+      code: 'ORDER_UPDATE_FAILED',
+      ...sanitized,
+      timestamp: new Date().toISOString(),
+      requestId,
+    });
+  }
+});
+
 // Processed webhook events (simple idempotence - replace with DB)
 const processedWebhookEvents = new Set<string>();
 

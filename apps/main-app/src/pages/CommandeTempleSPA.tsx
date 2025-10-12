@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { UnifiedCheckoutForm } from '../components/checkout/UnifiedCheckoutForm';
 import ProductOrderService from '../services/productOrder';
+import type { Product as CatalogProduct } from '../types/products';
 
 /**
  * CommandeTempleSPA - Page de Checkout Refonte 2025
@@ -22,23 +23,21 @@ import ProductOrderService from '../services/productOrder';
  * ✅ Mobile-first UX
  */
 
-interface Product {
-  _id: string;
-  name: string;
-  description: string;
-  amountCents: number;
-  currency: string;
-  features: string[];
-  active: boolean;
-}
+type CheckoutProduct = CatalogProduct & {
+  _id?: string; // legacy support if backend sends Mongo ObjectId
+  active?: boolean;
+};
 
 const CommandeTempleSPA = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // Support both 'product' and 'productId' URL params
-  const productParam = searchParams.get('product') || searchParams.get('productId') || '6786dd7a44dd7fc8cd05d94d';
+  // Support both 'product' and 'productId' URL params (slug-based by default)
+  const productParam =
+    searchParams.get('product') ||
+    searchParams.get('productId') ||
+    'mystique';
 
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<CheckoutProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,13 +46,15 @@ const CommandeTempleSPA = () => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const catalog = await ProductOrderService.getCatalog();
+        const catalog = (await ProductOrderService.getCatalog()) as CheckoutProduct[];
         
         // Try to find product by:
-        // 1. Exact _id match
+        // 1. Exact id (preferred) or legacy _id match
         // 2. Case-insensitive name match (for slugs like "initie", "mystique")
-        let foundProduct = catalog.find(p => p._id === productParam);
-        
+        let foundProduct = catalog.find(
+          (p) => p.id === productParam || p._id === productParam
+        );
+
         if (!foundProduct) {
           // Try matching by name (case-insensitive) - with safety checks
           const normalizedParam = productParam.toLowerCase();
@@ -67,15 +68,28 @@ const CommandeTempleSPA = () => {
             );
           });
         }
-        
+
         if (foundProduct) {
-          setProduct(foundProduct);
+          // Ensure we always have a usable id for downstream components
+          const normalizedProduct: CheckoutProduct = {
+            ...foundProduct,
+            id: foundProduct.id || foundProduct._id || productParam,
+          };
+
+          if (!foundProduct.id && foundProduct._id) {
+            console.warn('Product missing id field, falling back to legacy _id', {
+              legacyId: foundProduct._id,
+            });
+          }
+
+          setProduct(normalizedProduct);
         } else {
           console.error('Product not found. Search term:', productParam);
-          console.error('Available products:', catalog.map(p => ({ 
-            id: p._id, 
+          console.error('Available products:', catalog.map(p => ({
+            id: p.id,
+            legacyId: p._id,
             name: p.name || 'NO_NAME',
-            active: p.active 
+            active: p.active,
           })));
           setError('Produit non trouvé');
         }
@@ -204,7 +218,7 @@ const CommandeTempleSPA = () => {
 
         {/* Unified Checkout Form */}
         <UnifiedCheckoutForm
-          productId={product._id}
+          productId={product.id}
           productName={product.name}
           amountCents={product.amountCents}
           features={product.features || []}

@@ -41,6 +41,44 @@ export class ProductOrderService {
   }
 
   /**
+   * Sync customer information with an existing product order
+   */
+  static async updateOrderCustomer(
+    orderId: string,
+    customer: {
+      email: string;
+      phone?: string;
+      firstName: string;
+      lastName: string;
+    }
+  ): Promise<void> {
+    try {
+      const DEBUG = import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true';
+      if (DEBUG) {
+        console.log('Updating order customer info:', {
+          orderId,
+          email: customer.email,
+        });
+      }
+
+      await apiRequest<{ success: boolean }>(`/products/orders/${orderId}/customer`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          email: customer.email,
+          phone: customer.phone,
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to update order customer info:', error);
+      throw new Error(
+        error instanceof Error ? error.message : 'Failed to update order customer info'
+      );
+    }
+  }
+
+  /**
    * Get order status by order ID
    */
   static async getOrderStatus(orderId: string): Promise<OrderStatus> {

@@ -2,7 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { Elements, useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { loadStripe, Appearance, StripeElementsOptions } from '@stripe/stripe-js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, Loader2, Lock, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2, Lock, Sparkles } from 'lucide-react';
 import { FloatingInput } from './FloatingInput';
 import { ExpressPaymentSection } from './ExpressPaymentSection';
 import { ProductSummaryHeader } from './ProductSummaryHeader';
@@ -11,7 +11,6 @@ import {
   useValidationDebounce,
   validateEmail,
   validatePhone,
-  validateName,
   formatPhoneNumber,
 } from '../../hooks/useValidationDebounce';
 import ProductOrderService from '../../services/productOrder';
@@ -154,7 +153,7 @@ const CheckoutFormInner = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || !isFormValid) {
+    if (!stripe || !elements || !isFormValid || !clientSecret) {
       return;
     }
 
@@ -162,6 +161,24 @@ const CheckoutFormInner = ({
     setPaymentError(null);
 
     try {
+      if (orderId) {
+        try {
+          await ProductOrderService.updateOrderCustomer(orderId, {
+            email: email.value,
+            phone: phone.value.replace(/\D/g, ''),
+            firstName,
+            lastName,
+          });
+        } catch (updateError) {
+          console.error('Failed to update order with customer info:', updateError);
+          setPaymentError(
+            "Impossible d'enregistrer vos informations. Veuillez réessayer."
+          );
+          setProcessing(false);
+          return;
+        }
+      }
+
       // Confirm payment
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
@@ -225,7 +242,7 @@ const CheckoutFormInner = ({
       {/* Submit Button */}
       <motion.button
         type="submit"
-        disabled={processing || !isFormValid || !stripe}
+        disabled={processing || !isFormValid || !stripe || !clientSecret}
         whileHover={{ scale: processing ? 1 : 1.02 }}
         whileTap={{ scale: processing ? 1 : 0.98 }}
         className={cn(
@@ -302,6 +319,8 @@ export const UnifiedCheckoutForm = ({
   const [clientSecret, setClientSecret] = useState<string>('');
   const [orderId, setOrderId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [intentError, setIntentError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   // Form fields with validation state
   const [email, setEmail] = useState<FieldState>({
@@ -325,29 +344,63 @@ export const UnifiedCheckoutForm = ({
   useValidationDebounce(email, setEmail, validateEmail, 300);
   useValidationDebounce(phone, setPhone, validatePhone, 300);
 
-  // Initialize PaymentIntent immediately (only once)
+  // Initialize PaymentIntent (or retry on demand)
   useEffect(() => {
+    let isCancelled = false;
+
     const initPaymentIntent = async () => {
+      if (!productId) {
+        setClientSecret('');
+        setOrderId('');
+        setLoading(false);
+        setIntentError('Produit invalide.');
+        return;
+      }
+
+      setLoading(true);
+      setIntentError(null);
+      setClientSecret('');
+      setOrderId('');
+
       try {
-        // Use the existing createPaymentIntent method with placeholder data
-        const result = await ProductOrderService.createPaymentIntent(
-          productId,
-          'placeholder@example.com', // Placeholder email
-          'Client', // Placeholder name
-          '0000000000' // Placeholder phone
-        );
+        const result = await ProductOrderService.createPaymentIntent(productId);
+
+        if (isCancelled) {
+          return;
+        }
 
         setClientSecret(result.clientSecret);
         setOrderId(result.orderId);
       } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
         console.error('Failed to create PaymentIntent:', error);
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : "Impossible d'initialiser le paiement pour le moment.";
+        setIntentError(message);
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     initPaymentIntent();
-  }, [productId]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [productId, retryNonce]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setIntentError(null);
+    setRetryNonce((prev) => prev + 1);
+  };
 
   // Note: Customer info will be sent with the payment confirmation
 
@@ -387,6 +440,56 @@ export const UnifiedCheckoutForm = ({
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!loading && intentError) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 space-y-6">
+        <ProductSummaryHeader
+          name={productName}
+          amount={amountCents}
+          features={features}
+        />
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-red-500/10 border border-red-500/40 rounded-2xl p-6 backdrop-blur-md"
+        >
+          <div className="flex items-start gap-4 text-red-200">
+            <AlertCircle className="w-6 h-6 flex-shrink-0" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-white/90">
+                Impossible d'initialiser le paiement
+              </h3>
+              <p className="text-sm text-red-100/90 leading-relaxed">
+                {intentError}
+              </p>
+              <p className="text-xs text-red-100/70">
+                Vérifiez votre connexion internet, puis réessayez. Si le problème persiste, contactez le support Oracle Lumira.
+              </p>
+            </div>
+          </div>
+
+          <motion.button
+            type="button"
+            whileHover={{ scale: loading ? 1 : 1.02 }}
+            whileTap={{ scale: loading ? 1 : 0.98 }}
+            onClick={handleRetry}
+            disabled={loading}
+            className={cn(
+              'mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold',
+              'bg-gradient-to-r from-[#D4AF37] to-[#DAA520]',
+              'text-[#0F0B19] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+          >
+            <Loader2 className={cn('w-4 h-4', loading ? 'animate-spin' : '')} />
+            Réessayer
+          </motion.button>
+        </motion.div>
       </div>
     );
   }
