@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GlassCard from '../ui/GlassCard';
 import EmptyState from '../ui/EmptyState';
-import { FileText, Headphones, Image } from 'lucide-react';
+import { FileText, Headphones, Image, Lock } from 'lucide-react';
 import { SecondaryButton } from '../ui/Buttons';
 import AssetsModal from '../sanctuaire/AssetsModal';
 import { sanctuaireService } from '../../services/sanctuaire';
 import { useAudioPlayer } from '../../contexts/AudioPlayerContext';
+import { useEntitlements } from '../../hooks/useEntitlements';
+import { CapabilityGuard } from '../auth/CapabilityGuard';
 
 type Order = {
   id: string;
@@ -38,6 +40,7 @@ const RawDraws: React.FC = () => {
   const [pageSize] = useState(10);
   const navigate = useNavigate();
   const { play, setTrack } = useAudioPlayer();
+  const { hasCapability } = useEntitlements();
   const [modal, setModal] = useState<{ open: boolean; pdfUrl?: string; mandalaSvg?: string; title?: string }>({ open: false });
 
   useEffect(() => {
@@ -122,29 +125,94 @@ const RawDraws: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 ml-4">
-            <SecondaryButton onClick={async () => {
-              if (!o.pdfUrl) return;
-              const signed = await sanctuaireService.presignFileUrl(o.pdfUrl);
-              setModal({ open: true, pdfUrl: signed, title: o.title || 'Lecture PDF' });
-            }}> 
-              <FileText className="w-4 h-4 mr-2 inline" />
-              <span className="hidden sm:inline">Ouvrir</span>
-            </SecondaryButton>
+            {/* Bouton PDF - Toujours accessible pour les commandes complétées */}
+            <CapabilityGuard
+              requires="readings.pdf"
+              fallback={
+                <button
+                  disabled
+                  className="px-3 py-2 bg-gray-600/20 text-gray-400 rounded-lg flex items-center gap-2 cursor-not-allowed"
+                  title="PDF disponible avec niveau Initié"
+                >
+                  <Lock className="w-4 h-4" />
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline">PDF</span>
+                </button>
+              }
+            >
+              <SecondaryButton 
+                onClick={async () => {
+                  if (!o.pdfUrl) return;
+                  try {
+                    const signed = await sanctuaireService.getPresignedUrl(o.pdfUrl);
+                    setModal({ open: true, pdfUrl: signed, title: o.title || 'Lecture PDF' });
+                  } catch (err) {
+                    console.error('Erreur PDF:', err);
+                  }
+                }}
+                disabled={!o.pdfUrl}
+              > 
+                <FileText className="w-4 h-4 mr-2 inline" />
+                <span className="hidden sm:inline">PDF</span>
+              </SecondaryButton>
+            </CapabilityGuard>
 
-            <SecondaryButton onClick={async () => {
-              if (!o.audioUrl) return;
-              const signed = await sanctuaireService.presignFileUrl(o.audioUrl);
-              setTrack({ url: signed, title: o.title || 'Lecture audio' });
-              play({ url: signed, title: o.title || 'Lecture audio' });
-            }}>
-              <Headphones className="w-4 h-4 mr-2 inline" />
-              <span className="hidden sm:inline">Écouter</span>
-            </SecondaryButton>
+            {/* Bouton Audio - Nécessite capability readings.audio (niveau Mystique+) */}
+            <CapabilityGuard
+              requires="readings.audio"
+              fallback={
+                <button
+                  disabled
+                  className="px-3 py-2 bg-gray-600/20 text-gray-400 rounded-lg flex items-center gap-2 cursor-not-allowed"
+                  title="Audio disponible avec niveau Mystique"
+                >
+                  <Lock className="w-4 h-4" />
+                  <Headphones className="w-4 h-4" />
+                  <span className="hidden sm:inline">Audio</span>
+                </button>
+              }
+            >
+              <SecondaryButton 
+                onClick={async () => {
+                  if (!o.audioUrl) return;
+                  try {
+                    const signed = await sanctuaireService.getPresignedUrl(o.audioUrl);
+                    setTrack({ url: signed, title: o.title || 'Lecture audio' });
+                    play({ url: signed, title: o.title || 'Lecture audio' });
+                  } catch (err) {
+                    console.error('Erreur Audio:', err);
+                  }
+                }}
+                disabled={!o.audioUrl}
+              >
+                <Headphones className="w-4 h-4 mr-2 inline" />
+                <span className="hidden sm:inline">Audio</span>
+              </SecondaryButton>
+            </CapabilityGuard>
 
-            <SecondaryButton onClick={() => setModal({ open: true, mandalaSvg: o.mandalaSvg, title: 'Mandala HD' })}>
-              <Image className="w-4 h-4 mr-2 inline" />
-              <span className="hidden sm:inline">Mandala</span>
-            </SecondaryButton>
+            {/* Bouton Mandala - Nécessite capability mandala.hd (niveau Profond+) */}
+            <CapabilityGuard
+              requires="mandala.hd"
+              fallback={
+                <button
+                  disabled
+                  className="px-3 py-2 bg-gray-600/20 text-gray-400 rounded-lg flex items-center gap-2 cursor-not-allowed"
+                  title="Mandala HD disponible avec niveau Profond"
+                >
+                  <Lock className="w-4 h-4" />
+                  <Image className="w-4 h-4" />
+                  <span className="hidden sm:inline">Mandala</span>
+                </button>
+              }
+            >
+              <SecondaryButton 
+                onClick={() => setModal({ open: true, mandalaSvg: o.mandalaSvg, title: 'Mandala HD' })}
+                disabled={!o.mandalaSvg}
+              >
+                <Image className="w-4 h-4 mr-2 inline" />
+                <span className="hidden sm:inline">Mandala</span>
+              </SecondaryButton>
+            </CapabilityGuard>
           </div>
         </GlassCard>
       ))}

@@ -190,6 +190,24 @@ class SanctuaireService {
   }
 
   /**
+   * Obtenir une URL signée pour l'accès sécurisé aux fichiers
+   */
+  async getPresignedUrl(url: string): Promise<string> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Token d\'authentification requis');
+    }
+
+    const response = await apiRequest<{ signedUrl: string; expiresIn: number }>(`/users/files/presign?url=${encodeURIComponent(url)}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    return response.signedUrl;
+  }
+
+  /**
    * Télécharger un fichier (PDF, Audio)
    */
   async downloadFile(url: string, filename: string): Promise<void> {
