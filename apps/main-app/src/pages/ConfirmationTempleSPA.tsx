@@ -1,145 +1,152 @@
-// Oracle Lumira - Confirmation Page (SPA)
+// Oracle Lumira - Confirmation Page (SPA) - REFONTE SANCTUAIRE DYNAMIQUE
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, Loader, AlertCircle, Crown } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import ProductOrderService from '../services/productOrder';
-import { OrderStatus } from '../types/products';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
 import { useInitializeUserLevel } from '../contexts/UserLevelContext';
+import { useOrderStatus } from '../hooks/useOrderStatus';
 
 const ConfirmationTemple: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id');
   
-  const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Utiliser le nouveau hook de polling intelligent
+  const { 
+    orderStatus: status, 
+    orderData, 
+    accessGranted, 
+    sanctuaryUrl, 
+    isLoading, 
+    error: orderError,
+    stopPolling 
+  } = useOrderStatus(orderId || '', {
+    pollingInterval: 3000, // 3 secondes
+    maxPollingAttempts: 20, // 20 tentatives max (1 minute)
+    autoStart: !!orderId
+  });
+  
   const [error, setError] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const { initializeFromPurchase } = useInitializeUserLevel();
 
+  // Gestion de la redirection automatique quand l'accès est accordé
   useEffect(() => {
-    if (!orderId) {
-      setError('Identifiant de commande manquant');
-      setIsLoading(false);
-      return;
-    }
-
-    const checkOrderStatus = async () => {
+    if (accessGranted && orderData) {
+      console.log('[ConfirmationTemple] Accès accordé ! Démarrage du compte à rebours...');
+      
+      // Initialiser le contexte utilisateur
+      const productData = {
+        id: orderData.level.toString(),
+        name: orderData.levelName,
+        level: orderData.level as any,
+        amountCents: orderData.amount,
+        currency: 'eur',
+        description: `Niveau ${orderData.levelName}`,
+        features: [],
+        metadata: {},
+      };
+      
       try {
-        const status = await ProductOrderService.getOrderStatus(orderId);
-        setOrderStatus(status);
-        setIsLoading(false);
-
-        // If payment is successful, start countdown for auto-redirect
-        if (status.accessGranted) {
-          // Alimente le contexte et localStorage pour synchroniser l'order_id côté Sanctuaire
-          const productData = {
-            id: status.product.id,
-            name: status.product.name,
-            level: status.product.level as any,
-            amountCents: status.order.amount,
-            currency: status.order.currency,
-            description: `Niveau ${status.product.level}`,
-            features: [],
-            metadata: {},
-          };
-          try {
-            if (orderId) {
-              initializeFromPurchase(productData, orderId);
-            }
-            // Stocker le PaymentIntentId pour l'upload côté Sanctuaire
-            try {
-              const pi = status.order.paymentIntentId;
-              if (pi) {
-                localStorage.setItem('oraclelumira_last_payment_intent_id', pi);
-              }
-            } catch {}
-          } catch {}
-
-          const countdown = setInterval(() => {
-            setRedirectCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(countdown);
-                // Redirect with email and first-visit token for auto-login
-                const email = status.order.customerEmail || searchParams.get('email');
-                const token = `fv_${Date.now()}`;
-                const pi = status.order.paymentIntentId;
-                const parts: string[] = [];
-                if (email) parts.push(`email=${encodeURIComponent(email)}`);
-                parts.push(`token=${token}`);
-                if (orderId) parts.push(`order_id=${encodeURIComponent(orderId)}`);
-                if (pi) parts.push(`payment_intent=${encodeURIComponent(pi)}`);
-                const qs = parts.length ? `?${parts.join('&')}` : '';
-                navigate(`/sanctuaire${qs}`);
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-
-          // Cleanup interval on unmount
-          return () => clearInterval(countdown);
+        if (orderId) {
+          initializeFromPurchase(productData, orderId);
+        }
+        // Stocker le PaymentIntentId pour l'upload côté Sanctuaire
+        if (orderData.paymentIntentId) {
+          localStorage.setItem('oraclelumira_last_payment_intent_id', orderData.paymentIntentId);
         }
       } catch (err) {
-        console.error('Failed to check order status:', err);
-        setError(err instanceof Error ? err.message : 'Erreur lors de la vérification de la commande');
-        setIsLoading(false);
+        console.error('[ConfirmationTemple] Erreur initialisation contexte:', err);
       }
-    };
 
-    // Initial check
-    checkOrderStatus();
+      // Démarrer le compte à rebours
+      const countdown = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdown);
+            stopPolling();
+            
+            // Redirection avec paramètres d'auto-login
+            const email = searchParams.get('email');
+            const token = `fv_${Date.now()}`;
+            const pi = orderData.paymentIntentId;
+            const parts: string[] = [];
+            if (email) parts.push(`email=${encodeURIComponent(email)}`);
+            parts.push(`token=${token}`);
+            if (orderId) parts.push(`order_id=${encodeURIComponent(orderId)}`);
+            if (pi) parts.push(`payment_intent=${encodeURIComponent(pi)}`);
+            const qs = parts.length ? `?${parts.join('&')}` : '';
+            
+            navigate(`/sanctuaire${qs}`);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
 
-    // Poll for status updates (in case webhook hasn't processed yet)
-    const pollInterval = setInterval(checkOrderStatus, 2000);
+      return () => clearInterval(countdown);
+    }
+  }, [accessGranted, orderData, orderId, navigate, searchParams, initializeFromPurchase, stopPolling]);
 
-    // Stop polling after 30 seconds
-    const stopPolling = setTimeout(() => {
-      clearInterval(pollInterval);
-    }, 30000);
-
-    return () => {
-      clearInterval(pollInterval);
-      clearTimeout(stopPolling);
-    };
-  }, [orderId, navigate, searchParams]);
+  // Gérer les erreurs
+  useEffect(() => {
+    if (orderError) {
+      setError(orderError);
+    }
+    if (!orderId) {
+      setError('Identifiant de commande manquant');
+    }
+  }, [orderError, orderId]);
 
   const handleGoToSanctuary = () => {
-    // Redirect with email and first-visit token for auto-login
-    const email = orderStatus?.order.customerEmail || searchParams.get('email');
+    stopPolling();
+    
+    // Redirection avec email et token d'auto-login
+    const email = searchParams.get('email');
     const token = `fv_${Date.now()}`;
-    const pi = orderStatus?.order.paymentIntentId;
+    const pi = orderData?.paymentIntentId;
     const parts: string[] = [];
     if (email) parts.push(`email=${encodeURIComponent(email)}`);
     parts.push(`token=${token}`);
     if (orderId) parts.push(`order_id=${encodeURIComponent(orderId)}`);
     if (pi) parts.push(`payment_intent=${encodeURIComponent(pi)}`);
     const qs = parts.length ? `?${parts.join('&')}` : '';
+    
     // Stocker PI pour robustesse
-    try { if (pi) localStorage.setItem('oraclelumira_last_payment_intent_id', pi); } catch {}
+    try { 
+      if (pi) localStorage.setItem('oraclelumira_last_payment_intent_id', pi); 
+    } catch {}
+    
     navigate(`/sanctuaire${qs}`);
   };
 
   const handleBackToHome = () => {
+    stopPolling();
     navigate('/');
   };
 
   if (isLoading) {
     return (
       <PageLayout variant="dark" className="py-12">
-        <div className="flex items-center justify-center"><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center space-y-6">
-          <Loader className="w-12 h-12 text-mystical-gold animate-spin mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Vérification de votre commande...</h2>
-          <p className="text-gray-300">Nous vérifions le statut de votre paiement</p>
-        </motion.div></div>
+        <div className="flex items-center justify-center">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center space-y-6">
+            <Loader className="w-12 h-12 text-mystical-gold animate-spin mx-auto" />
+            <h2 className="text-2xl font-bold text-white">Préparation de votre Sanctuaire...</h2>
+            <p className="text-gray-300">Nous finalisons votre accès. Cela peut prendre quelques instants.</p>
+            <div className="mt-4 text-sm text-gray-400">
+              <p>✨ Vérification du paiement</p>
+              <p>🔐 Activation de vos privilèges</p>
+              <p>🏛️ Ouverture des portes du Sanctuaire</p>
+            </div>
+          </motion.div>
+        </div>
       </PageLayout>
     );
   }
 
-  if (error || !orderStatus) {
+  if (error || !orderData) {
     return (
       <PageLayout variant="dark" className="py-12">
         <div className="flex items-center justify-center">
@@ -156,7 +163,10 @@ const ConfirmationTemple: React.FC = () => {
     );
   }
 
-  const { order, product, accessGranted } = orderStatus;
+  // Données de la commande (depuis le nouveau hook)
+  const productName = orderData.levelName;
+  const orderAmount = orderData.amount;
+  const orderIdShort = orderData._id.substring(0, 8);
 
   // Success state - payment completed and access granted
   if (accessGranted) {
@@ -186,7 +196,7 @@ const ConfirmationTemple: React.FC = () => {
               Félicitations !
             </h1>
             <h2 className="text-2xl font-semibold text-white">
-              Votre accès au {product.name} est activé
+              Votre accès au {productName} est activé
             </h2>
             <p className="text-gray-300 max-w-md mx-auto">
               Votre paiement a été confirmé et vos privilèges mystiques sont maintenant disponibles.
@@ -208,17 +218,17 @@ const ConfirmationTemple: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-400">Niveau</span>
-                <p className="text-white font-semibold">{product.name}</p>
+                <p className="text-white font-semibold">{productName}</p>
               </div>
               <div>
                 <span className="text-gray-400">Montant</span>
                 <p className="text-white font-semibold">
-                  {ProductOrderService.formatPrice(order.amount)}
+                  {(orderAmount / 100).toFixed(2)} €
                 </p>
               </div>
               <div>
                 <span className="text-gray-400">Commande</span>
-                <p className="text-white font-mono text-xs">#{order.id.substring(0, 8)}</p>
+                <p className="text-white font-mono text-xs">#{orderIdShort}</p>
               </div>
               <div>
                 <span className="text-gray-400">Statut</span>
@@ -261,14 +271,23 @@ const ConfirmationTemple: React.FC = () => {
     );
   }
 
-  // Payment pending or failed state
+  // Payment pending or in progress state
   const getStatusInfo = () => {
-    switch (order.status) {
+    switch (status) {
       case 'pending':
+      case 'paid':
         return {
           icon: Loader,
-          title: 'Paiement en cours...',
-          message: 'Nous finalisons votre transaction. Veuillez patienter quelques instants.',
+          title: 'Votre Sanctuaire est en préparation...',
+          message: 'Nous finalisons l\'activation de vos privilèges mystiques. Vous serez redirigé automatiquement.',
+          color: 'text-mystical-gold',
+          bgColor: 'bg-mystical-gold/20',
+        };
+      case 'processing':
+        return {
+          icon: Loader,
+          title: 'Activation en cours...',
+          message: 'Votre accès est en cours d\'activation. Veuillez patienter quelques instants.',
           color: 'text-yellow-400',
           bgColor: 'bg-yellow-400/20',
         };
@@ -280,7 +299,7 @@ const ConfirmationTemple: React.FC = () => {
           color: 'text-red-400',
           bgColor: 'bg-red-400/20',
         };
-      case 'cancelled':
+      case 'refunded':
         return {
           icon: AlertCircle,
           title: 'Paiement annulé',
@@ -307,7 +326,7 @@ const ConfirmationTemple: React.FC = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto p-8 text-center space-y-6">
         {/* Status Icon */}
         <div className={`w-16 h-16 ${statusInfo.bgColor} rounded-full flex items-center justify-center mx-auto`}>
-          <StatusIcon className={`w-8 h-8 ${statusInfo.color} ${order.status === 'pending' ? 'animate-spin' : ''}`} />
+          <StatusIcon className={`w-8 h-8 ${statusInfo.color} ${(status === 'pending' || status === 'processing') ? 'animate-spin' : ''}`} />
         </div>
 
         {/* Status Message */}
@@ -318,16 +337,19 @@ const ConfirmationTemple: React.FC = () => {
 
         {/* Order Details */}
         <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-xl p-4 space-y-2">
-          <p className="text-sm text-gray-400">Commande #{order.id.substring(0, 8)}</p>
-          <p className="text-white font-semibold">{product.name}</p>
-          <p className="text-mystical-gold">{ProductOrderService.formatPrice(order.amount)}</p>
+          <p className="text-sm text-gray-400">Commande #{orderIdShort}</p>
+          <p className="text-white font-semibold">{productName}</p>
+          <p className="text-mystical-gold">{(orderAmount / 100).toFixed(2)} €</p>
         </div>
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          {order.status === 'failed' || order.status === 'cancelled' ? (
+          {status === 'failed' || status === 'refunded' ? (
             <button
-              onClick={() => navigate(`/commande?product=${product.id}`)}
+              onClick={() => {
+                stopPolling();
+                navigate(`/commande?product=${orderData.level}`);
+              }}
               className="w-full bg-mystical-gold text-mystical-dark px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold-light transition-colors"
             >
               Réessayer le paiement
@@ -343,9 +365,9 @@ const ConfirmationTemple: React.FC = () => {
         </div>
 
         {/* Help Text */}
-        {order.status === 'pending' && (
+        {(status === 'pending' || status === 'paid' || status === 'processing') && (
           <p className="text-xs text-gray-500">
-            Cette page se mettra à jour automatiquement dès que votre paiement sera confirmé.
+            Cette page se mettra à jour automatiquement dès que votre Sanctuaire sera prêt.
           </p>
         )}
       </motion.div>
@@ -354,4 +376,3 @@ const ConfirmationTemple: React.FC = () => {
 };
 
 export default ConfirmationTemple;
-
