@@ -51,86 +51,6 @@ router.get('/', authenticateToken, requireRole(['admin']), async (req: any, res:
   }
 });
 
-// Get user by ID
-router.get('/:id', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
-  try {
-    const user = await User.findById(req.params.id).select('-__v');
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ error: 'Failed to fetch user' });
-  }
-});
-
-// Update user
-router.patch('/:id', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
-  try {
-    const updates = req.body;
-    
-    // Remove fields that shouldn't be updated directly
-    delete updates._id;
-    delete updates.__v;
-    delete updates.createdAt;
-    
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { ...updates, updatedAt: new Date() },
-      { new: true, runValidators: true }
-    ).select('-__v');
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Update user error:', error);
-    res.status(400).json({ error: 'Failed to update user', details: error });
-  }
-});
-
-// Get user statistics
-router.get('/:id/stats', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
-  try {
-    const userId = req.params.id;
-    const { Order } = require('../models/Order');
-    
-    const [user, orders] = await Promise.all([
-      User.findById(userId),
-      Order.find({ userId }).sort({ createdAt: -1 })
-    ]);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const stats = {
-      user: user,
-      orderStats: {
-        total: orders.length,
-        completed: orders.filter((o: any) => o.status === 'completed').length,
-        pending: orders.filter((o: any) => o.status === 'pending').length,
-        totalSpent: orders.reduce((sum: number, o: any) => sum + o.amount, 0)
-      },
-      recentOrders: orders.slice(0, 5),
-      levelDistribution: orders.reduce((acc: any, order: any) => {
-        acc[order.level] = (acc[order.level] || 0) + 1;
-        return acc;
-      }, {})
-    };
-    
-    res.json(stats);
-  } catch (error) {
-    console.error('Get user stats error:', error);
-    res.status(500).json({ error: 'Failed to fetch user statistics' });
-  }
-});
-
 // SANCTUAIRE CLIENT ENDPOINTS
 
 // Authentification sanctuaire par email (génère un token temporaire)
@@ -225,6 +145,86 @@ const authenticateSanctuaire = async (req: any, res: any, next: any) => {
   }
 };
 
+// =================== ENDPOINT ENTITLEMENTS - SOURCE DE VÉRITÉ ===================
+// GET /api/users/entitlements - Récupère les capacités débloquées de l'utilisateur
+router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const userId = req.user._id;
+    const userEmail = req.user.email;
+    
+    console.log('[ENTITLEMENTS] Requête pour userId:', userId, 'email:', userEmail);
+    
+    // Récupérer toutes les commandes complétées de l'utilisateur
+    const completedOrders = await Order.find({
+      userId: userId,
+      status: 'completed'
+    }).select('level orderNumber paymentIntentId');
+    
+    // Récupérer aussi les ProductOrder complétées (nouveau système)
+    const completedProductOrders = await ProductOrder.find({
+      customerEmail: userEmail.toLowerCase(),
+      status: 'completed'
+    }).select('productId paymentIntentId');
+    
+    console.log('[ENTITLEMENTS] Orders trouvées:', completedOrders.length);
+    console.log('[ENTITLEMENTS] ProductOrders trouvées:', completedProductOrders.length);
+    
+    // Mapper les niveaux des Order vers productId
+    const levelToProductId: Record<number, string> = {
+      1: 'initie',
+      2: 'mystique',
+      3: 'profond',
+      4: 'integrale'
+    };
+    
+    const orderProductIds = completedOrders
+      .map(order => levelToProductId[order.level])
+      .filter(Boolean);
+    
+    const productOrderIds = completedProductOrders
+      .map(po => po.productId.toLowerCase());
+    
+    // Fusionner les deux listes et dédupliquer
+    const allProductIds = [...new Set([...orderProductIds, ...productOrderIds])];
+    
+    console.log('[ENTITLEMENTS] Produits détectés:', allProductIds);
+    
+    // Si aucun produit, retourner un tableau vide
+    if (allProductIds.length === 0) {
+      return res.json({
+        capabilities: [],
+        products: [],
+        highestLevel: null,
+        levelMetadata: null,
+        message: 'Aucune commande complétée trouvée'
+      });
+    }
+    
+    // Agréger toutes les capacités
+    const capabilities = aggregateCapabilities(allProductIds);
+    
+    // Déterminer le niveau le plus élevé
+    const highestLevel = getHighestLevel(allProductIds);
+    const levelMetadata = highestLevel ? getLevelMetadata(highestLevel) : null;
+    
+    console.log('[ENTITLEMENTS] Capacités débloquées:', capabilities.length);
+    console.log('[ENTITLEMENTS] Niveau le plus élevé:', highestLevel);
+    
+    res.json({
+      capabilities,
+      products: allProductIds,
+      highestLevel,
+      levelMetadata,
+      orderCount: completedOrders.length,
+      productOrderCount: completedProductOrders.length
+    });
+    
+  } catch (error) {
+    console.error('[ENTITLEMENTS] Erreur:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des entitlements' });
+  }
+});
+
 // Récupérer les commandes complétées de l'utilisateur (SANCTUAIRE)
 router.get('/orders/completed', authenticateSanctuaire, async (req: any, res: any) => {
   try {
@@ -310,83 +310,83 @@ router.get('/sanctuaire/stats', authenticateSanctuaire, async (req: any, res: an
   }
 });
 
-// =================== ENDPOINT ENTITLEMENTS - SOURCE DE VÉRITÉ ===================
-// GET /api/users/entitlements - Récupère les capacités débloquées de l'utilisateur
-router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) => {
+// Get user by ID
+router.get('/:id([0-9a-fA-F]{24})', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
   try {
-    const userId = req.user._id;
-    const userEmail = req.user.email;
+    const user = await User.findById(req.params.id).select('-__v');
     
-    console.log('[ENTITLEMENTS] Requête pour userId:', userId, 'email:', userEmail);
-    
-    // Récupérer toutes les commandes complétées de l'utilisateur
-    const completedOrders = await Order.find({
-      userId: userId,
-      status: 'completed'
-    }).select('level orderNumber paymentIntentId');
-    
-    // Récupérer aussi les ProductOrder complétées (nouveau système)
-    const completedProductOrders = await ProductOrder.find({
-      customerEmail: userEmail.toLowerCase(),
-      status: 'completed'
-    }).select('productId paymentIntentId');
-    
-    console.log('[ENTITLEMENTS] Orders trouvées:', completedOrders.length);
-    console.log('[ENTITLEMENTS] ProductOrders trouvées:', completedProductOrders.length);
-    
-    // Mapper les niveaux des Order vers productId
-    const levelToProductId: Record<number, string> = {
-      1: 'initie',
-      2: 'mystique',
-      3: 'profond',
-      4: 'integrale'
-    };
-    
-    const orderProductIds = completedOrders
-      .map(order => levelToProductId[order.level])
-      .filter(Boolean);
-    
-    const productOrderIds = completedProductOrders
-      .map(po => po.productId.toLowerCase());
-    
-    // Fusionner les deux listes et dédupliquer
-    const allProductIds = [...new Set([...orderProductIds, ...productOrderIds])];
-    
-    console.log('[ENTITLEMENTS] Produits détectés:', allProductIds);
-    
-    // Si aucun produit, retourner un tableau vide
-    if (allProductIds.length === 0) {
-      return res.json({
-        capabilities: [],
-        products: [],
-        highestLevel: null,
-        levelMetadata: null,
-        message: 'Aucune commande complétée trouvée'
-      });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
     
-    // Agréger toutes les capacités
-    const capabilities = aggregateCapabilities(allProductIds);
-    
-    // Déterminer le niveau le plus élevé
-    const highestLevel = getHighestLevel(allProductIds);
-    const levelMetadata = highestLevel ? getLevelMetadata(highestLevel) : null;
-    
-    console.log('[ENTITLEMENTS] Capacités débloquées:', capabilities.length);
-    console.log('[ENTITLEMENTS] Niveau le plus élevé:', highestLevel);
-    
-    res.json({
-      capabilities,
-      products: allProductIds,
-      highestLevel,
-      levelMetadata,
-      orderCount: completedOrders.length,
-      productOrderCount: completedProductOrders.length
-    });
-    
+    res.json(user);
   } catch (error) {
-    console.error('[ENTITLEMENTS] Erreur:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération des entitlements' });
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+// Update user
+router.patch('/:id([0-9a-fA-F]{24})', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
+  try {
+    const updates = req.body;
+    
+    // Remove fields that shouldn't be updated directly
+    delete updates._id;
+    delete updates.__v;
+    delete updates.createdAt;
+    
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { ...updates, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    ).select('-__v');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(400).json({ error: 'Failed to update user', details: error });
+  }
+});
+
+// Get user statistics
+router.get('/:id([0-9a-fA-F]{24})/stats', authenticateToken, requireRole(['admin']), async (req: any, res: any) => {
+  try {
+    const userId = req.params.id;
+    const { Order } = require('../models/Order');
+    
+    const [user, orders] = await Promise.all([
+      User.findById(userId),
+      Order.find({ userId }).sort({ createdAt: -1 })
+    ]);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const stats = {
+      user: user,
+      orderStats: {
+        total: orders.length,
+        completed: orders.filter((o: any) => o.status === 'completed').length,
+        pending: orders.filter((o: any) => o.status === 'pending').length,
+        totalSpent: orders.reduce((sum: number, o: any) => sum + o.amount, 0)
+      },
+      recentOrders: orders.slice(0, 5),
+      levelDistribution: orders.reduce((acc: any, order: any) => {
+        acc[order.level] = (acc[order.level] || 0) + 1;
+        return acc;
+      }, {})
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Get user stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch user statistics' });
   }
 });
 
@@ -494,3 +494,4 @@ router.get('/files/presign', async (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to generate signed URL' });
   }
 });
+
