@@ -56,7 +56,7 @@ const apiLimiter = rateLimit({
     if (forwardedFor && typeof forwardedFor === 'string') {
       return forwardedFor.split(',')[0].trim();
     }
-    return req.ip;
+    return req.ip || 'unknown';
   },
 });
 
