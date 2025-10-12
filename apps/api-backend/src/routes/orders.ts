@@ -8,34 +8,91 @@ import { getS3Service } from '../services/s3';
 
 const router = express.Router();
 
-// Configuration Multer pour upload de fichiers en mémoire (S3)
-const upload = multer({ 
+// Fonction de validation stricte des fichiers avec vérification des "magic numbers"
+const validateFileHeader = (buffer: Buffer, mimetype: string): boolean => {
+  const magicNumbers: Record<string, number[]> = {
+    'image/jpeg': [0xFF, 0xD8, 0xFF],
+    'image/png': [0x89, 0x50, 0x4E, 0x47]
+  };
+
+  const expectedSignature = magicNumbers[mimetype];
+  if (!expectedSignature) {
+    return false;
+  }
+
+  // Vérifier que le buffer a au moins la taille de la signature
+  if (buffer.length < expectedSignature.length) {
+    return false;
+  }
+
+  // Comparer les premiers octets avec la signature attendue
+  for (let i = 0; i < expectedSignature.length; i++) {
+    if (buffer[i] !== expectedSignature[i]) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+// Configuration Multer sécurisée pour upload de fichiers
+const secureUpload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 5 * 1024 * 1024, // 5MB - limite réduite pour plus de sécurité
+    files: 2, // Maximum 2 fichiers
+    fieldSize: 1024 * 1024 // 1MB pour les champs de formulaire
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-      'image/heic', 'image/heif' // Support formats iPhone
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Type de fichier non autorisé'));
+    // Seuls JPEG et PNG authentiques sont autorisés
+    const allowedTypes = ['image/jpeg', 'image/png'];
+    
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error('Type de fichier non autorisé. Seuls JPEG et PNG sont acceptés.'));
     }
+
+    // Validation supplémentaire du nom de fichier
+    const allowedExtensions = /\.(jpg|jpeg|png)$/i;
+    if (!allowedExtensions.test(file.originalname)) {
+      return cb(new Error('Extension de fichier non autorisée.'));
+    }
+
+    cb(null, true);
   }
 });
 
-// Uploader permissif pour éviter les erreurs de type MIME
-const uploadPermissive = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }
-});
+// Middleware de validation des magic numbers (appliqué après multer)
+const validateFileContent = (req: any, res: any, next: any) => {
+  try {
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      
+      // Vérifier chaque fichier uploadé
+      for (const fieldName in files) {
+        for (const file of files[fieldName]) {
+          if (!validateFileHeader(file.buffer, file.mimetype)) {
+            return res.status(400).json({
+              error: 'Fichier corrompu ou type de fichier falsifié détecté.',
+              field: fieldName,
+              filename: file.originalname
+            });
+          }
+        }
+      }
+    }
+    next();
+  } catch (error) {
+    console.error('[FILE-VALIDATION] Erreur de validation:', error);
+    return res.status(500).json({ error: 'Erreur lors de la validation des fichiers.' });
+  }
+};
+
+
 
 // Client submission: attach uploaded files + form data by paymentIntentId
 router.post('/by-payment-intent/:paymentIntentId/client-submit', 
-  uploadPermissive.fields([{ name: 'facePhoto', maxCount: 1 }, { name: 'palmPhoto', maxCount: 1 }]),
+  secureUpload.fields([{ name: 'facePhoto', maxCount: 1 }, { name: 'palmPhoto', maxCount: 1 }]),
+  validateFileContent,
   async (req: any, res: any) => {
   try {
     // =================== INSTRUMENTATION AGRESSIVE CLIENT-SUBMIT ===================
