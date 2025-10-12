@@ -78,6 +78,8 @@ router.post(
         return;
       }
 
+      const useMockStripe = process.env.STRIPE_MOCK_MODE === 'true';
+
       // Validate product exists
       const product = getProductById(productId);
       if (!product) {
@@ -117,7 +119,7 @@ router.post(
       }
 
       // Validate Stripe environment
-      if (!process.env.STRIPE_SECRET_KEY) {
+      if (!useMockStripe && !process.env.STRIPE_SECRET_KEY) {
         console.error(`[${requestId}] Missing STRIPE_SECRET_KEY environment variable`);
         res.status(502).json({
           error: 'Payment service configuration error',
@@ -126,6 +128,54 @@ router.post(
           timestamp: new Date().toISOString(),
           requestId,
         });
+        return;
+      }
+
+      if (useMockStripe) {
+        console.log(`[${requestId}] STRIPE_MOCK_MODE enabled - simulating payment intent`);
+        const now = new Date();
+        const mockPaymentIntentId = `pi_mock_${startTime}_${Math.random().toString(36).substring(2, 10)}`;
+        const mockClientSecret = `${mockPaymentIntentId}_secret_mock`;
+
+        await ProductOrder.create({
+          productId,
+          customerEmail,
+          amount: product.amountCents,
+          currency: product.currency,
+          status: 'completed',
+          paymentIntentId: mockPaymentIntentId,
+          createdAt: now,
+          updatedAt: now,
+          completedAt: now,
+          metadata: {
+            ...metadata,
+            productName: product.name,
+            level: product.level,
+            requestId,
+            mockMode: true,
+            customerName: customerName || '',
+            customerPhone: customerPhone || '',
+          },
+        });
+
+        const response: CreatePaymentIntentResponse = {
+          clientSecret: mockClientSecret,
+          orderId: mockPaymentIntentId,
+          amount: product.amountCents,
+          currency: product.currency,
+          productName: product.name,
+        };
+
+        const processingTime = Date.now() - startTime;
+        console.log(`[${requestId}] MOCK SUCCESS - PaymentIntent simulated`, {
+          orderId: response.orderId,
+          productId,
+          amount: response.amount,
+          processingTimeMs: processingTime,
+          timestamp: new Date().toISOString(),
+        });
+
+        res.status(200).json(response);
         return;
       }
 
