@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "body": {
+    "clientSecret": "pi_mock_1760300482783_ameov1ie_secret_mock",
+    "orderId": "pi_mock_1760300482783_ameov1ie",
+    "amount": 2700,
+    "currency": "eur",
+    "productName": "Niveau Initié"
+  },
+  "requestPayload": {
+    "productId": "initie",
+    "customerEmail": "initiated.qa@example.com",
+    "customerName": "QA Initiée",
+    "customerPhone": "+33123456789",
+    "metadata": {
+      "scenario": "initié-purchase-flow",
+      "initiatedBy": "qa-script"
+    }
+  }
+}

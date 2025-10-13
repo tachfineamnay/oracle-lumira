@@ -25,12 +25,15 @@
   ],
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "concurrently": "^8.0.0"
+    "concurrently": "^8.0.0",
+    "playwright": "^1.48.2"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^4.0.0",
     "@stripe/stripe-js": "^7.9.0",
     "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb-memory-server": "^10.1.4",
     "mongoose": "^8.18.0"
   }
 }

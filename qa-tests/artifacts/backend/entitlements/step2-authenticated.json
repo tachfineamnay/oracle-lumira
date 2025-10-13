@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "body": {
+    "capabilities": [
+      "content.basic",
+      "meditations.access",
+      "readings.pdf",
+      "audio.basic",
+      "mandala.basic",
+      "community.access",
+      "upload.photos",
+      "sanctuaire.sphere.profile",
+      "sanctuaire.sphere.readings"
+    ],
+    "products": [
+      "initie"
+    ],
+    "highestLevel": "initie",
+    "levelMetadata": {
+      "name": "Initié",
+      "color": "#4F46E5",
+      "icon": "🌟"
+    },
+    "orderCount": 0,
+    "productOrderCount": 1
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "status": 400,
+  "data": {
+    "error": "Fichier corrompu ou type de fichier falsifié détecté.",
+    "field": "facePhoto",
+    "filename": "fake.png"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "body": {
+    "capabilities": [
+      "content.basic",
+      "meditations.access",
+      "readings.pdf",
+      "audio.basic",
+      "mandala.basic",
+      "community.access",
+      "upload.photos",
+      "sanctuaire.sphere.profile",
+      "sanctuaire.sphere.readings",
+      "content.advanced",
+      "meditations.advanced",
+      "rituals.access",
+      "readings.audio",
+      "audio.full",
+      "analysis.soul_profile",
+      "analysis.blockages",
+      "events.access",
+      "followup.7days",
+      "sanctuaire.sphere.rituals",
+      "sanctuaire.sphere.mandala"
+    ],
+    "products": [
+      "mystique"
+    ],
+    "highestLevel": "mystique",
+    "levelMetadata": {
+      "name": "Mystique",
+      "color": "#7C3AED",
+      "icon": "🔮"
+    },
+    "orderCount": 1,
+    "productOrderCount": 1
+  }
+}

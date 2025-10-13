@@ -1,0 +1,61 @@
+{
+  "status": 200,
+  "data": {
+    "success": true,
+    "order": {
+      "orderNumber": "LUM-1760319625085",
+      "userId": "68ec5889d8c62dd2a0f95db9",
+      "userEmail": "mystique.qa@example.com",
+      "level": 2,
+      "levelName": "Intuitive",
+      "amount": 0,
+      "currency": "eur",
+      "status": "paid",
+      "paymentIntentId": "pi_mock_1760319623229_pwlsvvxn",
+      "paidAt": "2025-10-13T01:40:25.085Z",
+      "formData": {
+        "firstName": "Mystique.qa",
+        "lastName": "Client",
+        "email": "mystique.qa@example.com",
+        "phone": "+33123456789",
+        "specificQuestion": "Je souhaite une guidance mystique.",
+        "preferences": {
+          "audioVoice": "feminine",
+          "deliveryFormat": "email"
+        }
+      },
+      "expertReview": {
+        "status": "pending"
+      },
+      "expertValidation": {
+        "validationStatus": "pending"
+      },
+      "revisionCount": 0,
+      "_id": "68ec5889d8c62dd2a0f95dbb",
+      "files": [
+        {
+          "name": "face.jpg",
+          "url": "https://mock-s3.local/qa-test-bucket/uploads/2025/10/1760319625111-face_photo-face.jpg",
+          "key": "uploads/2025/10/1760319625111-face_photo-face.jpg",
+          "contentType": "image/jpeg",
+          "size": 12,
+          "type": "face_photo",
+          "uploadedAt": "2025-10-13T01:40:25.111Z",
+          "_id": "68ec5889d8c62dd2a0f95dbd"
+        },
+        {
+          "name": "palm.jpg",
+          "url": "https://mock-s3.local/qa-test-bucket/uploads/2025/10/1760319625111-palm_photo-palm.jpg",
+          "key": "uploads/2025/10/1760319625111-palm_photo-palm.jpg",
+          "contentType": "image/jpeg",
+          "size": 12,
+          "type": "palm_photo",
+          "uploadedAt": "2025-10-13T01:40:25.112Z",
+          "_id": "68ec5889d8c62dd2a0f95dbe"
+        }
+      ],
+      "createdAt": "2025-10-13T01:40:25.095Z",
+      "updatedAt": "2025-10-13T01:40:25.122Z"
+    }
+  }
+}
