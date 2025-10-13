@@ -205,7 +205,13 @@ async function run() {
     } else {
       vite = spawn('npm', ['run','preview','--','--port','5173','--strictPort'], { cwd: FRONT_DIR, env: frontEnv, stdio: ['ignore','pipe','pipe'] });
     }
-    await waitForLog(vite, 'Local:', 120000);
+    // Wait for Vite to be ready (try multiple possible messages)
+    await Promise.race([
+      waitForLog(vite, 'Local:', 120000),
+      waitForLog(vite, 'http://localhost:5173', 120000),
+      waitForLog(vite, 'ready in', 120000),
+      new Promise(resolve => setTimeout(resolve, 5000)) // 5s fallback
+    ]);
 
     // Use Playwright to capture Sanctuaire with token in localStorage
     const { chromium } = require('playwright');

@@ -1,22 +1,22 @@
 {
-  "_id": "68ec5887d8c62dd2a0f95da7",
+  "_id": "68ed0810651561368def5a99",
   "productId": "mystique",
   "customerEmail": "mystique.qa@example.com",
   "amount": 4700,
   "currency": "eur",
   "status": "completed",
-  "paymentIntentId": "pi_mock_1760319623229_pwlsvvxn",
-  "completedAt": "2025-10-13T01:40:23.230Z",
+  "paymentIntentId": "pi_mock_1760364560905_s40u6ia3",
+  "completedAt": "2025-10-13T14:09:20.907Z",
   "metadata": {
     "scenario": "white-glove",
     "productName": "Niveau Mystique",
     "level": "mystique",
-    "requestId": "req_1760319623229_3ezkz9p",
+    "requestId": "req_1760364560905_aofd8zf",
     "mockMode": true,
     "customerName": "QA Mystique",
     "customerPhone": ""
   },
-  "createdAt": "2025-10-13T01:40:23.230Z",
-  "updatedAt": "2025-10-13T01:40:23.230Z",
+  "createdAt": "2025-10-13T14:09:20.907Z",
+  "updatedAt": "2025-10-13T14:09:20.907Z",
   "__v": 0
 }

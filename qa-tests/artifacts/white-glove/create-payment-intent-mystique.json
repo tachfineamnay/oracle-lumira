@@ -1,8 +1,8 @@
 {
   "status": 200,
   "body": {
-    "clientSecret": "pi_mock_1760319623229_pwlsvvxn_secret_mock",
-    "orderId": "pi_mock_1760319623229_pwlsvvxn",
+    "clientSecret": "pi_mock_1760364560905_s40u6ia3_secret_mock",
+    "orderId": "pi_mock_1760364560905_s40u6ia3",
     "amount": 4700,
     "currency": "eur",
     "productName": "Niveau Mystique"
