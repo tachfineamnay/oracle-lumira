@@ -4,6 +4,7 @@ import LandingTempleRefonte from './pages/LandingTempleRefonte';
 import CommandeTempleSPA from './pages/CommandeTempleSPA';
 import ConfirmationTempleSPA from './pages/ConfirmationTempleSPA';
 import ConfirmationPage from './pages/ConfirmationPage';
+import PaymentSuccessRedirect from './pages/PaymentSuccessRedirect';
 import SanctuairePage from './pages/SanctuairePage';
 import CommandeTemple from './pages/CommandeTemple';
 import ConfirmationTemple from './pages/ConfirmationTemple';
@@ -29,6 +30,7 @@ const AppRoutes: React.FC = () => (
     <Route path="/" element={<LandingTempleRefonte />} />
     <Route path="/commande" element={<CommandeTempleSPA />} />
     <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
+    <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     

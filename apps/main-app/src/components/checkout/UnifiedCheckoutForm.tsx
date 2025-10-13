@@ -25,7 +25,8 @@ const stripeAppearance: Appearance = {
   theme: 'night',
   variables: {
     colorPrimary: '#D4AF37',
-    colorBackground: 'rgba(15, 11, 25, 0.4)',
+    // Stripe Appearance API does not accept rgba() here; use hex/rgb/hsl only
+    colorBackground: '#0F0B19',
     colorText: '#ffffff',
     colorDanger: '#ef4444',
     colorSuccess: '#10b981',
@@ -37,13 +38,15 @@ const stripeAppearance: Appearance = {
     spacingGridRow: '16px',
     spacingGridColumn: '16px',
     borderRadius: '12px',
-    focusBoxShadow: '0 0 0 2px rgba(212, 175, 55, 0.3)',
+    // Use a visible focus without rgba
+    focusBoxShadow: '0 0 0 2px #D4AF37',
     focusOutline: 'none',
   },
   rules: {
     '.Input': {
-      backgroundColor: 'rgba(15, 11, 25, 0.4)',
-      backdropFilter: 'blur(8px)',
+      // Use solid background supported by Appearance rules
+      backgroundColor: '#0F0B19',
+      // backdropFilter is not supported by Stripe Appearance; remove it
       border: '1px solid rgba(212, 175, 55, 0.4)',
       padding: '24px 16px 8px 16px',
       fontSize: '16px',
