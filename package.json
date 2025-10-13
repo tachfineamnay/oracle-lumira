@@ -16,7 +16,8 @@
     "docker:run": "docker run -p 3000:80 oracle-main",
     "install:main": "cd apps/main-app && npm install",
     "install:desk": "cd apps/expert-desk && npm install",
-    "install:all": "npm run install:main && npm run install:desk"
+    "install:all": "npm run install:main && npm run install:desk",
+    "test:e2e": "playwright test"
   },
   "workspaces": [
     "apps/main-app",
