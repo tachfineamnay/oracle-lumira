@@ -86,7 +86,7 @@ const allowedOrigins = envCors.length > 0 ? envCors : [
 // Production-ready CORS configuration
 const corsOptions = {
   origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
   credentials: false, // No cookies needed for API
   optionsSuccessStatus: 204, // Proper preflight response
