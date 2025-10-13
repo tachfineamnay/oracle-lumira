@@ -87,7 +87,8 @@ const allowedOrigins = envCors.length > 0 ? envCors : [
 const corsOptions = {
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
+  // Be permissive enough to satisfy modern browsers' preflight checks
+  allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature', 'Accept', 'Origin', 'X-Requested-With'],
   credentials: false, // No cookies needed for API
   optionsSuccessStatus: 204, // Proper preflight response
 };
@@ -95,9 +96,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Explicit OPTIONS handler for preflight requests
-app.options('*', (req, res) => {
-  res.sendStatus(204);
-});
+// Let CORS middleware respond to preflight with proper headers
+app.options('*', cors(corsOptions));
 
 console.log('? [API] server.ts - CORS configured for production');
 
