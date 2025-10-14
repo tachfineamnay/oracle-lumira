@@ -577,25 +577,32 @@ router.get('/', async (req: any, res: any) => {
 router.get('/:id', async (req: any, res: any) => {
   try {
     const { id } = req.params;
+    console.log('[GET-ORDER] Recherche commande avec ID:', id);
     
     // Try to find by PaymentIntent ID first (pi_xxx format)
     let order;
     if (id.startsWith('pi_')) {
+      console.log('[GET-ORDER] Détection PaymentIntent ID, recherche par paymentIntentId...');
       order = await Order.findOne({ paymentIntentId: id })
         .populate('userId', 'firstName lastName email phone stripeCustomerId');
+      console.log('[GET-ORDER] Résultat findOne:', order ? 'TROUVÉ' : 'NON TROUVÉ');
     } else {
+      console.log('[GET-ORDER] Détection ObjectId, recherche par _id...');
       // Otherwise try MongoDB ObjectId
       order = await Order.findById(id)
         .populate('userId', 'firstName lastName email phone stripeCustomerId');
+      console.log('[GET-ORDER] Résultat findById:', order ? 'TROUVÉ' : 'NON TROUVÉ');
     }
     
     if (!order) {
+      console.log('[GET-ORDER] ERREUR 404 - Commande non trouvée pour ID:', id);
       return res.status(404).json({ error: 'Order not found' });
     }
     
+    console.log('[GET-ORDER] SUCCESS - Commande trouvée:', order._id);
     res.json(order);
   } catch (error) {
-    console.error('Get order error:', error);
+    console.error('[GET-ORDER] ERREUR CRITIQUE:', error);
     res.status(500).json({ error: 'Failed to fetch order' });
   }
 });
