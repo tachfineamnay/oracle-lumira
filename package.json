@@ -17,7 +17,8 @@
     "install:main": "cd apps/main-app && npm install",
     "install:desk": "cd apps/expert-desk && npm install",
     "install:all": "npm run install:main && npm run install:desk",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:webhook": "node qa-tests/stripe-webhook-qa.cjs"
   },
   "workspaces": [
     "apps/main-app",
