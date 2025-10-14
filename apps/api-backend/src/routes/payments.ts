@@ -172,6 +172,7 @@ router.post('/webhook', async (req, res) => {
         break;
 
       default:
+        console.log('Unhandled event type:', event.type);
         break;
     }
   } catch (error) {

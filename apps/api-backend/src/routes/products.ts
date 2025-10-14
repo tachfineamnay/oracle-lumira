@@ -701,16 +701,19 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
   });
 
   try {
-    // Update order status in DB
+    // Update order status in DB (idempotent)
     const orderDoc = await ProductOrder.findOne({ paymentIntentId: paymentIntent.id });
-    if (orderDoc) {
+    if (!orderDoc) {
+      console.warn('ProductOrder not found in DB for paymentIntent:', paymentIntent.id);
+    } else if (orderDoc.status === 'completed') {
+      console.log('Webhook already processed for this ProductOrder:', orderDoc.paymentIntentId);
+    } else {
+      console.log('ProductOrder found. Updating status to completed...', orderDoc.paymentIntentId);
       orderDoc.status = 'completed' as any;
       orderDoc.completedAt = new Date();
       orderDoc.updatedAt = new Date();
       await orderDoc.save();
-      console.log('Order updated to completed:', orderDoc.paymentIntentId);
-    } else {
-      console.warn('Order not found in DB for paymentIntent:', paymentIntent.id);
+      console.log('ProductOrder saved successfully as completed:', orderDoc.paymentIntentId);
     }
 
     // 🆕 AUTO-CREATE SANCTUAIRE PROFILE from payment data

@@ -1,6 +1,7 @@
 import express from 'express';
 import Stripe from 'stripe';
 import { Order } from '../models/Order';
+import { ProductOrder } from '../models/ProductOrder';
 import { User } from '../models/User';
 
 const router = express.Router();
@@ -199,22 +200,48 @@ async function createOrder(
 }
 
 async function handlePaymentSuccess(paymentIntent: any) {
-  console.log('Payment succeeded:', paymentIntent.id);
-  
-  const order = await Order.findOne({ paymentIntentId: paymentIntent.id });
-  if (order) {
-    order.status = 'paid';
-    await order.save();
-    
-    // Update user stats
-    await User.findByIdAndUpdate(order.userId, {
-      $inc: { totalOrders: 1 },
-      lastOrderAt: new Date(),
-      subscriptionStatus: 'active'
-    });
-    
-    // TODO: Trigger n8n workflow for content generation
-    console.log(`Order ${order.orderNumber} paid successfully - ready for processing`);
+  console.log('Webhook payment_intent.succeeded received:', paymentIntent.id);
+
+  // 1) Ensure ProductOrder is marked completed (idempotent)
+  try {
+    const productOrder = await ProductOrder.findOne({ paymentIntentId: paymentIntent.id });
+    if (!productOrder) {
+      console.warn('ProductOrder not found for paymentIntent:', paymentIntent.id);
+    } else if (productOrder.status === 'completed') {
+      console.log('Webhook already processed for this ProductOrder:', paymentIntent.id);
+    } else {
+      console.log('ProductOrder found. Updating status to completed...', productOrder.paymentIntentId);
+      productOrder.status = 'completed' as any;
+      productOrder.completedAt = new Date();
+      productOrder.updatedAt = new Date();
+      await productOrder.save();
+      console.log('ProductOrder saved successfully as completed:', productOrder.paymentIntentId);
+    }
+  } catch (err) {
+    console.error('Error updating ProductOrder on webhook:', err);
+  }
+
+  // 2) Maintain legacy Order updates (paid) with logs
+  try {
+    const order = await Order.findOne({ paymentIntentId: paymentIntent.id });
+    if (order) {
+      if (order.status !== 'paid') {
+        order.status = 'paid';
+        await order.save();
+        console.log(`Order ${order.orderNumber} updated to paid.`);
+      } else {
+        console.log(`Order ${order.orderNumber} already marked as paid.`);
+      }
+
+      // Update user stats
+      await User.findByIdAndUpdate(order.userId, {
+        $inc: { totalOrders: 1 },
+        lastOrderAt: new Date(),
+        subscriptionStatus: 'active'
+      });
+    }
+  } catch (err) {
+    console.error('Error updating legacy Order on webhook:', err);
   }
 }
 
