@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { Order } from '../models/Order';
+import { ProductOrder } from '../models/ProductOrder';
 import { User } from '../models/User';
 import jwt from 'jsonwebtoken';
 import { StripeService } from '../services/stripe';
@@ -574,18 +575,74 @@ router.get('/', async (req: any, res: any) => {
 });
 
 // Get order by ID or PaymentIntent ID
+// TACTICAL FIX: Fallback to ProductOrder if Order not found
 router.get('/:id', async (req: any, res: any) => {
   try {
     const { id } = req.params;
     console.log('[GET-ORDER] Recherche commande avec ID:', id);
     
-    // Try to find by PaymentIntent ID first (pi_xxx format)
+    // Strategy 1: Try to find by PaymentIntent ID first (pi_xxx format)
     let order;
     if (id.startsWith('pi_')) {
       console.log('[GET-ORDER] Détection PaymentIntent ID, recherche par paymentIntentId...');
       order = await Order.findOne({ paymentIntentId: id })
         .populate('userId', 'firstName lastName email phone stripeCustomerId');
-      console.log('[GET-ORDER] Résultat findOne:', order ? 'TROUVÉ' : 'NON TROUVÉ');
+      console.log('[GET-ORDER] Résultat Order.findOne:', order ? 'TROUVÉ' : 'NON TROUVÉ');
+      
+      // Strategy 2: Fallback to ProductOrder if Order not found
+      if (!order) {
+        console.log('[GET-ORDER] Order not found, searching in ProductOrder collection...');
+        const productOrder = await ProductOrder.findOne({ paymentIntentId: id });
+        console.log('[GET-ORDER] Résultat ProductOrder.findOne:', productOrder ? 'TROUVÉ' : 'NON TROUVÉ');
+        
+        if (productOrder) {
+          // Build a compatible response for the frontend
+          console.log('[GET-ORDER] ProductOrder trouvée, construction réponse compatible');
+          
+          // Map ProductOrder status to Order status expectations
+          const statusMapping: Record<string, string> = {
+            'pending': 'pending',
+            'processing': 'processing',
+            'completed': 'paid', // Payment succeeded but Order not yet created
+            'failed': 'failed',
+            'cancelled': 'refunded'
+          };
+          
+          const mappedStatus = statusMapping[productOrder.status] || 'pending';
+          
+          // Determine if access should be granted
+          const accessGranted = productOrder.status === 'completed';
+          
+          const compatibleResponse = {
+            _id: productOrder._id,
+            orderNumber: `TEMP-${productOrder.paymentIntentId.slice(-8)}`,
+            paymentIntentId: productOrder.paymentIntentId,
+            status: mappedStatus,
+            amount: productOrder.amount,
+            currency: productOrder.currency,
+            userEmail: productOrder.customerEmail,
+            productId: productOrder.productId,
+            createdAt: productOrder.createdAt,
+            updatedAt: productOrder.updatedAt,
+            // Frontend compatibility fields
+            accessGranted,
+            sanctuaryUrl: accessGranted ? '/sanctuaire' : null,
+            message: accessGranted 
+              ? 'Payment successful. Please complete your Sanctuaire profile.' 
+              : 'Order is being processed.',
+            // Flag to indicate this is from ProductOrder (for debugging)
+            _source: 'ProductOrder'
+          };
+          
+          console.log('[GET-ORDER] SUCCESS - ProductOrder mappée en réponse compatible:', {
+            paymentIntentId: productOrder.paymentIntentId,
+            status: compatibleResponse.status,
+            accessGranted
+          });
+          
+          return res.json(compatibleResponse);
+        }
+      }
     } else {
       console.log('[GET-ORDER] Détection ObjectId, recherche par _id...');
       // Otherwise try MongoDB ObjectId
@@ -599,7 +656,7 @@ router.get('/:id', async (req: any, res: any) => {
       return res.status(404).json({ error: 'Order not found' });
     }
     
-    console.log('[GET-ORDER] SUCCESS - Commande trouvée:', order._id);
+    console.log('[GET-ORDER] SUCCESS - Order trouvée:', order._id);
     res.json(order);
   } catch (error) {
     console.error('[GET-ORDER] ERREUR CRITIQUE:', error);
