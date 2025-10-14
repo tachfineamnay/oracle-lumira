@@ -25,6 +25,7 @@
     "apps/shared"
   ],
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@types/node": "^20.0.0",
     "concurrently": "^8.0.0",
     "playwright": "^1.48.2"

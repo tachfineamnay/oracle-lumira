@@ -1,15 +1,15 @@
 {
-  "_id": "68ed0812651561368def5aab",
-  "orderNumber": "LUM-1760364562724",
-  "userId": "68ed0812651561368def5aa9",
+  "_id": "68ee44da0196890ffd77e554",
+  "orderNumber": "LUM-1760445658543",
+  "userId": "68ee44da0196890ffd77e552",
   "userEmail": "mystique.qa@example.com",
   "level": 2,
   "levelName": "Intuitive",
   "amount": 0,
   "currency": "eur",
   "status": "completed",
-  "paymentIntentId": "pi_mock_1760364560905_s40u6ia3",
-  "paidAt": "2025-10-13T14:09:22.725Z",
+  "paymentIntentId": "pi_mock_1760445656978_avqhqsf0",
+  "paidAt": "2025-10-14T12:40:58.544Z",
   "formData": {
     "firstName": "Mystique.qa",
     "lastName": "Client",
@@ -26,36 +26,36 @@
   },
   "expertValidation": {
     "validationStatus": "approved",
-    "validatedAt": "2025-10-13T14:09:22.849Z"
+    "validatedAt": "2025-10-14T12:40:58.666Z"
   },
   "revisionCount": 0,
   "files": [
     {
       "name": "face.jpg",
-      "url": "https://mock-s3.local/qa-test-bucket/uploads/2025/10/1760364562749-face_photo-face.jpg",
-      "key": "uploads/2025/10/1760364562749-face_photo-face.jpg",
+      "url": "https://mock-s3.local/qa-test-bucket/uploads/2025/10/1760445658566-face_photo-face.jpg",
+      "key": "uploads/2025/10/1760445658566-face_photo-face.jpg",
       "contentType": "image/jpeg",
       "size": 12,
       "type": "face_photo",
-      "uploadedAt": "2025-10-13T14:09:22.751Z",
-      "_id": "68ed0812651561368def5aad"
+      "uploadedAt": "2025-10-14T12:40:58.567Z",
+      "_id": "68ee44da0196890ffd77e556"
     },
     {
       "name": "palm.jpg",
-      "url": "https://mock-s3.local/qa-test-bucket/uploads/2025/10/1760364562751-palm_photo-palm.jpg",
-      "key": "uploads/2025/10/1760364562751-palm_photo-palm.jpg",
+      "url": "https://mock-s3.local/qa-test-bucket/uploads/2025/10/1760445658567-palm_photo-palm.jpg",
+      "key": "uploads/2025/10/1760445658567-palm_photo-palm.jpg",
       "contentType": "image/jpeg",
       "size": 12,
       "type": "palm_photo",
-      "uploadedAt": "2025-10-13T14:09:22.751Z",
-      "_id": "68ed0812651561368def5aae"
+      "uploadedAt": "2025-10-14T12:40:58.568Z",
+      "_id": "68ee44da0196890ffd77e557"
     }
   ],
-  "createdAt": "2025-10-13T14:09:22.737Z",
-  "updatedAt": "2025-10-13T14:09:22.857Z",
+  "createdAt": "2025-10-14T12:40:58.551Z",
+  "updatedAt": "2025-10-14T12:40:58.679Z",
   "__v": 1,
   "generatedContent": {
-    "audioUrl": "https://qa-test-bucket.s3.us-east-1.amazonaws.com/uploads/2025/01/68ed0812651561368def5aab-audio.mp3",
-    "pdfUrl": "https://qa-test-bucket.s3.us-east-1.amazonaws.com/uploads/2025/01/68ed0812651561368def5aab-lecture.pdf"
+    "audioUrl": "https://qa-test-bucket.s3.us-east-1.amazonaws.com/uploads/2025/01/68ee44da0196890ffd77e554-audio.mp3",
+    "pdfUrl": "https://qa-test-bucket.s3.us-east-1.amazonaws.com/uploads/2025/01/68ee44da0196890ffd77e554-lecture.pdf"
   }
 }

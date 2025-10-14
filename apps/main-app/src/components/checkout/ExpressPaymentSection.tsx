@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useStripe, PaymentRequestButtonElement } from '@stripe/react-stripe-js';
 import { PaymentRequest } from '@stripe/stripe-js';
 import { motion } from 'framer-motion';
@@ -27,16 +27,15 @@ export const ExpressPaymentSection = ({
   onSuccess,
 }: ExpressPaymentSectionProps) => {
   const stripe = useStripe();
-  const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
   const [canMakePayment, setCanMakePayment] = useState(false);
 
-  useEffect(() => {
+  // Utiliser useMemo pour éviter les mutations sur paymentRequest (Memory ID: 8d63a968)
+  const paymentRequest = useMemo(() => {
     if (!stripe || !clientSecret) {
-      return;
+      return null;
     }
 
-    // Create PaymentRequest
-    const pr = stripe.paymentRequest({
+    return stripe.paymentRequest({
       country: 'FR',
       currency: 'eur',
       total: {
@@ -47,19 +46,28 @@ export const ExpressPaymentSection = ({
       requestPayerEmail: true,
       requestPayerPhone: true,
     });
+  }, [stripe, clientSecret, amount]);
 
-    // Check if express payment is available (Apple Pay, Google Pay, etc.)
-    pr.canMakePayment().then((result) => {
+  useEffect(() => {
+    if (!paymentRequest) {
+      return;
+    }
+
+    // Check if express payment is available
+    paymentRequest.canMakePayment().then((result) => {
       if (result) {
-        setPaymentRequest(pr);
         setCanMakePayment(true);
       }
     });
 
     // Handle payment method submission
-    pr.on('paymentmethod', async (e) => {
+    const handlePaymentMethod = async (e: any) => {
       try {
-        // Confirm payment with the clientSecret
+        if (!stripe) {
+          e.complete('fail');
+          return;
+        }
+
         const { error, paymentIntent } = await stripe.confirmCardPayment(
           clientSecret,
           {
@@ -75,8 +83,6 @@ export const ExpressPaymentSection = ({
           console.error('Express payment failed:', error);
         } else if (paymentIntent && paymentIntent.status === 'succeeded') {
           e.complete('success');
-          
-          // Extract email from payment method
           const email = e.payerEmail || '';
           onSuccess(orderId, email);
         } else {
@@ -86,13 +92,14 @@ export const ExpressPaymentSection = ({
         e.complete('fail');
         console.error('Express payment error:', err);
       }
-    });
+    };
+
+    paymentRequest.on('paymentmethod', handlePaymentMethod);
 
     return () => {
-      // Cleanup
-      pr.off('paymentmethod');
+      paymentRequest.off('paymentmethod');
     };
-  }, [stripe, clientSecret, amount, orderId, onSuccess]);
+  }, [paymentRequest, stripe, clientSecret, orderId, onSuccess]);
 
   // Don't render if express payment not available
   if (!canMakePayment || !paymentRequest) {
