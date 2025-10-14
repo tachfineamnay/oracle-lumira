@@ -573,11 +573,21 @@ router.get('/', async (req: any, res: any) => {
   }
 });
 
-// Get order by ID
+// Get order by ID or PaymentIntent ID
 router.get('/:id', async (req: any, res: any) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate('userId', 'firstName lastName email phone stripeCustomerId');
+    const { id } = req.params;
+    
+    // Try to find by PaymentIntent ID first (pi_xxx format)
+    let order;
+    if (id.startsWith('pi_')) {
+      order = await Order.findOne({ paymentIntentId: id })
+        .populate('userId', 'firstName lastName email phone stripeCustomerId');
+    } else {
+      // Otherwise try MongoDB ObjectId
+      order = await Order.findById(id)
+        .populate('userId', 'firstName lastName email phone stripeCustomerId');
+    }
     
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
