@@ -7,13 +7,15 @@ import MandalaNav from '../components/mandala/MandalaNav';
 import SanctuaireSidebar from '../components/layout/SanctuaireSidebar';
 import GlassCard from '../components/ui/GlassCard';
 import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeForm';
+import OnboardingForm from '../components/sanctuaire/OnboardingForm';
 import { useAuth } from '../hooks/useAuth';
 import { labels } from '../lib/sphereLabels';
 import { useUserLevel } from '../contexts/UserLevelContext';
 import ExistingClientLoginBar from '../components/sanctuaire/ExistingClientLoginBar';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
-import { useSanctuaire } from '../hooks/useSanctuaire';
+import { useSanctuaire as useSanctuaireOld } from '../hooks/useSanctuaire';
+import { useSanctuaire } from '../contexts/SanctuaireContext';
 import { useEntitlements } from '../hooks/useEntitlements';
 import { CapabilityGuard, LockedCard } from '../components/auth/CapabilityGuard';
 
@@ -494,7 +496,27 @@ const Sanctuaire: React.FC = () => {
   const location = useLocation();
   const { userLevel } = useUserLevel();
   const [searchParams] = useSearchParams();
-  const { isAuthenticated, loading, authenticateWithEmail } = useSanctuaire();
+  const { isAuthenticated, isLoading, authenticateWithEmail } = useSanctuaire();
+  
+  // État pour afficher l'onboarding
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
+
+  // Détection first_visit pour afficher OnboardingForm
+  React.useEffect(() => {
+    const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
+    const hasIncompleteProfile = userLevel?.profile && !userLevel.profile.profileCompleted;
+    
+    if (isAuthenticated && (isFirstVisit || hasIncompleteProfile)) {
+      setShowOnboarding(true);
+    }
+  }, [isAuthenticated, userLevel?.profile]);
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    sessionStorage.removeItem('first_visit');
+    // Recharger les données utilisateur
+    window.location.reload();
+  };
 
   // Effet 1: Auto-login via email/token depuis l'URL ou session
   React.useEffect(() => {
@@ -502,24 +524,24 @@ const Sanctuaire: React.FC = () => {
     const token = searchParams.get('token');
     const sessionEmail = sessionStorage.getItem('sanctuaire_email');
 
-    if (email && !isAuthenticated && !loading) {
+    if (email && !isAuthenticated && !isLoading) {
       sessionStorage.setItem('sanctuaire_email', email);
       if (token?.startsWith('fv_')) {
         sessionStorage.setItem('first_visit', 'true');
       } else {
         authenticateWithEmail(email).catch(console.error);
       }
-    } else if (sessionEmail && !isAuthenticated && !loading) {
+    } else if (sessionEmail && !isAuthenticated && !isLoading) {
       const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
       if (!isFirstVisit) {
         authenticateWithEmail(sessionEmail).catch(console.error);
       }
     }
-  }, [searchParams, isAuthenticated, loading, authenticateWithEmail]);
+  }, [searchParams, isAuthenticated, isLoading, authenticateWithEmail]);
 
   // Effet 2: Redirection vers /sanctuaire/login si aucune info d'auth disponible
   React.useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       const sessionEmail = sessionStorage.getItem('sanctuaire_email');
       const hasEmailInUrl = searchParams.get('email');
       const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
@@ -529,11 +551,14 @@ const Sanctuaire: React.FC = () => {
         return () => clearTimeout(t);
       }
     }
-  }, [isAuthenticated, loading, navigate, searchParams]);
+  }, [isAuthenticated, isLoading, navigate, searchParams]);
 
   const progress = Math.round(((Number(userLevel.currentLevel) || 1) / 4) * 100);
   return (
     <PageLayout variant="dark">
+      {/* Onboarding Form en overlay si first_visit ou profil incomplet */}
+      {showOnboarding && <OnboardingForm onComplete={handleOnboardingComplete} />}
+      
       {/* Icône Profil - Toujours visible */}
       <ProfileIcon />
       

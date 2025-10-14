@@ -12,6 +12,7 @@ import SanctuaireUnified from './pages/SanctuaireUnified';
 import LoginSanctuaireSimple from './pages/LoginSanctuaireSimple';
 import MentionsLegales from './pages/MentionsLegales';
 import ExpertDeskPage from './expert/ExpertDesk';
+import { SanctuaireProvider } from './contexts/SanctuaireContext';
 
 // Garder l'ancien Sanctuaire pour compatibilité legacy
 import Sanctuaire from './pages/Sanctuaire';
@@ -21,6 +22,7 @@ import SphereSkeleton from './components/ui/SphereSkeleton';
 // Lazy imports pour l'ancien système (legacy)
 const LazySpiritualPath = React.lazy(() => import('./components/spheres/SpiritualPath'));
 const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
+const LazyMesLectures = React.lazy(() => import('./components/spheres/MesLectures'));
 const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
 const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
 const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
@@ -34,52 +36,48 @@ const AppRoutes: React.FC = () => (
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     
-    {/* ROUTE PRINCIPALE SANCTUAIRE - revenir au legacy stable */}
-    <Route path="/sanctuaire" element={<Sanctuaire />}>
-      {/* nested children rendered inside Sanctuaire's <Outlet /> */}
-      <Route
-        path="path"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazySpiritualPath />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="draws"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazyRawDraws />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="synthesis"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazySynthesis />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="chat"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazyConversations />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="profile"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazyProfile />
-          </React.Suspense>
-        }
-      />
-    </Route>
+    {/* ROUTE PRINCIPALE SANCTUAIRE - Enveloppée dans SanctuaireProvider */}
+    <Route
+      path="/sanctuaire/*"
+      element={
+        <SanctuaireProvider>
+          <Routes>
+            <Route index element={<Sanctuaire />} />
+            <Route path="path" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazySpiritualPath />
+              </React.Suspense>
+            } />
+            <Route path="draws" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazyMesLectures />
+              </React.Suspense>
+            } />
+            <Route path="synthesis" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazySynthesis />
+              </React.Suspense>
+            } />
+            <Route path="chat" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazyConversations />
+              </React.Suspense>
+            } />
+            <Route path="profile" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazyProfile />
+              </React.Suspense>
+            } />
+          </Routes>
+        </SanctuaireProvider>
+      }
+    />
     {/* Garder la nouvelle version pour tests et référence */}
-    <Route path="/sanctuaire-unified" element={<SanctuaireUnified />} />
+    <Route path="/sanctuaire-unified" element={
+      <SanctuaireProvider>
+        <SanctuaireUnified />
+      </SanctuaireProvider>
+    } />
     <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
     
     {/* ROUTES LEGACY pour compatibilité */}

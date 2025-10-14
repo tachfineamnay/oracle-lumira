@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserLevel } from '../../contexts/UserLevelContext';
+import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
 
 interface EditableField {
@@ -34,7 +35,9 @@ interface EditableField {
 const Profile: React.FC = () => {
   const { user } = useAuth();
   const { userLevel, updateUserProfile } = useUserLevel();
+  const { orders, isLoading: ordersLoading } = useSanctuaire();
   const [isEditing, setIsEditing] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [editData, setEditData] = useState({
     email: userLevel.profile?.email || '',
     phone: userLevel.profile?.phone || '',
@@ -359,6 +362,109 @@ const Profile: React.FC = () => {
           </div>
         </GlassCard>
       </motion.div>
+
+      {/* Historique des Commandes avec Miniatures Cliquables */}
+      {!ordersLoading && orders && orders.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <GlassCard className="p-6">
+            <h2 className="text-lg font-playfair italic text-white mb-4 flex items-center gap-2">
+              <History className="w-5 h-5 text-amber-400" />
+              Historique des Soumissions
+            </h2>
+            
+            <div className="space-y-4">
+              {orders.map((order: any) => (
+                <div
+                  key={order.id}
+                  className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-white font-medium">
+                        {order.formData?.specificQuestion || 'Lecture spirituelle'}
+                      </div>
+                      <div className="text-xs text-white/60 mt-1">
+                        Commandée le {new Date(order.createdAt).toLocaleDateString('fr-FR')} • {order.levelName}
+                      </div>
+                    </div>
+                    <div className="px-3 py-1 bg-green-400/20 border border-green-400/30 rounded-full text-green-400 text-xs font-medium">
+                      ✓ Livrée
+                    </div>
+                  </div>
+                  
+                  {/* Photos miniatures cliquables */}
+                  {(order.formData?.facePhotoUrl || order.formData?.palmPhotoUrl) && (
+                    <div className="flex gap-3">
+                      <div className="text-xs text-white/60 mr-2">Photos uploadées :</div>
+                      {order.formData?.facePhotoUrl && (
+                        <button
+                          onClick={() => setLightboxImage(order.formData.facePhotoUrl)}
+                          className="relative w-16 h-16 bg-amber-400/10 border border-amber-400/30 rounded-lg overflow-hidden hover:scale-105 transition-transform group"
+                        >
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/60 transition-colors">
+                            <Camera className="w-6 h-6 text-amber-400" />
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] text-center py-0.5">
+                            Visage
+                          </div>
+                        </button>
+                      )}
+                      {order.formData?.palmPhotoUrl && (
+                        <button
+                          onClick={() => setLightboxImage(order.formData.palmPhotoUrl)}
+                          className="relative w-16 h-16 bg-purple-400/10 border border-purple-400/30 rounded-lg overflow-hidden hover:scale-105 transition-transform group"
+                        >
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/60 transition-colors">
+                            <ImageIcon className="w-6 h-6 text-purple-400" />
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] text-center py-0.5">
+                            Paume
+                          </div>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        </motion.div>
+      )}
+
+      {/* Lightbox pour afficher les images en grand */}
+      {lightboxImage && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setLightboxImage(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl max-h-[90vh] bg-white/5 border border-white/20 rounded-2xl overflow-hidden"
+          >
+            <img 
+              src={lightboxImage} 
+              alt="Photo uploadée" 
+              className="w-full h-full object-contain"
+            />
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };
