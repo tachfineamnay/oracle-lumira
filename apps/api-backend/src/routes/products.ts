@@ -137,7 +137,7 @@ router.post(
         const mockPaymentIntentId = `pi_mock_${startTime}_${Math.random().toString(36).substring(2, 10)}`;
         const mockClientSecret = `${mockPaymentIntentId}_secret_mock`;
 
-        await ProductOrder.create({
+        const productOrder = new ProductOrder({
           productId,
           customerEmail,
           amount: product.amountCents,
@@ -158,6 +158,8 @@ router.post(
             customerEmail: customerEmail || '',
           },
         });
+
+        await productOrder.save();
 
         // 🆕 MOCK MODE: Simulate webhook auto-creation of User and Order
         if (customerEmail && customerEmail.includes('@')) {

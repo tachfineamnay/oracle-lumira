@@ -127,8 +127,15 @@ async function run() {
     await mongoose.connect(mongoUri);
     const { ProductOrder } = apiRequire('./models/ProductOrder');
     const po = await ProductOrder.findOne({ paymentIntentId }).lean();
-    if (po) {
-      await fs.writeFile(path.join(ARTIFACTS, 'product-order.json'), JSON.stringify(po, null, 2));
+    if (!po) {
+      await mongoose.disconnect();
+      throw new Error('Mock ProductOrder not found after create-payment-intent');
+    }
+
+    await fs.writeFile(path.join(ARTIFACTS, 'product-order.json'), JSON.stringify(po, null, 2));
+    if (po.status !== 'completed') {
+      await mongoose.disconnect();
+      throw new Error(`Expected ProductOrder.status to be "completed" but received "${po.status ?? 'undefined'}"`);
     }
     await mongoose.disconnect();
 
@@ -201,16 +208,24 @@ async function run() {
 
     let vite;
     if (process.platform === 'win32') {
-      vite = spawn(process.env.ComSpec || 'cmd.exe', ['/c','npm','run','preview','--','--port','5173','--strictPort'], { cwd: FRONT_DIR, env: frontEnv, stdio: ['ignore','pipe','pipe'] });
+      vite = spawn(
+        process.env.ComSpec || 'cmd.exe',
+        ['/c','npm','run','preview','--','--port','5173','--strictPort','--host','127.0.0.1'],
+        { cwd: FRONT_DIR, env: frontEnv, stdio: ['ignore','pipe','pipe'] }
+      );
     } else {
-      vite = spawn('npm', ['run','preview','--','--port','5173','--strictPort'], { cwd: FRONT_DIR, env: frontEnv, stdio: ['ignore','pipe','pipe'] });
+      vite = spawn(
+        'npm',
+        ['run','preview','--','--port','5173','--strictPort','--host','127.0.0.1'],
+        { cwd: FRONT_DIR, env: frontEnv, stdio: ['ignore','pipe','pipe'] }
+      );
     }
     // Wait for Vite to be ready (try multiple possible messages)
     await Promise.race([
       waitForLog(vite, 'Local:', 120000),
       waitForLog(vite, 'http://localhost:5173', 120000),
       waitForLog(vite, 'ready in', 120000),
-      new Promise(resolve => setTimeout(resolve, 5000)) // 5s fallback
+      new Promise(resolve => setTimeout(resolve, 20000)) // 20s fallback for slower startup environments
     ]);
 
     // Use Playwright to capture Sanctuaire with token in localStorage
