@@ -155,8 +155,85 @@ router.post(
             mockMode: true,
             customerName: customerName || '',
             customerPhone: customerPhone || '',
+            customerEmail: customerEmail || '',
           },
         });
+
+        // 🆕 MOCK MODE: Simulate webhook auto-creation of User and Order
+        if (customerEmail && customerEmail.includes('@')) {
+          try {
+            // Create or update user profile
+            const nameParts = (customerName || '').split(' ');
+            const firstName = nameParts[0] || customerEmail.split('@')[0] || 'Client';
+            const lastName = nameParts.slice(1).join(' ') || 'Mock';
+            
+            let user = await User.findOne({ email: customerEmail.toLowerCase() });
+            if (!user) {
+              user = await User.create({
+                email: customerEmail.toLowerCase(),
+                firstName,
+                lastName,
+                phone: customerPhone || undefined,
+                profileCompleted: false,
+              });
+              console.log(`[${requestId}] MOCK - User created:`, user.email);
+            } else {
+              console.log(`[${requestId}] MOCK - User found:`, user.email);
+            }
+
+            // Create Order for Expert Desk
+            const date = new Date();
+            const year = date.getFullYear().toString().slice(-2);
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const timestamp = Date.now().toString().slice(-6);
+            const orderNumber = `LU${year}${month}${day}${timestamp}`;
+
+            const levelMap: Record<string, { num: 1|2|3|4; name: 'Simple'|'Intuitive'|'Alchimique'|'Intégrale' }> = {
+              initie: { num: 1, name: 'Simple' },
+              mystique: { num: 2, name: 'Intuitive' },
+              profond: { num: 3, name: 'Alchimique' },
+              integrale: { num: 4, name: 'Intégrale' },
+            };
+            const levelInfo = levelMap[productId] || { num: 1 as 1, name: 'Simple' as const };
+
+            await Order.create({
+              orderNumber,
+              userId: user._id,
+              userEmail: user.email,
+              userName: `${user.firstName} ${user.lastName}`,
+              level: levelInfo.num,
+              levelName: levelInfo.name,
+              amount: product.amountCents,
+              currency: product.currency,
+              status: 'paid' as const,
+              paymentIntentId: mockPaymentIntentId,
+              paidAt: now,
+              formData: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: customerPhone || '',
+                specificQuestion: `Lecture ${levelInfo.name} - ${product.name} (Mock)`,
+                preferences: {
+                  audioVoice: 'feminine' as const,
+                  deliveryFormat: 'email' as const
+                }
+              },
+              metadata: {
+                source: 'mock_payment',
+                productName: product.name,
+                level: product.level,
+                mockMode: true
+              }
+            });
+            
+            console.log(`[${requestId}] MOCK - Order created:`, orderNumber);
+          } catch (mockError) {
+            console.error(`[${requestId}] MOCK - Error creating User/Order:`, mockError);
+            // Don't fail the mock payment if profile creation fails
+          }
+        }
 
         const response: CreatePaymentIntentResponse = {
           clientSecret: mockClientSecret,
