@@ -12,8 +12,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { sanctuaireService, CompletedOrder, SanctuaireStats, SanctuaireUser, OrderContent } from '../services/sanctuaire';
 import axios from 'axios';
+import { getApiBaseUrl } from '../lib/apiBase';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE = getApiBaseUrl();
 
 // =================== TYPES ===================
 
