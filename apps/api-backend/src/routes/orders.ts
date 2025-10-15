@@ -599,25 +599,37 @@ router.get('/:id', async (req: any, res: any) => {
           // Build a compatible response for the frontend
           console.log('[GET-ORDER] ProductOrder trouvée, construction réponse compatible');
           
-          // Map ProductOrder status to Order status expectations
+          // Map ProductOrder status to client-facing status
+          // Important: expose 'completed' when ProductOrder is completed so polling can stop
           const statusMapping: Record<string, string> = {
             'pending': 'pending',
             'processing': 'processing',
-            'completed': 'paid', // Payment succeeded but Order not yet created
+            'completed': 'completed',
             'failed': 'failed',
             'cancelled': 'refunded'
           };
-          
+
           const mappedStatus = statusMapping[productOrder.status] || 'pending';
-          
+
           // Determine if access should be granted
           const accessGranted = productOrder.status === 'completed';
+
+          // Derive level metadata from productId for Sanctuaire routing
+          const levelMap: Record<string, { num: 1|2|3|4; name: 'Simple'|'Intuitive'|'Alchimique'|'Intégrale' }> = {
+            initie: { num: 1, name: 'Simple' },
+            mystique: { num: 2, name: 'Intuitive' },
+            profond: { num: 3, name: 'Alchimique' },
+            integrale: { num: 4, name: 'Intégrale' },
+          };
+          const levelInfo = levelMap[(productOrder.productId || '').toLowerCase()] || levelMap['initie'];
           
           const compatibleResponse = {
             _id: productOrder._id,
             orderNumber: `TEMP-${productOrder.paymentIntentId.slice(-8)}`,
             paymentIntentId: productOrder.paymentIntentId,
             status: mappedStatus,
+            level: levelInfo.num,
+            levelName: levelInfo.name,
             amount: productOrder.amount,
             currency: productOrder.currency,
             userEmail: productOrder.customerEmail,
