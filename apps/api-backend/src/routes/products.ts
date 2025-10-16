@@ -716,7 +716,7 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
       console.log('ProductOrder saved successfully as completed:', orderDoc.paymentIntentId);
     }
 
-    // 🆕 AUTO-CREATE SANCTUAIRE PROFILE from payment data
+    // 🆕 AUTO-CREATE SANCTUAIRE PROFILE from payment data (AVANT handlePaymentSuccess)
     const customerEmail = (paymentIntent.metadata?.customerEmail || '').toLowerCase();
     const customerName = paymentIntent.metadata?.customerName || '';
     const customerPhone = paymentIntent.metadata?.customerPhone || '';
@@ -764,6 +764,8 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
         console.error('⚠️ Error creating sanctuaire profile:', profileError);
         // Don't fail the payment if profile creation fails
       }
+    } else {
+      console.warn('⚠️ [Webhook] No valid customerEmail found in metadata');
     }
 
     // Grant access via Stripe service

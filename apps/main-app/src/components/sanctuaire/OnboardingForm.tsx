@@ -49,6 +49,14 @@ interface OnboardingFormProps {
 export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) => {
   const { user, isAuthenticated } = useSanctuaire();
   
+  // ✨ NOUVELLE LOGIQUE : Charger les données depuis le webhook/DB si user vide
+  const [customerData, setCustomerData] = useState<{
+    email?: string;
+    phone?: string;
+    firstName?: string;
+    lastName?: string;
+  }>({});
+  
   // État du formulaire
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,17 +93,66 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
     }
   }, []);
 
+  // 🆕 Charger les données client depuis ProductOrder si user vide
+  useEffect(() => {
+    if (!paymentIntentId || user?.email) return; // Déjà authentifié
+
+    const loadCustomerData = async () => {
+      try {
+        console.log('🔍 [OnboardingForm] Chargement données client depuis PaymentIntent:', paymentIntentId);
+        
+        const response = await fetch(`${API_BASE}/orders/${paymentIntentId}`);
+        if (!response.ok) throw new Error('Order not found');
+        
+        const data = await response.json();
+        const order = data.order;
+        
+        console.log('✅ [OnboardingForm] Données commande chargées:', order);
+        
+        // Extraire customerEmail/Name/Phone depuis metadata ProductOrder
+        if (order.metadata) {
+          const email = order.metadata.customerEmail || order.customerEmail || '';
+          const name = order.metadata.customerName || '';
+          const phone = order.metadata.customerPhone || '';
+          
+          const nameParts = name.split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          setCustomerData({
+            email,
+            phone,
+            firstName,
+            lastName
+          });
+          
+          console.log('✨ [OnboardingForm] Données client extraites:', {
+            email,
+            firstName,
+            lastName,
+            phone
+          });
+        }
+      } catch (err) {
+        console.error('❌ [OnboardingForm] Erreur chargement données client:', err);
+      }
+    };
+
+    loadCustomerData();
+  }, [paymentIntentId, user]);
+
   // 🆕 Log des données utilisateur pré-remplies
   useEffect(() => {
-    if (user) {
+    if (user || customerData.email) {
       console.log('[OnboardingForm] Données utilisateur pré-remplies:', {
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone
+        email: user?.email || customerData.email,
+        firstName: user?.firstName || customerData.firstName,
+        lastName: user?.lastName || customerData.lastName,
+        phone: customerData.phone, // Only in customerData
+        source: user ? 'useSanctuaire' : 'ProductOrder metadata'
       });
     }
-  }, [user]);
+  }, [user, customerData]);
 
   // =================== VALIDATION PAR ÉTAPE ===================
   
@@ -168,10 +225,10 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
 
       // Ajouter les données JSON en string
       const jsonData = {
-        email: user?.email || '',
-        phone: user?.phone || '',
-        firstName: user?.firstName || '',
-        lastName: user?.lastName || '',
+        email: user?.email || customerData.email || '',
+        phone: customerData.phone || '', // Phone uniquement dans customerData
+        firstName: user?.firstName || customerData.firstName || '',
+        lastName: user?.lastName || customerData.lastName || '',
         dateOfBirth: formData.birthDate,
         birthTime: formData.birthTime,
         birthPlace: formData.birthPlace,
