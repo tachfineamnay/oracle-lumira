@@ -164,23 +164,9 @@ const CheckoutFormInner = ({
     setPaymentError(null);
 
     try {
-      if (orderId) {
-        try {
-          await ProductOrderService.updateOrderCustomer(orderId, {
-            email: email.value,
-            phone: phone.value.replace(/\D/g, ''),
-            firstName,
-            lastName,
-          });
-        } catch (updateError) {
-          console.error('Failed to update order with customer info:', updateError);
-          setPaymentError(
-            "Impossible d'enregistrer vos informations. Veuillez réessayer."
-          );
-          setProcessing(false);
-          return;
-        }
-      }
+      // ✨ Les données client sont DÉJÀ dans les métadonnées Stripe lors de la création du PaymentIntent
+      // Plus besoin d'appeler updateOrderCustomer ici !
+      console.log('👳 [CheckoutFormInner] Confirming payment with customer data already in Stripe metadata');
 
       // Confirm payment
       const { error, paymentIntent } = await stripe.confirmPayment({
@@ -321,9 +307,9 @@ export const UnifiedCheckoutForm = ({
   // PaymentIntent state
   const [clientSecret, setClientSecret] = useState<string>('');
   const [orderId, setOrderId] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // ✨ Ne charge PLUS au montage
   const [intentError, setIntentError] = useState<string | null>(null);
-  const [retryNonce, setRetryNonce] = useState(0);
+  const [isCreatingIntent, setIsCreatingIntent] = useState(false);
 
   // Form fields with validation state
   const [email, setEmail] = useState<FieldState>({
@@ -347,65 +333,63 @@ export const UnifiedCheckoutForm = ({
   useValidationDebounce(email, setEmail, validateEmail, 300);
   useValidationDebounce(phone, setPhone, validatePhone, 300);
 
-  // Initialize PaymentIntent (or retry on demand)
-  useEffect(() => {
-    let isCancelled = false;
+  // ✨ NOUVELLE LOGIQUE : Créer PaymentIntent APRÈS validation formulaire
+  const isFormValid =
+    email.valid &&
+    phone.valid &&
+    firstName.trim().length >= 2 &&
+    lastName.trim().length >= 2;
 
-    const initPaymentIntent = async () => {
-      if (!productId) {
-        setClientSecret('');
-        setOrderId('');
-        setLoading(false);
-        setIntentError('Produit invalide.');
-        return;
-      }
+  const handleCreatePaymentIntent = async () => {
+    if (!productId || !isFormValid) {
+      setIntentError('Veuillez remplir tous les champs requis.');
+      return;
+    }
 
-      setLoading(true);
-      setIntentError(null);
-      setClientSecret('');
-      setOrderId('');
-
-      try {
-        const result = await ProductOrderService.createPaymentIntent(productId);
-
-        if (isCancelled) {
-          return;
-        }
-
-        setClientSecret(result.clientSecret);
-        setOrderId(result.orderId);
-      } catch (error) {
-        if (isCancelled) {
-          return;
-        }
-
-        console.error('Failed to create PaymentIntent:', error);
-        const message =
-          error instanceof Error && error.message
-            ? error.message
-            : "Impossible d'initialiser le paiement pour le moment.";
-        setIntentError(message);
-      } finally {
-        if (!isCancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initPaymentIntent();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [productId, retryNonce]);
-
-  const handleRetry = () => {
-    setLoading(true);
+    setIsCreatingIntent(true);
     setIntentError(null);
-    setRetryNonce((prev) => prev + 1);
+    setClientSecret('');
+    setOrderId('');
+
+    try {
+      console.log('🚀 [UnifiedCheckout] Creating PaymentIntent with customer data:', {
+        email: email.value,
+        name: `${firstName} ${lastName}`,
+        phone: phone.value,
+      });
+
+      const result = await ProductOrderService.createPaymentIntent(
+        productId,
+        email.value,                          // ✅ Email
+        `${firstName} ${lastName}`.trim(),    // ✅ Nom complet
+        phone.value.replace(/\D/g, '')        // ✅ Téléphone (chiffres uniquement)
+      );
+
+      console.log('✅ [UnifiedCheckout] PaymentIntent created:', result.orderId);
+
+      setClientSecret(result.clientSecret);
+      setOrderId(result.orderId);
+    } catch (error) {
+      console.error('❌ [UnifiedCheckout] Failed to create PaymentIntent:', error);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "Impossible d'initialiser le paiement pour le moment.";
+      setIntentError(message);
+    } finally {
+      setIsCreatingIntent(false);
+    }
   };
 
-  // Note: Customer info will be sent with the payment confirmation
+  // Auto-créer PaymentIntent dès que le formulaire est valide
+  useEffect(() => {
+    if (isFormValid && !clientSecret && !isCreatingIntent && !intentError) {
+      console.log('✨ [UnifiedCheckout] Form valid, auto-creating PaymentIntent...');
+      handleCreatePaymentIntent();
+    }
+  }, [isFormValid, clientSecret, isCreatingIntent, intentError]);
+
+  // Note: Customer info is NOW sent DURING PaymentIntent creation (not after)
 
   // Stripe Elements options
   const elementsOptions: StripeElementsOptions = {
@@ -414,7 +398,7 @@ export const UnifiedCheckoutForm = ({
     locale: 'fr',
   };
 
-  if (loading) {
+  if (loading || isCreatingIntent) {
     return (
       <div className="max-w-2xl mx-auto p-6">
         <div className="space-y-6 animate-pulse">
@@ -481,8 +465,8 @@ export const UnifiedCheckoutForm = ({
             type="button"
             whileHover={{ scale: loading ? 1 : 1.02 }}
             whileTap={{ scale: loading ? 1 : 0.98 }}
-            onClick={handleRetry}
-            disabled={loading}
+            onClick={handleCreatePaymentIntent}
+            disabled={isCreatingIntent}
             className={cn(
               'mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold',
               'bg-gradient-to-r from-[#D4AF37] to-[#DAA520]',

@@ -721,6 +721,13 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
     const customerName = paymentIntent.metadata?.customerName || '';
     const customerPhone = paymentIntent.metadata?.customerPhone || '';
     
+    console.log('🔍 [Webhook] Extracting customer data from PaymentIntent metadata:', {
+      customerEmail,
+      customerName,
+      customerPhone,
+      allMetadata: paymentIntent.metadata
+    });
+    
     if (customerEmail && customerEmail.includes('@')) {
       try {
         // Split name into first/last
