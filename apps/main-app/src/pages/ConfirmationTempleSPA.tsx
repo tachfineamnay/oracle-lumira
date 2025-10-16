@@ -1,5 +1,5 @@
 // Oracle Lumira - Confirmation Page (SPA) - REFONTE SANCTUAIRE DYNAMIQUE
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, Loader, AlertCircle, Crown } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -30,11 +30,14 @@ const ConfirmationTemple: React.FC = () => {
   
   const [error, setError] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
+  const redirectStartedRef = useRef(false);
   const { initializeFromPurchase } = useInitializeUserLevel();
 
   // Gestion de la redirection automatique quand l'accès est accordé
   useEffect(() => {
     if (accessGranted && orderData) {
+      if (redirectStartedRef.current) return;
+      redirectStartedRef.current = true;
       console.log('[ConfirmationTemple] Accès accordé ! Démarrage du compte à rebours...');
       
       // Initialiser le contexte utilisateur
@@ -79,7 +82,12 @@ const ConfirmationTemple: React.FC = () => {
             if (pi) parts.push(`payment_intent=${encodeURIComponent(pi)}`);
             const qs = parts.length ? `?${parts.join('&')}` : '';
             
-            navigate(`/sanctuaire${qs}`);
+            try {
+              navigate(`/sanctuaire${qs}`);
+            } catch {
+              // Fallback dur en cas d'échec client-side
+              window.location.href = `/sanctuaire${qs}`;
+            }
             return 0;
           }
           return prev - 1;
@@ -119,7 +127,12 @@ const ConfirmationTemple: React.FC = () => {
       if (pi) localStorage.setItem('oraclelumira_last_payment_intent_id', pi); 
     } catch {}
     
-    navigate(`/sanctuaire${qs}`);
+    try {
+      navigate(`/sanctuaire${qs}`);
+    } catch {
+      // Fallback dur en cas d'échec client-side
+      window.location.href = `/sanctuaire${qs}`;
+    }
   };
 
   const handleBackToHome = () => {

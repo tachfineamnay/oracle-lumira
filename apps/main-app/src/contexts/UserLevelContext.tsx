@@ -1,5 +1,5 @@
 // Oracle Lumira - Context niveau utilisateur global
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { Product } from '../types/products';
 
 export interface UserProfile {
@@ -166,7 +166,7 @@ export const useUserLevel = (): UserLevelContextType => {
 export const useInitializeUserLevel = () => {
   const { setUserLevel } = useUserLevel();
 
-  const initializeFromPurchase = (product: Product, orderId: string) => {
+  const initializeFromPurchase = useCallback((product: Product, orderId: string) => {
     const newLevel: UserLevel = {
       currentLevel: product.level,
       purchasedProduct: product,
@@ -183,8 +183,8 @@ export const useInitializeUserLevel = () => {
     } catch {}
     
     // Optionnel: envoi analytics
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'purchase_completed', {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'purchase_completed', {
         event_category: 'Oracle Lumira',
         event_label: product.level,
         value: product.amountCents / 100,
@@ -192,7 +192,7 @@ export const useInitializeUserLevel = () => {
         transaction_id: orderId,
       });
     }
-  };
+  }, [setUserLevel]);
 
   return { initializeFromPurchase };
 };

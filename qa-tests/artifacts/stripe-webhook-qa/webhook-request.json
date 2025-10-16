@@ -1,0 +1,22 @@
+{
+  "headers": {
+    "stripe-signature": "t=1760484190,v1=295069cb6e08577a94c8652e49d321be09086a7539afdf7bee578d2b30e8fc9f"
+  },
+  "body": {
+    "id": "evt_test_1760484190089",
+    "type": "payment_intent.succeeded",
+    "data": {
+      "object": {
+        "id": "pi_test_1760484189432_7bu0ddgv",
+        "amount": 4700,
+        "currency": "eur",
+        "metadata": {
+          "customerEmail": "webhook.qa@example.com",
+          "product_id": "mystique",
+          "level": "mystique",
+          "productName": "Niveau Mystique"
+        }
+      }
+    }
+  }
+}

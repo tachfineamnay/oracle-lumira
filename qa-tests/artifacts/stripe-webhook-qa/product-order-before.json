@@ -1,0 +1,14 @@
+{
+  "productId": "mystique",
+  "customerEmail": "webhook.qa@example.com",
+  "amount": 4700,
+  "currency": "eur",
+  "status": "pending",
+  "paymentIntentId": "pi_test_1760484189432_7bu0ddgv",
+  "metadata": {
+    "test": "stripe-webhook-qa"
+  },
+  "_id": "68eedb5d8f46738b6ebd6c34",
+  "createdAt": "2025-10-14T23:23:09.433Z",
+  "updatedAt": "2025-10-14T23:23:09.433Z"
+}
