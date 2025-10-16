@@ -85,6 +85,18 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
     }
   }, []);
 
+  // 🆕 Log des données utilisateur pré-remplies
+  useEffect(() => {
+    if (user) {
+      console.log('[OnboardingForm] Données utilisateur pré-remplies:', {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone
+      });
+    }
+  }, [user]);
+
   // =================== VALIDATION PAR ÉTAPE ===================
   
   const canProceedToStep2 = () => {
@@ -240,7 +252,10 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             Bienvenue, {user.firstName} !
           </h2>
           <p className="text-white/70">
-            Complétons ensemble votre profil spirituel
+            Complétons votre profil spirituel
+          </p>
+          <p className="text-sm text-white/50 mt-2">
+            Vos informations de base sont déjà enregistrées ✨
           </p>
         </motion.div>
 
