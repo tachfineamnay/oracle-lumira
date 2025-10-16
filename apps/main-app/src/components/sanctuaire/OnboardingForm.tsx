@@ -1,22 +1,26 @@
 /**
- * OnboardingForm - Formulaire d'Onboarding Post-Achat Multi-Étapes
+ * OnboardingForm - Formulaire d'Onboarding Refonte 2025
  * 
- * Expérience guidée en 3 étapes pour collecter les données du client :
- * 1. Naissance : Date, heure, lieu de naissance
- * 2. Intention : Question spécifique, objectif spirituel
- * 3. Photos : Upload photo visage et paume de main
+ * Architecture 4 étapes compacte :
+ * 0. BIENVENUE : Affiche données pré-remplies (email, nom, téléphone) en read-only
+ * 1. NAISSANCE : Date, heure, lieu (compact)
+ * 2. INTENTION : Question spirituelle, objectif (compact)
+ * 3. PHOTOS : Upload visage + paume
  * 
- * Intelligence :
- * - Pré-remplit automatiquement nom, email depuis useSanctuaire()
- * - Affiche un message de bienvenue personnalisé
- * - Soumet vers /api/orders/by-payment-intent/:id/client-submit
+ * Fonctionnalités :
+ * ✅ Pré-remplissage automatique depuis metadata Stripe
+ * ✅ Fallback robuste si useSanctuaire() échoue
+ * ✅ Validation progressive par étape
+ * ✅ Design compact celeste/stellar
+ * ✅ Progress bar 4 steps
  */
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Star, ChevronRight, ChevronLeft, Upload, Calendar, 
-  Clock, MapPin, Sparkles, Image, Hand, Check, Loader2 
+  Clock, MapPin, Sparkles, Image, Hand, Check, Loader2,
+  Mail, Phone, User
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
@@ -25,17 +29,19 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // =================== TYPES ===================
 
-interface OnboardingFormData {
-  // Étape 1 : Naissance
+interface UserData {
+  email: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface FormData {
   birthDate: string;
   birthTime: string;
   birthPlace: string;
-  
-  // Étape 2 : Intention
   specificQuestion: string;
   objective: string;
-  
-  // Étape 3 : Photos
   facePhoto: File | null;
   palmPhoto: File | null;
 }
@@ -47,23 +53,21 @@ interface OnboardingFormProps {
 // =================== COMPOSANT PRINCIPAL ===================
 
 export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) => {
-  const { user, isAuthenticated } = useSanctuaire();
+  const { user } = useSanctuaire();
   
-  // ✨ NOUVELLE LOGIQUE : Charger les données depuis le webhook/DB si user vide
-  const [customerData, setCustomerData] = useState<{
-    email?: string;
-    phone?: string;
-    firstName?: string;
-    lastName?: string;
-  }>({});
+  // État utilisateur (pré-rempli)
+  const [userData, setUserData] = useState<UserData>({
+    email: '',
+    phone: '',
+    firstName: '',
+    lastName: ''
+  });
   
-  // État du formulaire
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoadingUserData, setIsLoadingUserData] = useState(true);
   
-  // Données accumulées
-  const [formData, setFormData] = useState<OnboardingFormData>({
+  // État formulaire spirituel
+  const [currentStep, setCurrentStep] = useState<0 | 1 | 2 | 3>(0);
+  const [formData, setFormData] = useState<FormData>({
     birthDate: '',
     birthTime: '',
     birthPlace: '',
@@ -72,271 +76,219 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
     facePhoto: null,
     palmPhoto: null,
   });
-
-  // Récupérer le paymentIntentId depuis localStorage ou URL
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   
+  // =================== CHARGEMENT PAYMENT INTENT ===================
+  
   useEffect(() => {
-    // Chercher dans localStorage (stocké lors du paiement)
     const storedPI = localStorage.getItem('last_payment_intent_id');
     if (storedPI) {
       setPaymentIntentId(storedPI);
-      console.log('[OnboardingForm] PaymentIntentId trouvé:', storedPI);
     } else {
-      // Fallback : URL params
       const urlParams = new URLSearchParams(window.location.search);
       const urlPI = urlParams.get('payment_intent');
-      if (urlPI) {
-        setPaymentIntentId(urlPI);
-        console.log('[OnboardingForm] PaymentIntentId depuis URL:', urlPI);
-      }
+      if (urlPI) setPaymentIntentId(urlPI);
     }
   }, []);
-
-  // 🆕 Charger les données client depuis ProductOrder si user vide
+  
+  // =================== CHARGEMENT DONNÉES UTILISATEUR ===================
+  
   useEffect(() => {
-    if (!paymentIntentId || user?.email) return; // Déjà authentifié
-
-    const loadCustomerData = async () => {
+    const loadUserData = async () => {
       try {
-        console.log('🔍 [OnboardingForm] Chargement données client depuis PaymentIntent:', paymentIntentId);
+        // 1️⃣ Tenter useSanctuaire() d'abord
+        if (user?.email) {
+          console.log('✅ [OnboardingForm] Données depuis useSanctuaire()');
+          setUserData({
+            email: user.email,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            phone: '' // SanctuaireUser n'a pas phone
+          });
+          setIsLoadingUserData(false);
+          return;
+        }
         
-        const response = await fetch(`${API_BASE}/orders/${paymentIntentId}`);
-        if (!response.ok) throw new Error('Order not found');
-        
-        const data = await response.json();
-        const order = data.order;
-        
-        console.log('✅ [OnboardingForm] Données commande chargées:', order);
-        
-        // Extraire customerEmail/Name/Phone depuis metadata ProductOrder
-        if (order.metadata) {
-          const email = order.metadata.customerEmail || order.customerEmail || '';
-          const name = order.metadata.customerName || '';
-          const phone = order.metadata.customerPhone || '';
+        // 2️⃣ Fallback : ProductOrder metadata
+        if (paymentIntentId) {
+          console.log('🔍 [OnboardingForm] Chargement depuis ProductOrder:', paymentIntentId);
           
-          const nameParts = name.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
+          const response = await fetch(`${API_BASE}/orders/${paymentIntentId}`);
+          if (!response.ok) throw new Error('Order not found');
           
-          setCustomerData({
-            email,
-            phone,
-            firstName,
-            lastName
+          const data = await response.json();
+          const metadata = data.order.metadata || {};
+          
+          const customerName = metadata.customerName || '';
+          const nameParts = customerName.split(' ');
+          
+          setUserData({
+            email: metadata.customerEmail || '',
+            phone: metadata.customerPhone || '',
+            firstName: nameParts[0] || '',
+            lastName: nameParts.slice(1).join(' ') || ''
           });
           
-          console.log('✨ [OnboardingForm] Données client extraites:', {
-            email,
-            firstName,
-            lastName,
-            phone
+          console.log('✅ [OnboardingForm] Données chargées:', {
+            email: metadata.customerEmail,
+            phone: metadata.customerPhone,
+            name: customerName
           });
         }
       } catch (err) {
-        console.error('❌ [OnboardingForm] Erreur chargement données client:', err);
+        console.error('❌ [OnboardingForm] Erreur chargement données:', err);
+      } finally {
+        setIsLoadingUserData(false);
       }
     };
-
-    loadCustomerData();
-  }, [paymentIntentId, user]);
-
-  // 🆕 Log des données utilisateur pré-remplies
-  useEffect(() => {
-    if (user || customerData.email) {
-      console.log('[OnboardingForm] Données utilisateur pré-remplies:', {
-        email: user?.email || customerData.email,
-        firstName: user?.firstName || customerData.firstName,
-        lastName: user?.lastName || customerData.lastName,
-        phone: customerData.phone, // Only in customerData
-        source: user ? 'useSanctuaire' : 'ProductOrder metadata'
-      });
-    }
-  }, [user, customerData]);
-
+    
+    loadUserData();
+  }, [user, paymentIntentId]);
+  
   // =================== VALIDATION PAR ÉTAPE ===================
   
-  const canProceedToStep2 = () => {
-    return formData.birthDate && formData.birthTime && formData.birthPlace;
+  const canProceed = (): boolean => {
+    switch (currentStep) {
+      case 0: return true; // Bienvenue, toujours OK
+      case 1: return !!(formData.birthDate && formData.birthTime && formData.birthPlace);
+      case 2: return !!(formData.specificQuestion && formData.objective);
+      case 3: return !!(formData.facePhoto && formData.palmPhoto);
+      default: return false;
+    }
   };
-
-  const canProceedToStep3 = () => {
-    return formData.specificQuestion && formData.objective;
-  };
-
-  const canSubmit = () => {
-    return formData.facePhoto && formData.palmPhoto;
-  };
-
-  // =================== HANDLERS ===================
-
+  
+  // =================== NAVIGATION ===================
+  
   const handleNext = () => {
-    if (currentStep === 1 && !canProceedToStep2()) {
-      setError('Veuillez compléter tous les champs de naissance');
+    if (!canProceed()) {
+      setError('Veuillez compléter tous les champs requis');
       return;
     }
-    if (currentStep === 2 && !canProceedToStep3()) {
-      setError('Veuillez partager votre intention');
-      return;
-    }
-    
     setError(null);
-    setCurrentStep((prev) => Math.min(prev + 1, 3) as 1 | 2 | 3);
+    setCurrentStep((prev) => Math.min(prev + 1, 3) as 0 | 1 | 2 | 3);
   };
-
+  
   const handleBack = () => {
     setError(null);
-    setCurrentStep((prev) => Math.max(prev - 1, 1) as 1 | 2 | 3);
+    setCurrentStep((prev) => Math.max(prev - 1, 0) as 0 | 1 | 2 | 3);
   };
-
-  const handleFileChange = (field: 'facePhoto' | 'palmPhoto', file: File | null) => {
-    setFormData((prev) => ({ ...prev, [field]: file }));
-  };
-
-  // =================== SOUMISSION FINALE ===================
-
+  
+  // =================== SOUMISSION ===================
+  
   const handleSubmit = async () => {
-    if (!canSubmit()) {
+    if (!canProceed()) {
       setError('Veuillez uploader les deux photos');
       return;
     }
-
+    
     if (!paymentIntentId) {
-      setError('PaymentIntentId introuvable. Impossible de soumettre.');
+      setError('PaymentIntentId manquant. Impossible de soumettre.');
       return;
     }
-
+    
     try {
       setIsSubmitting(true);
       setError(null);
-
-      console.log('[OnboardingForm] Début soumission vers client-submit');
-
-      // Construire le FormData multipart
+      
       const submitFormData = new FormData();
       
-      // Ajouter les fichiers
-      if (formData.facePhoto) {
-        submitFormData.append('facePhoto', formData.facePhoto);
-      }
-      if (formData.palmPhoto) {
-        submitFormData.append('palmPhoto', formData.palmPhoto);
-      }
-
-      // Ajouter les données JSON en string
+      if (formData.facePhoto) submitFormData.append('facePhoto', formData.facePhoto);
+      if (formData.palmPhoto) submitFormData.append('palmPhoto', formData.palmPhoto);
+      
       const jsonData = {
-        email: user?.email || customerData.email || '',
-        phone: customerData.phone || '', // Phone uniquement dans customerData
-        firstName: user?.firstName || customerData.firstName || '',
-        lastName: user?.lastName || customerData.lastName || '',
+        email: userData.email,
+        phone: userData.phone,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         dateOfBirth: formData.birthDate,
         birthTime: formData.birthTime,
         birthPlace: formData.birthPlace,
         specificQuestion: formData.specificQuestion,
         objective: formData.objective,
       };
-
+      
       submitFormData.append('formData', JSON.stringify(jsonData));
-
-      console.log('[OnboardingForm] FormData construit:', {
-        facePhoto: !!formData.facePhoto,
-        palmPhoto: !!formData.palmPhoto,
-        jsonData
-      });
-
-      // Appel API vers client-submit
+      
       const response = await fetch(
         `${API_BASE}/orders/by-payment-intent/${paymentIntentId}/client-submit`,
-        {
-          method: 'POST',
-          body: submitFormData,
-          // Ne pas définir Content-Type : le navigateur le fera automatiquement pour multipart/form-data
-        }
+        { method: 'POST', body: submitFormData }
       );
-
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Erreur serveur' }));
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
-
-      const result = await response.json();
-      console.log('[OnboardingForm] Soumission réussie:', result);
-
-      // Marquer la première visite comme terminée
+      
+      console.log('✅ [OnboardingForm] Soumission réussie');
+      
       sessionStorage.removeItem('first_visit');
       localStorage.removeItem('last_payment_intent_id');
-
-      // Callback de complétion
-      if (onComplete) {
-        onComplete();
-      }
-
+      
+      if (onComplete) onComplete();
+      
     } catch (err: any) {
-      console.error('[OnboardingForm] Erreur soumission:', err);
+      console.error('❌ [OnboardingForm] Erreur:', err);
       setError(err.message || 'Erreur lors de la soumission');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  // =================== RENDU CONDITIONNEL ===================
-
-  if (!isAuthenticated || !user) {
-    return null;
+  
+  // =================== RENDU ===================
+  
+  if (isLoadingUserData) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+      </div>
+    );
   }
-
-  // =================== RENDU PRINCIPAL ===================
-
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
     >
-      <GlassCard className="w-full max-w-2xl bg-mystical-deep-blue/90 border-amber-400/30 p-8">
+      <GlassCard className="w-full max-w-2xl bg-mystical-deep-blue/90 border-amber-400/30 p-6 max-h-[90vh] overflow-y-auto">
         
-        {/* En-tête avec message de bienvenue personnalisé */}
+        {/* En-tête */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="text-center mb-8"
+          className="text-center mb-6"
         >
-          <div className="w-16 h-16 bg-gradient-to-br from-amber-400/30 to-purple-400/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Star className="w-8 h-8 text-amber-400" />
+          <div className="w-12 h-12 bg-gradient-to-br from-amber-400/30 to-purple-400/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Star className="w-6 h-6 text-amber-400" />
           </div>
-          <h2 className="text-3xl font-playfair italic text-amber-400 mb-2">
-            Bienvenue, {user.firstName} !
+          <h2 className="text-2xl font-playfair italic text-amber-400 mb-1">
+            Complétez votre Profil
           </h2>
-          <p className="text-white/70">
-            Complétons votre profil spirituel
-          </p>
-          <p className="text-sm text-white/50 mt-2">
-            Vos informations de base sont déjà enregistrées ✨
+          <p className="text-sm text-white/60">
+            Étape {currentStep + 1} sur 4
           </p>
         </motion.div>
 
-        {/* Barre de progression */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {[1, 2, 3].map((step) => (
+        {/* Progress Bar */}
+        <div className="flex items-center justify-center gap-1 mb-6">
+          {[0, 1, 2, 3].map((step) => (
             <div key={step} className="flex items-center">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
-                  step === currentStep
-                    ? 'bg-amber-400 text-mystical-900 scale-110'
-                    : step < currentStep
-                    ? 'bg-amber-400/50 text-white'
-                    : 'bg-white/10 text-white/40'
-                }`}
-              >
-                {step < currentStep ? <Check className="w-5 h-5" /> : step}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                step === currentStep
+                  ? 'bg-amber-400 text-mystical-900 scale-110'
+                  : step < currentStep
+                  ? 'bg-amber-400/50 text-white'
+                  : 'bg-white/10 text-white/40'
+              }`}>
+                {step < currentStep ? <Check className="w-4 h-4" /> : step + 1}
               </div>
               {step < 3 && (
-                <div
-                  className={`w-12 h-1 mx-2 rounded ${
-                    step < currentStep ? 'bg-amber-400/50' : 'bg-white/10'
-                  }`}
-                />
+                <div className={`w-8 h-0.5 mx-1 ${
+                  step < currentStep ? 'bg-amber-400/50' : 'bg-white/10'
+                }`} />
               )}
             </div>
           ))}
@@ -344,25 +296,20 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
 
         {/* Contenu des étapes */}
         <AnimatePresence mode="wait">
+          {currentStep === 0 && (
+            <Step0Welcome key="step0" userData={userData} />
+          )}
           {currentStep === 1 && (
-            <Step1Naissance
-              key="step1"
-              formData={formData}
-              setFormData={setFormData}
-            />
+            <Step1Naissance key="step1" formData={formData} setFormData={setFormData} />
           )}
           {currentStep === 2 && (
-            <Step2Intention
-              key="step2"
-              formData={formData}
-              setFormData={setFormData}
-            />
+            <Step2Intention key="step2" formData={formData} setFormData={setFormData} />
           )}
           {currentStep === 3 && (
             <Step3Photos
               key="step3"
               formData={formData}
-              handleFileChange={handleFileChange}
+              onFileChange={(field, file) => setFormData(prev => ({ ...prev, [field]: file }))}
             />
           )}
         </AnimatePresence>
@@ -378,43 +325,42 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
           </motion.div>
         )}
 
-        {/* Boutons de navigation */}
-        <div className="flex items-center justify-between mt-8">
-          {currentStep > 1 ? (
+        {/* Navigation */}
+        <div className="flex items-center justify-between mt-6">
+          {currentStep > 0 ? (
             <button
               onClick={handleBack}
               disabled={isSubmitting}
               className="flex items-center gap-2 px-4 py-2 text-white/70 hover:text-white transition-colors disabled:opacity-40"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
               <span>Retour</span>
             </button>
-          ) : (
-            <div />
-          )}
+          ) : <div />}
 
           {currentStep < 3 ? (
             <button
               onClick={handleNext}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-semibold rounded-lg hover:from-amber-500 hover:to-amber-600 transition-all shadow-lg hover:shadow-xl"
+              disabled={!canProceed()}
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-semibold rounded-lg hover:from-amber-500 hover:to-amber-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span>Suivant</span>
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={!canSubmit() || isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={!canProceed() || isSubmitting}
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Envoi en cours...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Envoi...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5" />
+                  <Sparkles className="w-4 h-4" />
                   <span>Finaliser</span>
                 </>
               )}
@@ -426,221 +372,234 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   );
 };
 
+// =================== ÉTAPE 0 : BIENVENUE ===================
+
+const Step0Welcome: React.FC<{ userData: UserData }> = ({ userData }) => (
+  <motion.div
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -20 }}
+    className="space-y-4"
+  >
+    <h3 className="text-xl font-semibold text-amber-400 text-center mb-4">
+      Bienvenue, {userData.firstName} {userData.lastName} !
+    </h3>
+
+    <div className="space-y-3 bg-white/5 border border-white/10 rounded-lg p-4">
+      <div className="flex items-center gap-3">
+        <Mail className="w-5 h-5 text-green-400 flex-shrink-0" />
+        <span className="text-white/80 text-sm flex-1 truncate">{userData.email}</span>
+        <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+      </div>
+      
+      {userData.phone && (
+        <div className="flex items-center gap-3">
+          <Phone className="w-5 h-5 text-green-400 flex-shrink-0" />
+          <span className="text-white/80 text-sm">{userData.phone}</span>
+          <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+        </div>
+      )}
+      
+      <div className="flex items-center gap-3">
+        <User className="w-5 h-5 text-green-400 flex-shrink-0" />
+        <span className="text-white/80 text-sm">{userData.firstName} {userData.lastName}</span>
+        <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+      </div>
+    </div>
+
+    <p className="text-xs text-center text-white/50 pt-2">
+      ✨ Vos informations de base sont enregistrées
+    </p>
+  </motion.div>
+);
+
 // =================== ÉTAPE 1 : NAISSANCE ===================
 
-interface Step1Props {
-  formData: OnboardingFormData;
-  setFormData: React.Dispatch<React.SetStateAction<OnboardingFormData>>;
+interface StepProps {
+  formData: FormData;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
 }
 
-const Step1Naissance: React.FC<Step1Props> = ({ formData, setFormData }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
-    >
-      <h3 className="text-xl font-semibold text-amber-400 flex items-center gap-2">
-        <Calendar className="w-6 h-6" />
-        Votre Naissance
-      </h3>
+const Step1Naissance: React.FC<StepProps> = ({ formData, setFormData }) => (
+  <motion.div
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -20 }}
+    className="space-y-4"
+  >
+    <h3 className="text-lg font-semibold text-amber-400 flex items-center gap-2 mb-4">
+      <Calendar className="w-5 h-5" />
+      Votre Carte Natale
+    </h3>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm text-white/70 mb-2">
-            Date de naissance
-          </label>
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs text-white/60 mb-1.5">Date de naissance</label>
+        <input
+          type="date"
+          value={formData.birthDate}
+          onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))}
+          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-amber-400 transition-colors"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs text-white/60 mb-1.5">Heure de naissance</label>
+        <div className="relative">
+          <Clock className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
-            type="date"
-            value={formData.birthDate}
-            onChange={(e) => setFormData((prev) => ({ ...prev, birthDate: e.target.value }))}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-amber-400 transition-colors"
+            type="time"
+            value={formData.birthTime}
+            onChange={(e) => setFormData(prev => ({ ...prev, birthTime: e.target.value }))}
+            className="w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-amber-400 transition-colors"
             required
           />
         </div>
+      </div>
 
-        <div>
-          <label className="block text-sm text-white/70 mb-2">
-            Heure de naissance
-          </label>
-          <div className="relative">
-            <Clock className="w-5 h-5 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="time"
-              value={formData.birthTime}
-              onChange={(e) => setFormData((prev) => ({ ...prev, birthTime: e.target.value }))}
-              className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-amber-400 transition-colors"
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm text-white/70 mb-2">
-            Lieu de naissance (Ville, Pays)
-          </label>
-          <div className="relative">
-            <MapPin className="w-5 h-5 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={formData.birthPlace}
-              onChange={(e) => setFormData((prev) => ({ ...prev, birthPlace: e.target.value }))}
-              placeholder="Ex: Paris, France"
-              className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-amber-400 transition-colors"
-              required
-            />
-          </div>
+      <div>
+        <label className="block text-xs text-white/60 mb-1.5">Lieu de naissance</label>
+        <div className="relative">
+          <MapPin className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={formData.birthPlace}
+            onChange={(e) => setFormData(prev => ({ ...prev, birthPlace: e.target.value }))}
+            placeholder="Ex: Paris, France"
+            className="w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-amber-400 transition-colors"
+            required
+          />
         </div>
       </div>
-    </motion.div>
-  );
-};
+    </div>
+  </motion.div>
+);
 
 // =================== ÉTAPE 2 : INTENTION ===================
 
-const Step2Intention: React.FC<Step1Props> = ({ formData, setFormData }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
-    >
-      <h3 className="text-xl font-semibold text-amber-400 flex items-center gap-2">
-        <Sparkles className="w-6 h-6" />
-        Votre Intention
-      </h3>
+const Step2Intention: React.FC<StepProps> = ({ formData, setFormData }) => (
+  <motion.div
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -20 }}
+    className="space-y-4"
+  >
+    <h3 className="text-lg font-semibold text-amber-400 flex items-center gap-2 mb-4">
+      <Sparkles className="w-5 h-5" />
+      Votre Intention Spirituelle
+    </h3>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm text-white/70 mb-2">
-            Quelle question vous guide aujourd'hui ?
-          </label>
-          <textarea
-            value={formData.specificQuestion}
-            onChange={(e) => setFormData((prev) => ({ ...prev, specificQuestion: e.target.value }))}
-            placeholder="Ex: Comment puis-je mieux aligner ma vie professionnelle avec mon chemin spirituel ?"
-            rows={4}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-amber-400 transition-colors resize-none"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-white/70 mb-2">
-            Quel est votre objectif spirituel ?
-          </label>
-          <textarea
-            value={formData.objective}
-            onChange={(e) => setFormData((prev) => ({ ...prev, objective: e.target.value }))}
-            placeholder="Ex: Développer mon intuition, trouver ma mission de vie, guérir des blessures du passé..."
-            rows={4}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-amber-400 transition-colors resize-none"
-            required
-          />
-        </div>
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs text-white/60 mb-1.5">
+          Quelle question vous guide ?
+        </label>
+        <textarea
+          value={formData.specificQuestion}
+          onChange={(e) => setFormData(prev => ({ ...prev, specificQuestion: e.target.value }))}
+          placeholder="Ex: Comment aligner ma vie professionnelle avec mon chemin spirituel ?"
+          rows={3}
+          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-amber-400 transition-colors resize-none"
+          required
+        />
       </div>
-    </motion.div>
-  );
-};
+
+      <div>
+        <label className="block text-xs text-white/60 mb-1.5">
+          Quel est votre objectif spirituel ?
+        </label>
+        <textarea
+          value={formData.objective}
+          onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
+          placeholder="Ex: Développer mon intuition, trouver ma mission de vie..."
+          rows={3}
+          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-amber-400 transition-colors resize-none"
+          required
+        />
+      </div>
+    </div>
+  </motion.div>
+);
 
 // =================== ÉTAPE 3 : PHOTOS ===================
 
 interface Step3Props {
-  formData: OnboardingFormData;
-  handleFileChange: (field: 'facePhoto' | 'palmPhoto', file: File | null) => void;
+  formData: FormData;
+  onFileChange: (field: 'facePhoto' | 'palmPhoto', file: File | null) => void;
 }
 
-const Step3Photos: React.FC<Step3Props> = ({ formData, handleFileChange }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
-    >
-      <h3 className="text-xl font-semibold text-amber-400 flex items-center gap-2">
-        <Upload className="w-6 h-6" />
-        Vos Photos
-      </h3>
+const Step3Photos: React.FC<Step3Props> = ({ formData, onFileChange }) => (
+  <motion.div
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -20 }}
+    className="space-y-4"
+  >
+    <h3 className="text-lg font-semibold text-amber-400 flex items-center gap-2 mb-4">
+      <Upload className="w-5 h-5" />
+      Vos Photos
+    </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Photo Visage */}
-        <PhotoUpload
-          label="Photo de votre visage"
-          icon={<Image className="w-8 h-8" />}
-          file={formData.facePhoto}
-          onChange={(file) => handleFileChange('facePhoto', file)}
-        />
+    <div className="grid grid-cols-2 gap-3">
+      <PhotoUpload
+        label="Visage"
+        icon={<Image className="w-6 h-6" />}
+        file={formData.facePhoto}
+        onChange={(file) => onFileChange('facePhoto', file)}
+      />
+      <PhotoUpload
+        label="Paume"
+        icon={<Hand className="w-6 h-6" />}
+        file={formData.palmPhoto}
+        onChange={(file) => onFileChange('palmPhoto', file)}
+      />
+    </div>
 
-        {/* Photo Paume */}
-        <PhotoUpload
-          label="Photo de votre paume"
-          icon={<Hand className="w-8 h-8" />}
-          file={formData.palmPhoto}
-          onChange={(file) => handleFileChange('palmPhoto', file)}
-        />
-      </div>
+    <p className="text-xs text-white/50 text-center pt-2">
+      Ces photos personnalisent votre lecture spirituelle
+    </p>
+  </motion.div>
+);
 
-      <p className="text-xs text-white/50 text-center">
-        Ces photos nous aideront à personnaliser votre lecture spirituelle
-      </p>
-    </motion.div>
-  );
-};
+// =================== COMPOSANT PHOTO ===================
 
-// =================== COMPOSANT PHOTO UPLOAD ===================
-
-interface PhotoUploadProps {
+const PhotoUpload: React.FC<{
   label: string;
   icon: React.ReactNode;
   file: File | null;
   onChange: (file: File | null) => void;
-}
-
-const PhotoUpload: React.FC<PhotoUploadProps> = ({ label, icon, file, onChange }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    onChange(selectedFile);
-  };
-
-  return (
-    <div className="relative">
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleChange}
-        className="hidden"
-        id={`upload-${label}`}
-      />
-      <label
-        htmlFor={`upload-${label}`}
-        className={`block cursor-pointer p-6 border-2 border-dashed rounded-lg transition-all ${
-          file
-            ? 'border-amber-400/50 bg-amber-400/10'
-            : 'border-white/20 bg-white/5 hover:border-amber-400/30 hover:bg-white/10'
-        }`}
-      >
-        <div className="flex flex-col items-center gap-3">
-          <div className={`${file ? 'text-amber-400' : 'text-white/40'}`}>
-            {icon}
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-white/80">{label}</p>
-            {file ? (
-              <p className="text-xs text-amber-400 mt-1 flex items-center justify-center gap-1">
-                <Check className="w-3 h-3" />
-                {file.name}
-              </p>
-            ) : (
-              <p className="text-xs text-white/40 mt-1">Cliquez pour uploader</p>
-            )}
-          </div>
+}> = ({ label, icon, file, onChange }) => (
+  <div className="relative">
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) => onChange(e.target.files?.[0] || null)}
+      className="hidden"
+      id={`upload-${label}`}
+    />
+    <label
+      htmlFor={`upload-${label}`}
+      className={`block cursor-pointer p-4 border-2 border-dashed rounded-lg transition-all ${
+        file
+          ? 'border-amber-400/50 bg-amber-400/10'
+          : 'border-white/20 bg-white/5 hover:border-amber-400/30'
+      }`}
+    >
+      <div className="flex flex-col items-center gap-2">
+        <div className={file ? 'text-amber-400' : 'text-white/40'}>
+          {icon}
         </div>
-      </label>
-    </div>
-  );
-};
+        <p className="text-xs font-medium text-white/80">{label}</p>
+        {file && (
+          <p className="text-xs text-amber-400 flex items-center gap-1">
+            <Check className="w-3 h-3" />
+            OK
+          </p>
+        )}
+      </div>
+    </label>
+  </div>
+);
 
 export default OnboardingForm;
