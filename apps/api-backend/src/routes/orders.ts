@@ -18,25 +18,39 @@ const router = express.Router();
  * @security CRITICAL - Protection contre les attaques par upload de fichiers falsifiés
  */
 const validateFileHeader = (buffer: Buffer, mimetype: string): boolean => {
-  const magicNumbers: Record<string, number[]> = {
+  const magicNumbers: Record<string, number[] | string> = {
     'image/jpeg': [0xFF, 0xD8, 0xFF],
-    'image/png': [0x89, 0x50, 0x4E, 0x47]
+    'image/png': [0x89, 0x50, 0x4E, 0x47],
+    // WebP: starts with RIFF....WEBP
+    'image/webp': 'RIFF-WEBP',
+    // GIF87a / GIF89a
+    'image/gif': 'GIF8',
   };
 
-  const expectedSignature = magicNumbers[mimetype];
-  if (!expectedSignature) {
-    return false;
+  const expected = magicNumbers[mimetype];
+  // For unknown/less common types (HEIC/HEIF/BMP/TIFF), be permissive and skip header validation
+  if (!expected) {
+    return true;
   }
 
   // Vérifier que le buffer a au moins la taille de la signature
-  if (buffer.length < expectedSignature.length) {
-    return false;
-  }
-
-  // Comparer les premiers octets avec la signature attendue
-  for (let i = 0; i < expectedSignature.length; i++) {
-    if (buffer[i] !== expectedSignature[i]) {
-      return false;
+  if (Array.isArray(expected)) {
+    if (buffer.length < expected.length) return false;
+    for (let i = 0; i < expected.length; i++) {
+      if (buffer[i] !== expected[i]) return false;
+    }
+  } else if (typeof expected === 'string') {
+    const sig = expected;
+    if (sig === 'RIFF-WEBP') {
+      // Check 'RIFF' at 0..3 and 'WEBP' at 8..11
+      if (buffer.length < 12) return false;
+      const riff = buffer.slice(0, 4).toString('ascii');
+      const webp = buffer.slice(8, 12).toString('ascii');
+      if (riff !== 'RIFF' || webp !== 'WEBP') return false;
+    } else if (sig === 'GIF8') {
+      if (buffer.length < 4) return false;
+      const gif = buffer.slice(0, 4).toString('ascii');
+      if (!gif.startsWith('GIF8')) return false;
     }
   }
 
@@ -53,22 +67,25 @@ const validateFileHeader = (buffer: Buffer, mimetype: string): boolean => {
 const secureUpload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 25 * 1024 * 1024, // 25MB - augmenté pour photos haute résolution
+    fileSize: 50 * 1024 * 1024, // 50MB par fichier pour être permissif
     files: 2, // Maximum 2 fichiers
-    fieldSize: 5 * 1024 * 1024 // 5MB pour les champs de formulaire
+    fieldSize: 10 * 1024 * 1024 // 10MB pour champs texte si besoin
   },
   fileFilter: (req, file, cb) => {
-    // Seuls JPEG et PNG authentiques sont autorisés
-    const allowedTypes = ['image/jpeg', 'image/png'];
-    
-    if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error('Type de fichier non autorisé. Seuls JPEG et PNG sont acceptés.'));
+    // Autoriser largement les formats d'images courants
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/webp',
+      'image/gif', 'image/bmp', 'image/tiff', 'image/heic', 'image/heif'
+    ];
+
+    if (!allowedTypes.includes(file.mimetype) && !file.mimetype.startsWith('image/')) {
+      return cb(new Error('Type de fichier non autorisé. Veuillez envoyer une image.'));
     }
 
-    // Validation supplémentaire du nom de fichier
-    const allowedExtensions = /\.(jpg|jpeg|png)$/i;
+    // Validation supplémentaire du nom de fichier (permissive sur extensions images)
+    const allowedExtensions = /\.(jpg|jpeg|png|webp|gif|bmp|tiff|tif|heic|heif)$/i;
     if (!allowedExtensions.test(file.originalname)) {
-      return cb(new Error('Extension de fichier non autorisée.'));
+      return cb(new Error('Extension de fichier non autorisée. Formats images attendus.'));
     }
 
     cb(null, true);
