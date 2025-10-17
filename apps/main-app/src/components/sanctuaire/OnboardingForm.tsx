@@ -83,6 +83,76 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   const [error, setError] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   
+  // =================== IMAGE COMPRESSION UTILS ===================
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const compressImage = async (
+    file: File,
+    opts: { maxDimension?: number; quality?: number } = {}
+  ): Promise<File> => {
+    try {
+      const isSupportedType = /^(image\/jpeg|image\/png)$/.test(file.type);
+      if (!isSupportedType) return file;
+
+      const maxDimension = opts.maxDimension ?? 1600; // px
+      const quality = opts.quality ?? 0.8; // JPEG quality
+
+      // Skip compression for small files (< 3MB)
+      if (file.size <= 3 * 1024 * 1024) return file;
+
+      const dataUrl = await readFileAsDataURL(file);
+      const img = new Image();
+      const loaded: Promise<void> = new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Image load error'));
+      });
+      img.src = dataUrl;
+      await loaded;
+
+      const { width, height } = img;
+      const scale = Math.min(1, maxDimension / Math.max(width, height));
+      const targetW = Math.max(1, Math.round(width * scale));
+      const targetH = Math.max(1, Math.round(height * scale));
+
+      if (scale >= 0.98 && file.size < 10 * 1024 * 1024) {
+        return file;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return file;
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+
+      const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      const blob: Blob | null = await new Promise((resolve) =>
+        canvas.toBlob(
+          resolve,
+          outType,
+          outType === 'image/jpeg' ? quality : undefined
+        )
+      );
+      if (!blob) return file;
+
+      let name = file.name;
+      if (outType === 'image/jpeg' && /\.(png)$/i.test(name)) {
+        name = name.replace(/\.png$/i, '.jpg');
+      }
+
+      return new File([blob], name, { type: outType, lastModified: Date.now() });
+    } catch {
+      return file; // fail-safe
+    }
+  };
+  
   // =================== CHARGEMENT PAYMENT INTENT ===================
   
   useEffect(() => {
@@ -226,7 +296,11 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       );
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Erreur serveur' }));
+        if (response.status === 413) {
+          setError('Vos fichiers sont trop volumineux (max 25MB). Compressez vos photos puis réessayez.');
+          return;
+        }
+        const errorData = await response.json().catch(() => ({ error: `Erreur serveur (HTTP ${response.status})` }));
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
       
@@ -333,7 +407,14 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             <Step3Photos
               key="step3"
               formData={formData}
-              onFileChange={(field, file) => setFormData(prev => ({ ...prev, [field]: file }))}
+              onFileChange={async (field, file) => {
+                if (!file) {
+                  setFormData(prev => ({ ...prev, [field]: null }));
+                  return;
+                }
+                const compressed = await compressImage(file, { maxDimension: 1600, quality: 0.8 });
+                setFormData(prev => ({ ...prev, [field]: compressed }));
+              }}
             />
           )}
         </AnimatePresence>
