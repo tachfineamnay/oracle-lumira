@@ -439,7 +439,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     }
 
     // Traiter les fichiers uploadés avec S3
-    const uploadedFiles = [];
+    const uploadedFiles = [] as any[];
     if (req.files) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       const s3Service = getS3Service();
@@ -497,10 +497,46 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       }
     }
 
+    // Handle direct-to-S3 uploads via uploadedKeys in JSON body
+    // Expect: req.body.uploadedKeys = { facePhotoKey?: string, palmPhotoKey?: string }
+    try {
+      const __safeParse = (v: any) => { try { if (!v) return {}; if (typeof v === 'string') return JSON.parse(v); if (typeof v === 'object') return v; return {}; } catch { return {}; } };
+      const keys = __safeParse(req.body.uploadedKeys);
+      const s3Service = getS3Service();
+      if (keys && (keys.facePhotoKey || keys.palmPhotoKey)) {
+        if (keys.facePhotoKey) {
+          const key = String(keys.facePhotoKey);
+          uploadedFiles.push({
+            name: key.split('/').pop() || 'face_photo',
+            url: s3Service.getPublicUrl(key),
+            key,
+            contentType: 'image',
+            size: 0,
+            type: 'face_photo',
+            uploadedAt: new Date()
+          });
+        }
+        if (keys.palmPhotoKey) {
+          const key = String(keys.palmPhotoKey);
+          uploadedFiles.push({
+            name: key.split('/').pop() || 'palm_photo',
+            url: s3Service.getPublicUrl(key),
+            key,
+            contentType: 'image',
+            size: 0,
+            type: 'palm_photo',
+            uploadedAt: new Date()
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[CLIENT-SUBMIT] uploadedKeys parse skipped:', e instanceof Error ? e.message : e);
+    }
+
     // Parser les données JSON depuis FormData
-    const __safeParse = (v: any) => { try { if (!v) return {}; if (typeof v === 'string') return JSON.parse(v); if (typeof v === 'object') return v; return {}; } catch { return {}; } };
-    const formData = __safeParse(req.body.formData);
-    const clientInputs = __safeParse(req.body.clientInputs);
+    const __safeParse2 = (v: any) => { try { if (!v) return {}; if (typeof v === 'string') return JSON.parse(v); if (typeof v === 'object') return v; return {}; } catch { return {}; } };
+    const formData = __safeParse2(req.body.formData || req.body.form_data || req.body);
+    const clientInputs = __safeParse2(req.body.clientInputs);
 
     // Fusionner les fichiers existants avec les nouveaux
     const existing = order.files || [];

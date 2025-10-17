@@ -82,6 +82,8 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<null | 'face' | 'palm'>(null);
+  const [uploadedKeys, setUploadedKeys] = useState<{ facePhotoKey?: string; palmPhotoKey?: string }>({});
   
   // =================== IMAGE COMPRESSION UTILS ===================
   const readFileAsDataURL = (file: File): Promise<string> => {
@@ -244,7 +246,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       case 0: return true; // Bienvenue, toujours OK
       case 1: return !!(formData.birthDate && formData.birthTime && formData.birthPlace);
       case 2: return !!(formData.specificQuestion && formData.objective);
-      case 3: return !!(formData.facePhoto && formData.palmPhoto);
+      case 3: return !!(formData.facePhoto && formData.palmPhoto && uploadedKeys.facePhotoKey && uploadedKeys.palmPhotoKey);
       default: return false;
     }
   };
@@ -282,11 +284,6 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       setIsSubmitting(true);
       setError(null);
       
-      const submitFormData = new FormData();
-      
-      if (formData.facePhoto) submitFormData.append('facePhoto', formData.facePhoto);
-      if (formData.palmPhoto) submitFormData.append('palmPhoto', formData.palmPhoto);
-      
       const jsonData = {
         email: userData.email,
         phone: userData.phone,
@@ -298,12 +295,10 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
         specificQuestion: formData.specificQuestion,
         objective: formData.objective,
       };
-      
-      submitFormData.append('formData', JSON.stringify(jsonData));
-      
+      const payload = { formData: jsonData, uploadedKeys };
       const response = await fetch(
         `${API_BASE}/orders/by-payment-intent/${paymentIntentId}/client-submit`,
-        { method: 'POST', body: submitFormData }
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
       );
       
       if (!response.ok) {
@@ -421,11 +416,40 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
               onFileChange={async (field, file) => {
                 if (!file) {
                   setFormData(prev => ({ ...prev, [field]: null }));
+                  setUploadedKeys(prev => ({ ...prev, [field === 'facePhoto' ? 'facePhotoKey' : 'palmPhotoKey']: undefined }));
                   return;
                 }
                 // Tenter une compression quand supporté (JPEG/PNG); sinon garder le fichier tel quel
                 const compressed = await compressImage(file, { maxDimension: 1600, quality: 0.8, targetKB: 900 });
                 setFormData(prev => ({ ...prev, [field]: compressed }));
+                try {
+                  const type = field === 'facePhoto' ? 'face_photo' : 'palm_photo';
+                  setUploading(field === 'facePhoto' ? 'face' : 'palm');
+                  const presign = await fetch(`${API_BASE}/uploads/presign`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, contentType: compressed.type || file.type, originalName: compressed.name || file.name })
+                  });
+                  if (!presign.ok) {
+                    const err = await presign.json().catch(() => ({}));
+                    throw new Error(err.error || `Presign failed (${presign.status})`);
+                  }
+                  const { uploadUrl, key } = await presign.json();
+                  const putRes = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': compressed.type || 'application/octet-stream' },
+                    body: compressed
+                  });
+                  if (!putRes.ok) {
+                    throw new Error(`S3 upload failed (${putRes.status})`);
+                  }
+                  setUploadedKeys(prev => ({ ...prev, [field === 'facePhoto' ? 'facePhotoKey' : 'palmPhotoKey']: key }));
+                } catch (e: any) {
+                  console.error('[OnboardingForm] S3 upload error:', e);
+                  setError(e?.message || 'Échec de l\'upload S3');
+                } finally {
+                  setUploading(null);
+                }
               }}
             />
           )}

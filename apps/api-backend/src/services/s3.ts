@@ -99,7 +99,7 @@ export class S3Service {
   /**
    * Générer l'URL publique d'un fichier
    */
-  private getPublicUrl(key: string): string {
+  public getPublicUrl(key: string): string {
     const endpoint = process.env.S3_ENDPOINT;
     if (endpoint) {
       // MinIO ou endpoint personnalisé
@@ -146,6 +146,20 @@ export class S3Service {
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
       Key: key,
+    });
+    const url = await awsGetSignedUrl(this.s3Client, command, { expiresIn: expiresInSeconds });
+    return url;
+  }
+
+  /**
+   * Generate a presigned PUT URL for direct uploads from the browser
+   */
+  async getPresignedPutUrl(key: string, contentType: string, expiresInSeconds: number = 900): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      ContentType: contentType,
+      // Optional: you can add ACL or Metadata here if your bucket policy allows
     });
     const url = await awsGetSignedUrl(this.s3Client, command, { expiresIn: expiresInSeconds });
     return url;

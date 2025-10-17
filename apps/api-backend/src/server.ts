@@ -19,6 +19,7 @@ import { expertRoutes } from './routes/expert';
 import paymentRoutes from './routes/payments';
 import productRoutes from './routes/products';
 import envDebugRoutes from './routes/env-debug';
+import uploadsRoutes from './routes/uploads';
 
 console.log('? [API] server.ts - Imports loaded');
 
@@ -115,9 +116,13 @@ app.use('/api/expert/n8n-callback', express.raw({ type: 'application/json' }));
 // Body parsing middleware (after webhook routes)
 // Skip JSON parsing for upload routes to avoid conflicts with Multer
 app.use((req, res, next) => {
-  // Skip JSON parsing for routes that handle file uploads
+  // client-submit can now receive either multipart (Multer) or JSON (keys-only)
   if (req.path.includes('client-submit')) {
-    console.log('[MIDDLEWARE] Skipping JSON parsing for client-submit route:', req.path);
+    const ct = String(req.headers['content-type'] || '');
+    if (ct.startsWith('application/json')) {
+      return express.json({ limit: '10mb' })(req, res, next);
+    }
+    // multipart/form-data passes through to Multer in the route
     return next();
   }
   return express.json({ limit: '25mb' })(req, res, next);
@@ -126,6 +131,10 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   // Skip URL encoding for routes that handle file uploads
   if (req.path.includes('client-submit')) {
+    const ct = String(req.headers['content-type'] || '');
+    if (ct.startsWith('application/x-www-form-urlencoded')) {
+      return express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
+    }
     return next();
   }
   return express.urlencoded({ extended: true, limit: '25mb' })(req, res, next);
@@ -160,6 +169,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/debug', envDebugRoutes);
+app.use('/api/uploads', uploadsRoutes);
 // Mount real expert routes (production-ready)
 app.use('/api/expert', expertRoutes);
 
