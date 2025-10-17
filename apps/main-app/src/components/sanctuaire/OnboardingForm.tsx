@@ -23,6 +23,7 @@ import {
   Mail, Phone, User
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
+import { useUserLevel } from '../../contexts/UserLevelContext';
 import GlassCard from '../ui/GlassCard';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -54,6 +55,7 @@ interface OnboardingFormProps {
 
 export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) => {
   const { user } = useSanctuaire();
+  const { updateUserProfile } = useUserLevel(); // ✨ Ajout pour marquer profileCompleted
   
   // État utilisateur (pré-rempli)
   const [userData, setUserData] = useState<UserData>({
@@ -223,6 +225,22 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       }
       
       console.log('✅ [OnboardingForm] Soumission réussie');
+      
+      // ✨ CRITIQUE : Marquer le profil comme complété dans UserLevelContext
+      updateUserProfile({
+        email: userData.email,
+        phone: userData.phone,
+        birthDate: formData.birthDate,
+        birthTime: formData.birthTime,
+        objective: formData.specificQuestion,
+        additionalInfo: formData.objective,
+        profileCompleted: true, // ✅ Clé critique pour débloquer le dashboard
+        submittedAt: new Date(),
+        facePhoto: formData.facePhoto,
+        palmPhoto: formData.palmPhoto
+      });
+      
+      console.log('✨ [OnboardingForm] profileCompleted marqué à true dans UserLevelContext');
       
       sessionStorage.removeItem('first_visit');
       localStorage.removeItem('last_payment_intent_id');
