@@ -26,7 +26,7 @@ import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import { useUserLevel } from '../../contexts/UserLevelContext';
 import GlassCard from '../ui/GlassCard';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // =================== TYPES ===================
 
