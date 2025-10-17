@@ -412,6 +412,11 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
                   setFormData(prev => ({ ...prev, [field]: null }));
                   return;
                 }
+                const allowed = ['image/jpeg','image/png'];
+                if (!allowed.includes(file.type)) {
+                  setError('Format non supporté. Utilisez des photos JPEG ou PNG.');
+                  return;
+                }
                 const compressed = await compressImage(file, { maxDimension: 1600, quality: 0.8 });
                 setFormData(prev => ({ ...prev, [field]: compressed }));
               }}
@@ -678,7 +683,7 @@ const PhotoUpload: React.FC<{
   <div className="relative">
     <input
       type="file"
-      accept="image/*"
+      accept="image/jpeg,image/png"
       onChange={(e) => onChange(e.target.files?.[0] || null)}
       className="hidden"
       id={`upload-${label}`}
