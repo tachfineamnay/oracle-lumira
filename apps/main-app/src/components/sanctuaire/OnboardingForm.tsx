@@ -122,7 +122,13 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
           if (!response.ok) throw new Error('Order not found');
           
           const data = await response.json();
-          const metadata = data.order.metadata || {};
+          console.log('📦 [OnboardingForm] Réponse API reçue:', data);
+          
+          // Vérifier la structure de la réponse
+          const order = data.order || data;
+          const metadata = order?.metadata || {};
+          
+          console.log('📋 [OnboardingForm] Metadata extraite:', metadata);
           
           const customerName = metadata.customerName || '';
           const nameParts = customerName.split(' ');

@@ -53,9 +53,9 @@ const validateFileHeader = (buffer: Buffer, mimetype: string): boolean => {
 const secureUpload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB - limite réduite pour plus de sécurité
+    fileSize: 25 * 1024 * 1024, // 25MB - augmenté pour photos haute résolution
     files: 2, // Maximum 2 fichiers
-    fieldSize: 1024 * 1024 // 1MB pour les champs de formulaire
+    fieldSize: 5 * 1024 * 1024 // 5MB pour les champs de formulaire
   },
   fileFilter: (req, file, cb) => {
     // Seuls JPEG et PNG authentiques sont autorisés

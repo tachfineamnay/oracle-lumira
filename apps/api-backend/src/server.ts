@@ -120,7 +120,7 @@ app.use((req, res, next) => {
     console.log('[MIDDLEWARE] Skipping JSON parsing for client-submit route:', req.path);
     return next();
   }
-  return express.json({ limit: '10mb' })(req, res, next);
+  return express.json({ limit: '25mb' })(req, res, next);
 });
 
 app.use((req, res, next) => {
@@ -128,7 +128,7 @@ app.use((req, res, next) => {
   if (req.path.includes('client-submit')) {
     return next();
   }
-  return express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
+  return express.urlencoded({ extended: true, limit: '25mb' })(req, res, next);
 });
 
 // Request logging middleware
