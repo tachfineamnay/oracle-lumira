@@ -95,14 +95,15 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
 
   const compressImage = async (
     file: File,
-    opts: { maxDimension?: number; quality?: number } = {}
+    opts: { maxDimension?: number; quality?: number; targetKB?: number } = {}
   ): Promise<File> => {
     try {
       const isSupportedType = /^(image\/jpeg|image\/png)$/.test(file.type);
       if (!isSupportedType) return file;
 
-      const maxDimension = opts.maxDimension ?? 1600; // px
-      const quality = opts.quality ?? 0.8; // JPEG quality
+      let maxDimension = opts.maxDimension ?? 1400; // px
+      let quality = opts.quality ?? 0.8; // JPEG quality
+      const targetBytes = Math.max(200, (opts.targetKB ?? 900)) * 1024; // par défaut 900KB
 
       // Skip compression for small files (< 3MB)
       if (file.size <= 3 * 1024 * 1024) return file;
@@ -117,37 +118,47 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       await loaded;
 
       const { width, height } = img;
-      const scale = Math.min(1, maxDimension / Math.max(width, height));
-      const targetW = Math.max(1, Math.round(width * scale));
-      const targetH = Math.max(1, Math.round(height * scale));
-
-      if (scale >= 0.98 && file.size < 10 * 1024 * 1024) {
-        return file;
-      }
+      const scale0 = Math.min(1, maxDimension / Math.max(width, height));
+      let targetW = Math.max(1, Math.round(width * scale0));
+      let targetH = Math.max(1, Math.round(height * scale0));
 
       const canvas = document.createElement('canvas');
-      canvas.width = targetW;
-      canvas.height = targetH;
       const ctx = canvas.getContext('2d');
       if (!ctx) return file;
-      ctx.drawImage(img, 0, 0, targetW, targetH);
 
-      const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-      const blob: Blob | null = await new Promise((resolve) =>
-        canvas.toBlob(
-          resolve,
-          outType,
-          outType === 'image/jpeg' ? quality : undefined
-        )
-      );
-      if (!blob) return file;
+      const encode = async (): Promise<Blob | null> => new Promise((resolve) => {
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', quality);
+      });
 
-      let name = file.name;
-      if (outType === 'image/jpeg' && /\.(png)$/i.test(name)) {
-        name = name.replace(/\.png$/i, '.jpg');
+      // Toujours sortir en JPEG (photos), plus compact que PNG
+      let attempt = 0;
+      let blob: Blob | null = null;
+      while (attempt < 6) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+        ctx.clearRect(0, 0, targetW, targetH);
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        blob = await encode();
+        if (!blob) break;
+        if (blob.size <= targetBytes) break;
+
+        // Réduire progressivement la qualité, puis la taille si nécessaire
+        if (quality > 0.55) {
+          quality -= 0.1;
+        } else if (Math.max(targetW, targetH) > 900) {
+          targetW = Math.round(targetW * 0.9);
+          targetH = Math.round(targetH * 0.9);
+        } else {
+          break;
+        }
+        attempt++;
       }
 
-      return new File([blob], name, { type: outType, lastModified: Date.now() });
+      if (!blob) return file;
+
+      let name = file.name.replace(/\.(png)$/i, '.jpg');
+      if (!/\.(jpe?g)$/i.test(name)) name = `${name}.jpg`;
+      return new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() });
     } catch {
       return file; // fail-safe
     }

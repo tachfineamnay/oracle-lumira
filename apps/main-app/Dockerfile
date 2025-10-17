@@ -38,6 +38,7 @@ RUN echo 'server { \
     server_name _; \
     root /usr/share/nginx/html; \
     index index.html; \
+    client_max_body_size 25M; \
     \
     # Security headers \
     add_header X-Frame-Options "DENY" always; \
