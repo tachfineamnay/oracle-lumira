@@ -184,14 +184,40 @@ const CheckoutFormInner = ({
         redirect: 'if_required',
       });
 
+      console.log('💳 [CheckoutFormInner] Stripe response:', { error, paymentIntent });
+
       if (error) {
+        console.error('❌ [CheckoutFormInner] Payment error:', error);
         setPaymentError(
           error.message || 'Une erreur est survenue lors du paiement'
         );
         setProcessing(false);
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        // Payment succeeded without redirect
-        onSuccess(orderId, email.value);
+      } else if (paymentIntent) {
+        console.log('✅ [CheckoutFormInner] PaymentIntent status:', paymentIntent.status);
+        
+        if (paymentIntent.status === 'succeeded') {
+          console.log('✅ Payment succeeded:', { orderId, email: email.value });
+          onSuccess(orderId, email.value);
+        } else if (paymentIntent.status === 'processing') {
+          console.log('⏳ Payment processing, waiting for webhook...');
+          // Le paiement est en cours de traitement (3D Secure, etc.)
+          // Attendre quelques secondes puis rediriger
+          setTimeout(() => {
+            console.log('⏳ Payment still processing, redirecting to confirmation...');
+            onSuccess(orderId, email.value);
+          }, 2000);
+        } else if (paymentIntent.status === 'requires_action') {
+          console.log('⚠️ Payment requires additional action (3D Secure, etc.)');
+          setPaymentError('Action supplémentaire requise. Veuillez suivre les instructions.');
+          setProcessing(false);
+        } else {
+          console.log('⚠️ Unexpected payment status:', paymentIntent.status);
+          setPaymentError(`Statut inattendu: ${paymentIntent.status}`);
+          setProcessing(false);
+        }
+      } else {
+        console.error('❌ [CheckoutFormInner] No error and no paymentIntent!');
+        setProcessing(false);
       }
     } catch (err) {
       setPaymentError('Une erreur inattendue est survenue');
