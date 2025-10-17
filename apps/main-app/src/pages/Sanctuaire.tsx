@@ -7,7 +7,7 @@ import MandalaNav from '../components/mandala/MandalaNav';
 import SanctuaireSidebar from '../components/layout/SanctuaireSidebar';
 import GlassCard from '../components/ui/GlassCard';
 import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeForm';
-import OnboardingForm from '../components/sanctuaire/OnboardingForm';
+import { OnboardingForm } from '../components/sanctuaire/OnboardingForm';
 import { useAuth } from '../hooks/useAuth';
 import { labels } from '../lib/sphereLabels';
 import { useUserLevel } from '../contexts/UserLevelContext';
@@ -147,8 +147,8 @@ const ContextualHint: React.FC = () => {
             <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
           </div>
 
-          {/* Formulaire d'accueil */}
-          <SanctuaireWelcomeForm />
+          {/* Formulaire d'onboarding refonte 2025 */}
+          <OnboardingForm />
         </motion.div>
       );
     }
