@@ -111,9 +111,35 @@ const validateFileContent = (req: any, res: any, next: any) => {
 
 
 
+// Safe wrapper to catch Multer errors and respond with meaningful status codes
+const clientSubmitUpload = (req: any, res: any, next: any) => {
+  const handler = secureUpload.fields([
+    { name: 'facePhoto', maxCount: 1 },
+    { name: 'palmPhoto', maxCount: 1 },
+  ]);
+  handler(req, res, (err: any) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: 'Fichier trop volumineux (max 25MB).' });
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ error: 'Trop de fichiers. Maximum 2 autorisés.' });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ error: 'Champ de fichier inattendu.' });
+      }
+      return res.status(400).json({ error: `Erreur upload (${err.code}).` });
+    }
+    if (err) {
+      return res.status(400).json({ error: err.message || 'Erreur upload.' });
+    }
+    next();
+  });
+};
+
 // Client submission: attach uploaded files + form data by paymentIntentId
 router.post('/by-payment-intent/:paymentIntentId/client-submit', 
-  secureUpload.fields([{ name: 'facePhoto', maxCount: 1 }, { name: 'palmPhoto', maxCount: 1 }]),
+  clientSubmitUpload,
   validateFileContent,
   async (req: any, res: any) => {
   try {
