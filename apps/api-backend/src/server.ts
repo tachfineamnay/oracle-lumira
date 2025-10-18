@@ -7,6 +7,9 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createLogger, format, transports } from 'winston';
+import { requestIdMiddleware, httpLoggerMiddleware, errorLoggerMiddleware } from './middleware/logging';
+// Import cleanup job (node-cron required - install: npm install node-cron @types/node-cron)
+// import { startCleanupJob } from './jobs/cleanupTempFiles';
 
 // Import routes
 import { stripeRoutes } from './routes/stripe';
@@ -105,6 +108,15 @@ console.log('? [API] server.ts - CORS configured for production');
 // Apply general rate limiting to all requests
 app.use(apiLimiter);
 
+// =================== GLOBAL LOGGING MIDDLEWARE ===================
+// Add requestId to all requests for log correlation
+app.use(requestIdMiddleware);
+
+// HTTP request/response logging (before routes)
+app.use(httpLoggerMiddleware);
+console.log('? [API] server.ts - Global logging middleware configured');
+// =================== END GLOBAL LOGGING ===================
+
 // Webhook routes MUST come before body parsing middleware
 // Stripe webhooks need raw body for signature verification
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
@@ -184,6 +196,12 @@ if (process.env.NODE_ENV !== 'production') {
 
 console.log('? [API] server.ts - Routes configured');
 
+// =================== GLOBAL ERROR LOGGING MIDDLEWARE ===================
+// Error logging middleware (before error handler)
+app.use(errorLoggerMiddleware);
+console.log('? [API] server.ts - Error logging middleware configured');
+// =================== END ERROR LOGGING ===================
+
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   logger.error('Unhandled error:', { message: err.message, stack: err.stack });
@@ -219,6 +237,12 @@ if (!MONGODB_URI) {
     .then(() => {
       console.log('? [API] server.ts - MongoDB connected successfully');
       logger.info('MongoDB connected successfully');
+      
+      // =================== START CLEANUP JOB ===================
+      // Uncomment when node-cron is installed (npm install node-cron @types/node-cron)
+      // startCleanupJob();
+      // logger.info('Cleanup job started - runs daily at 3 AM');
+      // =================== END CLEANUP JOB ===================
       
       // Listen on all interfaces for Docker compatibility
       app.listen(PORT, '0.0.0.0', () => {

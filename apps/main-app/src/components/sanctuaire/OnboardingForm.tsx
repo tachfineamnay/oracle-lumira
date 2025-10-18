@@ -85,6 +85,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   const [uploading, setUploading] = useState<null | 'face' | 'palm'>(null);
   const [uploadedKeys, setUploadedKeys] = useState<{ facePhotoKey?: string; palmPhotoKey?: string }>({});
   const [useDirectUpload, setUseDirectUpload] = useState(true);
+  const [uploadProgress, setUploadProgress] = useState<{ face?: number; palm?: number }>({});
   
   // =================== IMAGE COMPRESSION UTILS ===================
   const readFileAsDataURL = (file: File): Promise<string> => {
@@ -94,6 +95,110 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  };
+
+  /**
+   * Upload file to S3 using XMLHttpRequest with progress tracking
+   * @returns { success: boolean, error?: string }
+   */
+  const uploadWithProgress = (
+    uploadUrl: string,
+    file: File,
+    onProgress: (percentage: number) => void
+  ): Promise<{ success: boolean; error?: string }> => {
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percentage = Math.round((e.loaded / e.total) * 100);
+          onProgress(percentage);
+        }
+      });
+
+      // Handle completion
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ success: true });
+        } else {
+          resolve({ success: false, error: `S3 upload failed (${xhr.status})` });
+        }
+      });
+
+      // Handle network errors
+      xhr.addEventListener('error', () => {
+        resolve({ success: false, error: 'Network error during upload' });
+      });
+
+      // Handle timeout
+      xhr.addEventListener('timeout', () => {
+        resolve({ success: false, error: 'Upload timeout' });
+      });
+
+      // Configure and send
+      xhr.open('PUT', uploadUrl, true);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.timeout = 120000; // 2 minutes timeout
+      xhr.send(file);
+    });
+  };
+
+  /**
+   * Retry wrapper with exponential backoff for upload
+   * Retries on network/timeout errors, not on auth/permission errors
+   */
+  const uploadWithRetry = async (
+    uploadUrl: string,
+    file: File,
+    onProgress: (percentage: number, attempt?: number, maxAttempts?: number) => void
+  ): Promise<{ success: boolean; error?: string }> => {
+    const maxAttempts = 3;
+    const delays = [1000, 2000, 4000]; // Exponential backoff in ms
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`[uploadWithRetry] Attempt ${attempt}/${maxAttempts}`);
+      
+      // Reset progress to 0 on retry attempts
+      if (attempt > 1) {
+        onProgress(0, attempt, maxAttempts);
+      }
+
+      const result = await uploadWithProgress(
+        uploadUrl,
+        file,
+        (percentage) => onProgress(percentage, attempt, maxAttempts)
+      );
+
+      // Success - return immediately
+      if (result.success) {
+        console.log(`[uploadWithRetry] Success on attempt ${attempt}`);
+        return result;
+      }
+
+      // Check if error is retryable
+      const isRetryable = result.error?.includes('Network error') || 
+                          result.error?.includes('timeout');
+
+      // Non-retryable error (CORS, 403, etc.) - fail immediately
+      if (!isRetryable) {
+        console.error(`[uploadWithRetry] Non-retryable error:`, result.error);
+        return result;
+      }
+
+      // Last attempt failed - return error
+      if (attempt === maxAttempts) {
+        console.error(`[uploadWithRetry] All ${maxAttempts} attempts failed`);
+        return { success: false, error: `Upload failed after ${maxAttempts} attempts: ${result.error}` };
+      }
+
+      // Wait before retry with exponential backoff
+      const delay = delays[attempt - 1];
+      console.log(`[uploadWithRetry] Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    return { success: false, error: 'Upload failed (unexpected)' };
   };
 
   const compressImage = async (
@@ -428,6 +533,8 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             <Step3Photos
               key="step3"
               formData={formData}
+              uploadProgress={uploadProgress}
+              uploading={uploading}
               onFileChange={async (field, file) => {
                 if (!file) {
                   setFormData(prev => ({ ...prev, [field]: null }));
@@ -443,7 +550,10 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
           }
           try {
             const type = field === 'facePhoto' ? 'face_photo' : 'palm_photo';
-            setUploading(field === 'facePhoto' ? 'face' : 'palm');
+            const uploadType = field === 'facePhoto' ? 'face' : 'palm';
+            setUploading(uploadType);
+            setUploadProgress(prev => ({ ...prev, [uploadType]: 0 }));
+            
             const presign = await fetch(`${API_BASE}/uploads/presign`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -454,18 +564,31 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
               throw new Error(err.error || `Presign failed (${presign.status})`);
             }
             const { uploadUrl, key } = await presign.json();
-            const putRes = await fetch(uploadUrl, {
-              method: 'PUT',
-              headers: { 'Content-Type': compressed.type || 'application/octet-stream' },
-              body: compressed
-            });
-            if (!putRes.ok) {
-              throw new Error(`S3 upload failed (${putRes.status})`);
+            
+            // Upload with progress tracking and retry logic using XHR
+            const uploadResult = await uploadWithRetry(
+              uploadUrl,
+              compressed,
+              (percentage, attempt, maxAttempts) => {
+                setUploadProgress(prev => ({ ...prev, [uploadType]: percentage }));
+                
+                // Show retry attempt in console for debugging
+                if (attempt && attempt > 1) {
+                  console.log(`[OnboardingForm] Upload retry ${attempt}/${maxAttempts} - ${percentage}%`);
+                }
+              }
+            );
+            
+            if (!uploadResult.success) {
+              throw new Error(uploadResult.error || 'Upload failed');
             }
+            
             setUploadedKeys(prev => ({ ...prev, [field === 'facePhoto' ? 'facePhotoKey' : 'palmPhotoKey']: key }));
+            setUploadProgress(prev => ({ ...prev, [uploadType]: 100 }));
           } catch (e: any) {
             console.error('[OnboardingForm] S3 upload error:', e);
             setUploadedKeys(prev => ({ ...prev, [field === 'facePhoto' ? 'facePhotoKey' : 'palmPhotoKey']: undefined }));
+            setUploadProgress(prev => ({ ...prev, [field === 'facePhoto' ? 'face' : 'palm']: undefined }));
             setUseDirectUpload(false);
             setError('Upload S3 indisponible (CORS). Vos fichiers seront envoyés via nos serveurs.');
           } finally {
@@ -688,10 +811,12 @@ const Step2Intention: React.FC<StepProps> = ({ formData, setFormData }) => (
 
 interface Step3Props {
   formData: FormData;
+  uploadProgress: { face?: number; palm?: number };
+  uploading: 'face' | 'palm' | null;
   onFileChange: (field: 'facePhoto' | 'palmPhoto', file: File | null) => void;
 }
 
-const Step3Photos: React.FC<Step3Props> = ({ formData, onFileChange }) => (
+const Step3Photos: React.FC<Step3Props> = ({ formData, uploadProgress, uploading, onFileChange }) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
     animate={{ opacity: 1, x: 0 }}
@@ -708,12 +833,16 @@ const Step3Photos: React.FC<Step3Props> = ({ formData, onFileChange }) => (
         label="Visage"
         icon={<Image className="w-6 h-6" />}
         file={formData.facePhoto}
+        progress={uploadProgress.face}
+        isUploading={uploading === 'face'}
         onChange={(file) => onFileChange('facePhoto', file)}
       />
       <PhotoUpload
         label="Paume"
         icon={<Hand className="w-6 h-6" />}
         file={formData.palmPhoto}
+        progress={uploadProgress.palm}
+        isUploading={uploading === 'palm'}
         onChange={(file) => onFileChange('palmPhoto', file)}
       />
     </div>
@@ -730,8 +859,10 @@ const PhotoUpload: React.FC<{
   label: string;
   icon: React.ReactNode;
   file: File | null;
+  progress?: number;
+  isUploading?: boolean;
   onChange: (file: File | null) => void;
-}> = ({ label, icon, file, onChange }) => (
+}> = ({ label, icon, file, progress, isUploading, onChange }) => (
   <div className="relative">
     <input
       type="file"
@@ -739,6 +870,7 @@ const PhotoUpload: React.FC<{
       onChange={(e) => onChange(e.target.files?.[0] || null)}
       className="hidden"
       id={`upload-${label}`}
+      disabled={isUploading}
     />
     <label
       htmlFor={`upload-${label}`}
@@ -746,18 +878,42 @@ const PhotoUpload: React.FC<{
         file
           ? 'border-amber-400/50 bg-amber-400/10'
           : 'border-white/20 bg-white/5 hover:border-amber-400/30'
-      }`}
+      } ${isUploading ? 'cursor-wait opacity-70' : ''}`}
     >
       <div className="flex flex-col items-center gap-2">
         <div className={file ? 'text-amber-400' : 'text-white/40'}>
           {icon}
         </div>
         <p className="text-xs font-medium text-white/80">{label}</p>
-        {file && (
+        
+        {/* Show upload progress */}
+        {isUploading && progress !== undefined && (
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-amber-400">{progress}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.3 }}
+                className="h-full bg-gradient-to-r from-amber-400 to-amber-500"
+              />
+            </div>
+          </div>
+        )}
+        
+        {/* Show checkmark when complete */}
+        {file && !isUploading && (
           <p className="text-xs text-amber-400 flex items-center gap-1">
             <Check className="w-3 h-3" />
             OK
           </p>
+        )}
+        
+        {/* Show loader when uploading but no progress yet */}
+        {isUploading && progress === undefined && (
+          <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
         )}
       </div>
     </label>

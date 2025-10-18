@@ -562,41 +562,115 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     const formDataRaw = __safeParse2(req.body.formData || req.body.form_data || req.body);
     const clientInputs = __safeParse2(req.body.clientInputs);
 
-    // Enrichir formData avec les informations utilisateur connues (email, firstName, lastName)
-    let userForEnrichment: any = null;
-    try {
-      if (order.userId) {
-        userForEnrichment = await User.findById(order.userId).lean();
-      }
-      // Fallback: si pas d'user, tenter via email fourni
-      if (!userForEnrichment && formDataRaw?.email) {
-        userForEnrichment = await User.findOne({ email: String(formDataRaw.email).toLowerCase() }).lean();
-      }
-    } catch (e) {
-      console.warn('[CLIENT-SUBMIT] Enrichment user lookup skipped:', e instanceof Error ? e.message : e);
-    }
+    // =================== ENRICHISSEMENT AVEC PRIORITÉ CORRECTE ===================
+    // Priorité: 1) Client-submitted data, 2) PaymentIntent metadata, 3) Order.formData, 4) User doc
+    structuredLogger.info('[CLIENT-SUBMIT][ENRICH] Starting enrichment with priority cascade', {
+      hasClientData: !!Object.keys(formDataRaw).length,
+      paymentIntentId: order.paymentIntentId
+    }, req);
 
-    const formData = { ...formDataRaw } as any;
-    const missingBefore = ['email','firstName','lastName'].filter((f) => !formDataRaw?.[f]);
-    if (userForEnrichment) {
-      if (!formData.email && userForEnrichment.email) formData.email = userForEnrichment.email;
-      if (!formData.firstName && userForEnrichment.firstName) formData.firstName = userForEnrichment.firstName;
-      if (!formData.lastName && userForEnrichment.lastName) formData.lastName = userForEnrichment.lastName;
-      if (!formData.phone && userForEnrichment.phone) formData.phone = userForEnrichment.phone;
-
-      const filledFromUser = ['email','firstName','lastName'].filter((f) => !formDataRaw?.[f] && !!formData?.[f]);
-      if (filledFromUser.length > 0) {
-        structuredLogger.info('[CLIENT-SUBMIT][ENRICH]', {
-          missingBefore,
-          filledFromUser,
-          userId: (userForEnrichment as any)?._id || 'N/A'
-        }, req);
-      }
-    } else if (missingBefore.length > 0) {
-      structuredLogger.warn('[CLIENT-SUBMIT][ENRICH] No user found to enrich missing fields', {
-        missingBefore
+    // 1️⃣ CLIENT-SUBMITTED DATA (highest priority)
+    const clientData = { ...formDataRaw };
+    const fieldsFromClient = ['email', 'firstName', 'lastName', 'phone'].filter(f => !!clientData[f]);
+    if (fieldsFromClient.length > 0) {
+      structuredLogger.info('[CLIENT-SUBMIT][ENRICH] Source: Client-submitted data', {
+        fields: fieldsFromClient
       }, req);
     }
+
+    // 2️⃣ PAYMENTINTENT METADATA (Stripe billing info)
+    let piMetadata: any = {};
+    try {
+      const pi = await StripeService.getPaymentIntent(order.paymentIntentId);
+      if (pi && pi.metadata) {
+        piMetadata = {
+          email: (pi.metadata as any).customerEmail,
+          phone: (pi.metadata as any).customerPhone,
+          // Parse customerName into firstName/lastName
+          ...((() => {
+            const name = (pi.metadata as any).customerName || '';
+            const parts = name.split(' ');
+            return {
+              firstName: parts[0] || '',
+              lastName: parts.slice(1).join(' ') || ''
+            };
+          })())
+        };
+        const fieldsFromPI = ['email', 'firstName', 'lastName', 'phone'].filter(f => !!piMetadata[f]);
+        if (fieldsFromPI.length > 0) {
+          structuredLogger.info('[CLIENT-SUBMIT][ENRICH] Source: PaymentIntent metadata', {
+            fields: fieldsFromPI
+          }, req);
+        }
+      }
+    } catch (e) {
+      structuredLogger.warn('[CLIENT-SUBMIT][ENRICH] PaymentIntent metadata unavailable', {
+        error: e instanceof Error ? e.message : String(e)
+      }, req);
+    }
+
+    // 3️⃣ ORDER.FORMDATA (existing order data)
+    const orderData = order.formData || {};
+    const fieldsFromOrder = ['email', 'firstName', 'lastName', 'phone'].filter(f => !!orderData[f]);
+    if (fieldsFromOrder.length > 0) {
+      structuredLogger.info('[CLIENT-SUBMIT][ENRICH] Source: Order.formData (existing)', {
+        fields: fieldsFromOrder
+      }, req);
+    }
+
+    // 4️⃣ USER DOC (last resort fallback)
+    let userDoc: any = null;
+    try {
+      if (order.userId) {
+        userDoc = await User.findById(order.userId).lean();
+      }
+      // Fallback: try by email if no userId
+      if (!userDoc && (clientData.email || piMetadata.email || orderData.email)) {
+        const emailCandidate = clientData.email || piMetadata.email || orderData.email;
+        userDoc = await User.findOne({ email: String(emailCandidate).toLowerCase() }).lean();
+      }
+      if (userDoc) {
+        const fieldsFromUser = ['email', 'firstName', 'lastName', 'phone'].filter(f => !!userDoc[f]);
+        if (fieldsFromUser.length > 0) {
+          structuredLogger.info('[CLIENT-SUBMIT][ENRICH] Source: User doc (fallback)', {
+            fields: fieldsFromUser,
+            userId: (userDoc as any)._id
+          }, req);
+        }
+      }
+    } catch (e) {
+      structuredLogger.warn('[CLIENT-SUBMIT][ENRICH] User doc lookup failed', {
+        error: e instanceof Error ? e.message : String(e)
+      }, req);
+    }
+
+    // MERGE WITH PRIORITY: client > piMetadata > order > user
+    const formData = {
+      email: clientData.email || piMetadata.email || orderData.email || userDoc?.email || '',
+      firstName: clientData.firstName || piMetadata.firstName || orderData.firstName || userDoc?.firstName || '',
+      lastName: clientData.lastName || piMetadata.lastName || orderData.lastName || userDoc?.lastName || '',
+      phone: clientData.phone || piMetadata.phone || orderData.phone || userDoc?.phone || '',
+      // Preserve other fields from client data
+      ...clientData
+    };
+
+    // Log final enrichment result
+    const enrichmentSummary = {
+      email: clientData.email ? 'client' : piMetadata.email ? 'stripe' : orderData.email ? 'order' : userDoc?.email ? 'user' : 'missing',
+      firstName: clientData.firstName ? 'client' : piMetadata.firstName ? 'stripe' : orderData.firstName ? 'order' : userDoc?.firstName ? 'user' : 'missing',
+      lastName: clientData.lastName ? 'client' : piMetadata.lastName ? 'stripe' : orderData.lastName ? 'order' : userDoc?.lastName ? 'user' : 'missing',
+      phone: clientData.phone ? 'client' : piMetadata.phone ? 'stripe' : orderData.phone ? 'order' : userDoc?.phone ? 'user' : 'missing'
+    };
+    structuredLogger.info('[CLIENT-SUBMIT][ENRICH] Enrichment complete', {
+      sources: enrichmentSummary,
+      finalData: {
+        hasEmail: !!formData.email,
+        hasFirstName: !!formData.firstName,
+        hasLastName: !!formData.lastName,
+        hasPhone: !!formData.phone
+      }
+    }, req);
+    // =================== FIN ENRICHISSEMENT ===================
 
     // Fusionner les fichiers existants avec les nouveaux
     const existing = order.files || [];
