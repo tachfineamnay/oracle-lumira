@@ -202,11 +202,31 @@ async function createOrder(
 async function handlePaymentSuccess(paymentIntent: any) {
   console.log('Webhook payment_intent.succeeded received:', paymentIntent.id);
 
-  // 1) Ensure ProductOrder is marked completed (idempotent)
+  // 1) Ensure ProductOrder exists and is marked completed (idempotent)
   try {
     const productOrder = await ProductOrder.findOne({ paymentIntentId: paymentIntent.id });
     if (!productOrder) {
-      console.warn('ProductOrder not found for paymentIntent:', paymentIntent.id);
+      // Create ProductOrder when missing (webhook-first flows)
+      const metadata: any = paymentIntent.metadata || {};
+      const productId = metadata.productId || metadata.level || 'initie';
+      const customerEmail = metadata.customerEmail || paymentIntent.receipt_email || undefined;
+
+      const newOrder = new ProductOrder({
+        productId,
+        customerEmail,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: 'completed',
+        paymentIntentId: paymentIntent.id,
+        completedAt: new Date(),
+        metadata
+      });
+      await newOrder.save();
+      console.log('ProductOrder created from webhook (succeeded):', {
+        orderId: newOrder._id,
+        paymentIntentId: paymentIntent.id,
+        productId
+      });
     } else if (productOrder.status === 'completed') {
       console.log('Webhook already processed for this ProductOrder:', paymentIntent.id);
     } else {
