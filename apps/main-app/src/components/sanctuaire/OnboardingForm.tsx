@@ -554,10 +554,28 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             setUploading(uploadType);
             setUploadProgress(prev => ({ ...prev, [uploadType]: 0 }));
             
+            // Ensure we always send a solid contentType (some browsers may omit file.type)
+            const nameHint = (compressed as any)?.name || (file as any)?.name || '';
+            const extLower = String(nameHint).toLowerCase();
+            const guessContentType = () => {
+              if (compressed.type) return compressed.type;
+              if (file.type) return file.type;
+              if (extLower.endsWith('.jpg') || extLower.endsWith('.jpeg')) return 'image/jpeg';
+              if (extLower.endsWith('.png')) return 'image/png';
+              if (extLower.endsWith('.webp')) return 'image/webp';
+              if (extLower.endsWith('.gif')) return 'image/gif';
+              if (extLower.endsWith('.heic')) return 'image/heic';
+              if (extLower.endsWith('.heif')) return 'image/heif';
+              if (extLower.endsWith('.tif') || extLower.endsWith('.tiff')) return 'image/tiff';
+              if (extLower.endsWith('.bmp')) return 'image/bmp';
+              return 'application/octet-stream';
+            };
+            const contentType = guessContentType();
+
             const presign = await fetch(`${API_BASE}/uploads/presign`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type, contentType: compressed.type || file.type, originalName: compressed.name || file.name })
+              body: JSON.stringify({ type, contentType, originalName: nameHint })
             });
             if (!presign.ok) {
               const err = await presign.json().catch(() => ({}));
