@@ -67,9 +67,9 @@ const validateFileHeader = (buffer: Buffer, mimetype: string): boolean => {
 const secureUpload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB par fichier pour être permissif
+    fileSize: 100 * 1024 * 1024, // 100MB par fichier (permissif pour mobiles HEIC/JPG)
     files: 2, // Maximum 2 fichiers
-    fieldSize: 10 * 1024 * 1024 // 10MB pour champs texte si besoin
+    fieldSize: 20 * 1024 * 1024 // 20MB pour champs texte si besoin
   },
   fileFilter: (req, file, cb) => {
     // Autoriser largement les formats d'images courants
@@ -137,7 +137,7 @@ const clientSubmitUpload = (req: any, res: any, next: any) => {
   handler(req, res, (err: any) => {
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ error: 'Fichier trop volumineux (max 25MB).' });
+        return res.status(413).json({ error: 'Fichier trop volumineux (max 100MB).' });
       }
       if (err.code === 'LIMIT_FILE_COUNT') {
         return res.status(400).json({ error: 'Trop de fichiers. Maximum 2 autorisés.' });
