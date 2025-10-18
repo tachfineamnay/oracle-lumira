@@ -581,14 +581,16 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     // 2️⃣ PAYMENTINTENT METADATA (Stripe billing info)
     let piMetadata: any = {};
     try {
-      const pi = await StripeService.getPaymentIntent(order.paymentIntentId);
+      const pi = order.paymentIntentId
+        ? await StripeService.getPaymentIntent(order.paymentIntentId)
+        : null;
       if (pi && pi.metadata) {
         piMetadata = {
           email: (pi.metadata as any).customerEmail,
           phone: (pi.metadata as any).customerPhone,
           // Parse customerName into firstName/lastName
           ...((() => {
-            const name = (pi.metadata as any).customerName || '';
+            const name: string = String((pi.metadata as any).customerName || '');
             const parts = name.split(' ');
             return {
               firstName: parts[0] || '',

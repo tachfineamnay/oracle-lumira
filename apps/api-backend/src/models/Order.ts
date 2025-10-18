@@ -22,6 +22,7 @@ export interface IOrder extends Document {
   
   // User form data
   formData: {
+    [key: string]: any; // index signature to allow dynamic fields from multi-step form
     firstName: string;
     lastName: string;
     email: string;
