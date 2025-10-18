@@ -3,6 +3,7 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { structuredLogger } from '../middleware/logging';
 import { Order } from '../models/Order';
 import { ProductOrder } from '../models/ProductOrder';
 import { User } from '../models/User';
@@ -579,11 +580,25 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     }
 
     const formData = { ...formDataRaw } as any;
+    const missingBefore = ['email','firstName','lastName'].filter((f) => !formDataRaw?.[f]);
     if (userForEnrichment) {
       if (!formData.email && userForEnrichment.email) formData.email = userForEnrichment.email;
       if (!formData.firstName && userForEnrichment.firstName) formData.firstName = userForEnrichment.firstName;
       if (!formData.lastName && userForEnrichment.lastName) formData.lastName = userForEnrichment.lastName;
       if (!formData.phone && userForEnrichment.phone) formData.phone = userForEnrichment.phone;
+
+      const filledFromUser = ['email','firstName','lastName'].filter((f) => !formDataRaw?.[f] && !!formData?.[f]);
+      if (filledFromUser.length > 0) {
+        structuredLogger.info('[CLIENT-SUBMIT][ENRICH]', {
+          missingBefore,
+          filledFromUser,
+          userId: (userForEnrichment as any)?._id || 'N/A'
+        }, req);
+      }
+    } else if (missingBefore.length > 0) {
+      structuredLogger.warn('[CLIENT-SUBMIT][ENRICH] No user found to enrich missing fields', {
+        missingBefore
+      }, req);
     }
 
     // Fusionner les fichiers existants avec les nouveaux
