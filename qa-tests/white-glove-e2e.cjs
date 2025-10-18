@@ -155,6 +155,17 @@ async function run() {
     ]);
     await fs.writeFile(path.join(ARTIFACTS, 'upload-valid.json'), JSON.stringify(valid, null, 2));
     if (valid.status !== 200) throw new Error('Valid upload failed');
+    // Assert enriched formData contains required identity fields
+    const orderResp = valid?.data?.order || {};
+    const fd = orderResp?.formData || {};
+    const hasEmail = typeof fd.email === 'string' && fd.email.length > 0;
+    const hasFirst = typeof fd.firstName === 'string' && fd.firstName.length > 0;
+    const hasLast = typeof fd.lastName === 'string' && fd.lastName.length > 0;
+    const enrichmentCheck = { hasEmail, hasFirst, hasLast };
+    await fs.writeFile(path.join(ARTIFACTS, 'upload-valid-formdata-check.json'), JSON.stringify(enrichmentCheck, null, 2));
+    if (!hasEmail || !hasFirst || !hasLast) {
+      throw new Error('Enriched formData missing required identity fields (email/firstName/lastName)');
+    }
 
     // Snapshot Order and mark as completed + generated content for Sanctuaire
     await mongoose.connect(mongoUri);

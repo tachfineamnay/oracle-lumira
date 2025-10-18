@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -136,6 +137,43 @@ export class S3Service {
     } catch (error) {
       console.error('Test connexion S3 échoué:', error);
       return false;
+    }
+  }
+
+  /**
+   * Upload a readable stream to S3 (no buffering in memory)
+   */
+  async uploadStream(
+    stream: Readable,
+    originalName: string,
+    contentType: string,
+    type: 'face_photo' | 'palm_photo'
+  ): Promise<FileUploadResult> {
+    try {
+      const fileExtension = originalName.split('.').pop() || 'jpg';
+      const timestamp = Date.now();
+      const uuid = uuidv4();
+      const key = `uploads/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${uuid}-${timestamp}-${type}.${fileExtension}`;
+
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: stream,
+        ContentType: contentType,
+        Metadata: {
+          'original-name': originalName,
+          'upload-type': type,
+          'upload-timestamp': timestamp.toString(),
+        },
+      });
+
+      await this.s3Client.send(command);
+
+      const url = this.getPublicUrl(key);
+      return { url, key, size: 0 };
+    } catch (error) {
+      console.error('Erreur upload S3 (stream):', error);
+      throw new Error(`Échec upload S3 (stream): ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     }
   }
 

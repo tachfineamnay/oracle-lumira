@@ -1,5 +1,8 @@
 import express from 'express';
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { Order } from '../models/Order';
 import { ProductOrder } from '../models/ProductOrder';
 import { User } from '../models/User';
@@ -64,12 +67,27 @@ const validateFileHeader = (buffer: Buffer, mimetype: string): boolean => {
  * Couche 3: Validation des magic numbers (via middleware validateFileContent)
  * @security HARDENED - Triple validation pour sécurité maximale
  */
+// Temporary directory for disk-based uploads to avoid memory pressure
+const TEMP_DIR = process.env.UPLOAD_TMP_DIR || path.join(os.tmpdir(), 'lumira-uploads');
+if (!fs.existsSync(TEMP_DIR)) {
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
+
+const diskStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, TEMP_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.bin';
+    const base = `${file.fieldname}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    cb(null, `${base}${ext}`);
+  }
+});
+
 const secureUpload = multer({ 
-  storage: multer.memoryStorage(),
+  storage: diskStorage,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB par fichier (permissif pour mobiles HEIC/JPG)
+    fileSize: 1024 * 1024 * 1024, // 1GB par fichier (très permissif)
     files: 2, // Maximum 2 fichiers
-    fieldSize: 20 * 1024 * 1024 // 20MB pour champs texte si besoin
+    fieldSize: 50 * 1024 * 1024 // 50MB pour champs texte
   },
   fileFilter: (req, file, cb) => {
     // Autoriser largement les formats d'images courants
@@ -101,7 +119,7 @@ const secureUpload = multer({
  * @returns 400 si fichier falsifié détecté, sinon continue
  * @security DEFENSE-IN-DEPTH - Validation post-upload du contenu binaire
  */
-const validateFileContent = (req: any, res: any, next: any) => {
+const validateFileContent = async (req: any, res: any, next: any) => {
   try {
     if (req.files) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -109,7 +127,15 @@ const validateFileContent = (req: any, res: any, next: any) => {
       // Vérifier chaque fichier uploadé
       for (const fieldName in files) {
         for (const file of files[fieldName]) {
-          if (!validateFileHeader(file.buffer, file.mimetype)) {
+          // Read only the first 16 bytes from disk to validate magic numbers
+          const fd = await fs.promises.open(file.path, 'r');
+          const header = Buffer.alloc(16);
+          try {
+            await fd.read(header, 0, 16, 0);
+          } finally {
+            await fd.close();
+          }
+          if (!validateFileHeader(header, file.mimetype)) {
             return res.status(400).json({
               error: 'Fichier corrompu ou type de fichier falsifié détecté.',
               field: fieldName,
@@ -137,7 +163,7 @@ const clientSubmitUpload = (req: any, res: any, next: any) => {
   handler(req, res, (err: any) => {
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({ error: 'Fichier trop volumineux (max 100MB).' });
+        return res.status(413).json({ error: 'Fichier trop volumineux (max 1GB).' });
       }
       if (err.code === 'LIMIT_FILE_COUNT') {
         return res.status(400).json({ error: 'Trop de fichiers. Maximum 2 autorisés.' });
@@ -448,22 +474,23 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       if (files.facePhoto && files.facePhoto[0]) {
         const file = files.facePhoto[0];
         try {
-          const uploadResult = await s3Service.uploadFile(
-            file.buffer,
-            file.originalname,
-            file.mimetype,
-            'face_photo'
-          );
+          const stream = fs.createReadStream(file.path);
+          const uploadResult = await s3Service.uploadStream(stream, file.originalname, file.mimetype, 'face_photo');
+          // Best-effort file size
+          let size = 0;
+          try { const st = await fs.promises.stat(file.path); size = st.size; } catch {}
           
           uploadedFiles.push({
             name: file.originalname,
             url: uploadResult.url,
             key: uploadResult.key,
             contentType: file.mimetype,
-            size: uploadResult.size,
+            size,
             type: 'face_photo',
             uploadedAt: new Date()
           });
+          // cleanup temp file
+          fs.promises.unlink(file.path).catch(() => {});
         } catch (error) {
           console.error('Erreur upload photo visage S3:', error);
           return res.status(500).json({ error: 'Échec upload photo visage' });
@@ -474,22 +501,21 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       if (files.palmPhoto && files.palmPhoto[0]) {
         const file = files.palmPhoto[0];
         try {
-          const uploadResult = await s3Service.uploadFile(
-            file.buffer,
-            file.originalname,
-            file.mimetype,
-            'palm_photo'
-          );
+          const stream = fs.createReadStream(file.path);
+          const uploadResult = await s3Service.uploadStream(stream, file.originalname, file.mimetype, 'palm_photo');
+          let size = 0;
+          try { const st = await fs.promises.stat(file.path); size = st.size; } catch {}
           
           uploadedFiles.push({
             name: file.originalname,
             url: uploadResult.url,
             key: uploadResult.key,
             contentType: file.mimetype,
-            size: uploadResult.size,
+            size,
             type: 'palm_photo',
             uploadedAt: new Date()
           });
+          fs.promises.unlink(file.path).catch(() => {});
         } catch (error) {
           console.error('Erreur upload photo paume S3:', error);
           return res.status(500).json({ error: 'Échec upload photo paume' });
@@ -535,8 +561,30 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
 
     // Parser les données JSON depuis FormData
     const __safeParse2 = (v: any) => { try { if (!v) return {}; if (typeof v === 'string') return JSON.parse(v); if (typeof v === 'object') return v; return {}; } catch { return {}; } };
-    const formData = __safeParse2(req.body.formData || req.body.form_data || req.body);
+    const formDataRaw = __safeParse2(req.body.formData || req.body.form_data || req.body);
     const clientInputs = __safeParse2(req.body.clientInputs);
+
+    // Enrichir formData avec les informations utilisateur connues (email, firstName, lastName)
+    let userForEnrichment: any = null;
+    try {
+      if (order.userId) {
+        userForEnrichment = await User.findById(order.userId).lean();
+      }
+      // Fallback: si pas d'user, tenter via email fourni
+      if (!userForEnrichment && formDataRaw?.email) {
+        userForEnrichment = await User.findOne({ email: String(formDataRaw.email).toLowerCase() }).lean();
+      }
+    } catch (e) {
+      console.warn('[CLIENT-SUBMIT] Enrichment user lookup skipped:', e instanceof Error ? e.message : e);
+    }
+
+    const formData = { ...formDataRaw } as any;
+    if (userForEnrichment) {
+      if (!formData.email && userForEnrichment.email) formData.email = userForEnrichment.email;
+      if (!formData.firstName && userForEnrichment.firstName) formData.firstName = userForEnrichment.firstName;
+      if (!formData.lastName && userForEnrichment.lastName) formData.lastName = userForEnrichment.lastName;
+      if (!formData.phone && userForEnrichment.phone) formData.phone = userForEnrichment.phone;
+    }
 
     // Fusionner les fichiers existants avec les nouveaux
     const existing = order.files || [];

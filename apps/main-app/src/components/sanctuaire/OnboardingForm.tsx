@@ -318,7 +318,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       
       if (!response.ok) {
         if (response.status === 413) {
-          setError('Vos fichiers sont trop volumineux (max 100MB). Compressez vos photos puis réessayez.');
+          setError('Vos fichiers sont trop volumineux (max 1GB). Compressez vos photos puis réessayez.');
           return;
         }
         const errorData = await response.json().catch(() => ({ error: `Erreur serveur (HTTP ${response.status})` }));
