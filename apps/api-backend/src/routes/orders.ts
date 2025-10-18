@@ -148,7 +148,7 @@ const validateFileContent = async (req: any, res: any, next: any) => {
     }
     next();
   } catch (error) {
-    console.error('[FILE-VALIDATION] Erreur de validation:', error);
+    structuredLogger.error('[FILE-VALIDATION] Erreur de validation', error, req);
     return res.status(500).json({ error: 'Erreur lors de la validation des fichiers.' });
   }
 };
@@ -188,29 +188,28 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
   async (req: any, res: any) => {
   try {
     // =================== INSTRUMENTATION AGRESSIVE CLIENT-SUBMIT ===================
-    console.log('[CLIENT-SUBMIT] Début de traitement - PI:', req.params.paymentIntentId);
-    console.log('[CLIENT-SUBMIT] Fichiers reçus:', req.files);
-    console.log('[CLIENT-SUBMIT] Body reçu:', req.body);
-    console.log('[CLIENT-SUBMIT] Headers:', req.headers);
+    structuredLogger.info('[CLIENT-SUBMIT] Début de traitement', {
+      paymentIntentId: req.params.paymentIntentId,
+      hasFiles: !!req.files,
+      contentType: req.headers['content-type']
+    }, req);
     // =================== FIN INSTRUMENTATION ===================
     // =================== MISSION FINISH LINE - INSTRUMENTATION CHIRURGICALE ===================
-    console.log('[CLIENT-SUBMIT] START - Request received. Headers:', req.headers);
-    console.log('[CLIENT-SUBMIT] ENV CHECK - ALLOW_DIRECT_CLIENT_SUBMIT:', process.env.ALLOW_DIRECT_CLIENT_SUBMIT);
+    structuredLogger.debug('[CLIENT-SUBMIT] Request headers', { headers: req.headers }, req);
+    structuredLogger.info('[CLIENT-SUBMIT] ENV CHECK', { ALLOW_DIRECT_CLIENT_SUBMIT: process.env.ALLOW_DIRECT_CLIENT_SUBMIT }, req);
     
     const { paymentIntentId } = req.params;
     if (!paymentIntentId || typeof paymentIntentId !== 'string') {
-      console.error('[CLIENT-SUBMIT] FATAL: paymentIntentId invalid:', paymentIntentId);
+      structuredLogger.error('[CLIENT-SUBMIT] FATAL: paymentIntentId invalid', { paymentIntentId }, req);
       return res.status(400).json({ error: 'paymentIntentId invalid' });
     }
     
-    console.log('[CLIENT-SUBMIT] PaymentIntentId received:', paymentIntentId);
+    structuredLogger.info('[CLIENT-SUBMIT] PaymentIntentId received', { paymentIntentId }, req);
 
-    console.log('[CLIENT-SUBMIT] FILES RECEIVED:', req.files);
-    console.log('[CLIENT-SUBMIT] BODY:', req.body);
-    console.log('[CLIENT-SUBMIT] FORM-DATA RAW:', req.body?.formData);
+    structuredLogger.debug('[CLIENT-SUBMIT] Payload snapshot', { hasFiles: !!req.files, bodyKeys: Object.keys(req.body || {}) }, req);
     
     let order = await Order.findOne({ paymentIntentId });
-    console.log('[CLIENT-SUBMIT] Existing order found:', !!order);
+    structuredLogger.info('[CLIENT-SUBMIT] Existing order found', { exists: !!order }, req);
     
     if (!order) {
       // Parse early (we may need formData for direct creation) - robust to strings/objects
@@ -218,11 +217,9 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       let parsedFormData;
       try {
         parsedFormData = __earlySafeParse(req.body?.formData);
-        console.log('[CLIENT-SUBMIT] FORM-DATA PARSED:', parsedFormData);
-        console.log('[CLIENT-SUBMIT] EMAIL CHECK:', parsedFormData?.email);
-        console.log('[CLIENT-SUBMIT] LEVEL CHECK:', parsedFormData?.level);
+        structuredLogger.debug('[CLIENT-SUBMIT] FORM-DATA parsed', { hasEmail: !!parsedFormData?.email, level: parsedFormData?.level }, req);
       } catch (e) {
-        console.error('[CLIENT-SUBMIT] FATAL: JSON parsing failed:', e);
+        structuredLogger.error('[CLIENT-SUBMIT] FATAL: JSON parsing failed', e, req);
         return res.status(400).json({ error: 'Invalid formData JSON.' });
       }
 
@@ -230,10 +227,10 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       let stripeError = null;
       let paymentIntent = null;
       try {
-        console.log('[CLIENT-SUBMIT] Attempting Stripe validation for PaymentIntent:', paymentIntentId);
+        structuredLogger.info('[CLIENT-SUBMIT] Attempting Stripe validation', { paymentIntentId }, req);
         const pi = await StripeService.getPaymentIntent(paymentIntentId);
         paymentIntent = pi;
-        console.log('[CLIENT-SUBMIT] Stripe PaymentIntent retrieved:', { status: pi?.status, amount: pi?.amount });
+        structuredLogger.info('[CLIENT-SUBMIT] Stripe PaymentIntent retrieved', { status: pi?.status, amount: (pi as any)?.amount }, req);
         if (pi && pi.status === 'succeeded') {
           const emailCandidate = (pi.metadata as any)?.customerEmail || parsedFormData?.email;
           if (emailCandidate) {
@@ -261,17 +258,17 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
 
             // Validation des champs obligatoires avant création
             if (!levelInfo.num) {
-              console.error('[CLIENT-SUBMIT] CRITICAL: Level number is missing or invalid:', levelInfo);
+              structuredLogger.error('[CLIENT-SUBMIT] CRITICAL: Level number is missing or invalid', { levelInfo }, req);
               return res.status(400).json({ error: 'Level information is invalid' });
             }
 
             if (!user._id) {
-              console.error('[CLIENT-SUBMIT] CRITICAL: User ID is missing');
+              structuredLogger.error('[CLIENT-SUBMIT] CRITICAL: User ID is missing', undefined, req);
               return res.status(400).json({ error: 'User information is missing' });
             }
 
             try {
-              console.log('[CLIENT-SUBMIT] Creating order with validated data:', {
+              structuredLogger.info('[CLIENT-SUBMIT] Creating order with validated data', {
                 userId: user._id,
                 userEmail: user.email,
                 level: levelInfo.num,
@@ -279,7 +276,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 amount,
                 currency,
                 paymentIntentId
-              });
+              }, req);
 
               const orderNumber = `LUM-${Date.now()}`;
               order = await Order.create({
@@ -304,15 +301,15 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 },
               });
               
-              console.log('[CLIENT-SUBMIT] Order created successfully:', order._id, 'OrderNumber:', order.orderNumber);
+              structuredLogger.info('[CLIENT-SUBMIT] Order created successfully', { orderId: order._id, orderNumber: order.orderNumber }, req);
             } catch (orderCreationError) {
-              console.error('[CLIENT-SUBMIT] CRITICAL ERROR during order creation:', orderCreationError);
-              console.error('[CLIENT-SUBMIT] Order creation failed with data:', {
+              structuredLogger.error('[CLIENT-SUBMIT] CRITICAL ERROR during order creation', orderCreationError, req);
+              structuredLogger.error('[CLIENT-SUBMIT] Order creation failed with data', {
                 userId: user._id,
                 level: levelInfo.num,
                 amount,
                 currency
-              });
+              }, req);
               return res.status(500).json({ 
                 error: 'Failed to create order', 
                 details: orderCreationError instanceof Error ? orderCreationError.message : 'Unknown error'
@@ -322,15 +319,15 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
         }
       } catch (stripeErr) {
         const e = stripeErr as any;
-        console.log('[CLIENT-SUBMIT] Stripe validation failed:', e?.message || e);
+        structuredLogger.warn('[CLIENT-SUBMIT] Stripe validation failed', { error: (e as any)?.message || e }, req);
         stripeError = e;
         // 2) Optional direct creation fallback (no Stripe) if explicitly allowed
         //    This decouples Desk from Stripe for uploads-only workflows.
-        console.log('[CLIENT-SUBMIT] ENTERING FALLBACK BLOCK - StripeError:', !!stripeError, 'PaymentIntentStatus:', paymentIntent?.status);
-        console.log('[CLIENT-SUBMIT] FALLBACK CONDITION CHECK - ALLOW_DIRECT_CLIENT_SUBMIT === "true"?', process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true');
+        structuredLogger.info('[CLIENT-SUBMIT] ENTERING FALLBACK BLOCK', { hasStripeError: !!stripeError, paymentIntentStatus: paymentIntent?.status }, req);
+        structuredLogger.info('[CLIENT-SUBMIT] FALLBACK CONDITION CHECK', { allowDirect: process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true' }, req);
         
         if (process.env.ALLOW_DIRECT_CLIENT_SUBMIT === 'true') {
-          console.log('[CLIENT-SUBMIT] CREATING DIRECT ORDER with data:', { email: parsedFormData?.email, level: parsedFormData?.level });
+          structuredLogger.info('[CLIENT-SUBMIT] CREATING DIRECT ORDER', { emailPresent: !!parsedFormData?.email, level: parsedFormData?.level }, req);
           const email = parsedFormData?.email ? String(parsedFormData.email).toLowerCase() : undefined;
           const levelKey = String(parsedFormData?.level || 'initie').toLowerCase();
           if (email) {
@@ -372,7 +369,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 preferences: { audioVoice: 'feminine', deliveryFormat: 'email' },
               },
             });
-            console.log('[CLIENT-SUBMIT] DIRECT ORDER CREATED:', order._id, 'Status:', order.status);
+            structuredLogger.info('[CLIENT-SUBMIT] DIRECT ORDER CREATED', { orderId: order._id, status: order.status }, req);
           }
         }
       }
@@ -401,23 +398,23 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
           
           // Validation des champs obligatoires avant création (additional fallback)
           if (!levelInfo.num) {
-            console.error('[CLIENT-SUBMIT] CRITICAL ADDITIONAL FALLBACK: Level number is missing or invalid:', levelInfo);
+            structuredLogger.error('[CLIENT-SUBMIT] CRITICAL ADDITIONAL FALLBACK: Level invalid', { levelInfo }, req);
             return res.status(400).json({ error: 'Level information is invalid in additional fallback mode' });
           }
 
           if (!user._id) {
-            console.error('[CLIENT-SUBMIT] CRITICAL ADDITIONAL FALLBACK: User ID is missing');
+            structuredLogger.error('[CLIENT-SUBMIT] CRITICAL ADDITIONAL FALLBACK: User ID missing', undefined, req);
             return res.status(400).json({ error: 'User information is missing in additional fallback mode' });
           }
 
           try {
-            console.log('[CLIENT-SUBMIT] Creating additional fallback order with validated data:', {
+            structuredLogger.info('[CLIENT-SUBMIT] Creating additional fallback order with validated data', {
               userId: user._id,
               userEmail: user.email,
               level: levelInfo.num,
               levelName: levelInfo.name,
               paymentIntentId
-            });
+            }, req);
 
             const orderNumber = `LUM-${Date.now()}`;
             order = await Order.create({
@@ -442,14 +439,14 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
               },
             });
             
-            console.log('[CLIENT-SUBMIT] ADDITIONAL FALLBACK ORDER CREATED:', order._id, 'OrderNumber:', order.orderNumber, 'Status:', order.status);
+            structuredLogger.info('[CLIENT-SUBMIT] ADDITIONAL FALLBACK ORDER CREATED', { orderId: order._id, orderNumber: order.orderNumber, status: order.status }, req);
           } catch (orderCreationError) {
-            console.error('[CLIENT-SUBMIT] CRITICAL ERROR during additional fallback order creation:', orderCreationError);
-            console.error('[CLIENT-SUBMIT] Additional fallback order creation failed with data:', {
+            structuredLogger.error('[CLIENT-SUBMIT] CRITICAL ERROR during additional fallback order creation', orderCreationError, req);
+            structuredLogger.error('[CLIENT-SUBMIT] Additional fallback order creation failed with data', {
               userId: user._id,
               level: levelInfo.num,
               email
-            });
+            }, req);
             return res.status(500).json({ 
               error: 'Failed to create additional fallback order', 
               details: orderCreationError instanceof Error ? orderCreationError.message : 'Unknown error'
@@ -459,10 +456,10 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       }
 
       if (!order) {
-        console.error('[CLIENT-SUBMIT] FATAL: No order created despite all attempts');
+        structuredLogger.error('[CLIENT-SUBMIT] FATAL: No order created despite all attempts', { paymentIntentId }, req);
         return res.status(404).json({ error: 'Order not found for paymentIntentId', paymentIntentId });
       }
-      console.log('[CLIENT-SUBMIT] Final order status before file processing:', order.status);
+      structuredLogger.info('[CLIENT-SUBMIT] Final order status before file processing', { status: order.status }, req);
     }
 
     // Traiter les fichiers uploadés avec S3
@@ -493,7 +490,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
           // cleanup temp file
           fs.promises.unlink(file.path).catch(() => {});
         } catch (error) {
-          console.error('Erreur upload photo visage S3:', error);
+          structuredLogger.error('Erreur upload photo visage S3', error, req);
           return res.status(500).json({ error: 'Échec upload photo visage' });
         }
       }
@@ -518,7 +515,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
           });
           fs.promises.unlink(file.path).catch(() => {});
         } catch (error) {
-          console.error('Erreur upload photo paume S3:', error);
+          structuredLogger.error('Erreur upload photo paume S3', error, req);
           return res.status(500).json({ error: 'Échec upload photo paume' });
         }
       }
@@ -557,7 +554,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
         }
       }
     } catch (e) {
-      console.warn('[CLIENT-SUBMIT] uploadedKeys parse skipped:', e instanceof Error ? e.message : e);
+      structuredLogger.warn('[CLIENT-SUBMIT] uploadedKeys parse skipped', { error: e instanceof Error ? e.message : e }, req);
     }
 
     // Parser les données JSON depuis FormData
@@ -634,10 +631,10 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     
     try {
       await order.save();
-      console.log('[CLIENT-SUBMIT] Order updated and saved successfully:', order._id);
+      structuredLogger.info('[CLIENT-SUBMIT] Order updated and saved successfully', { orderId: order._id }, req);
     } catch (saveError) {
-      console.error('[CLIENT-SUBMIT] CRITICAL ERROR during order save:', saveError);
-      console.error('[CLIENT-SUBMIT] Order save failed for order:', order._id);
+      structuredLogger.error('[CLIENT-SUBMIT] CRITICAL ERROR during order save', saveError, req);
+      structuredLogger.error('[CLIENT-SUBMIT] Order save failed for order', { orderId: order._id }, req);
       return res.status(500).json({ 
         error: 'Failed to save order', 
         details: saveError instanceof Error ? saveError.message : 'Unknown save error'
@@ -646,13 +643,12 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
 
     res.json({ success: true, order });
   } catch (catchError) {
-    console.error('[CLIENT-SUBMIT] CRITICAL GLOBAL ERROR - Unexpected error occurred:', catchError);
-    console.error('[CLIENT-SUBMIT] Error stack trace:', catchError instanceof Error ? catchError.stack : 'No stack trace');
-    console.error('[CLIENT-SUBMIT] Request context:', {
+    structuredLogger.error('[CLIENT-SUBMIT] CRITICAL GLOBAL ERROR - Unexpected error', catchError, req);
+    structuredLogger.error('[CLIENT-SUBMIT] Request context', {
       paymentIntentId: req.params.paymentIntentId,
       hasFiles: !!req.files,
       bodyKeys: Object.keys(req.body || {})
-    });
+    }, req);
     res.status(500).json({ 
       error: 'Erreur client-submit', 
       details: catchError instanceof Error ? catchError.message : 'Erreur interne inconnue'
