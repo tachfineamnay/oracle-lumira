@@ -15,7 +15,7 @@
  * ✅ Progress bar 4 steps
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Star, ChevronRight, ChevronLeft, Upload, Calendar, 
@@ -86,6 +86,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   const [uploadedKeys, setUploadedKeys] = useState<{ facePhotoKey?: string; palmPhotoKey?: string }>({});
   const [useDirectUpload, setUseDirectUpload] = useState(true);
   const [uploadProgress, setUploadProgress] = useState<{ face?: number; palm?: number }>({});
+  const autoSubmittedRef = useRef(false);
   
   // =================== IMAGE COMPRESSION UTILS ===================
   const readFileAsDataURL = (file: File): Promise<string> => {
@@ -460,6 +461,24 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       setIsSubmitting(false);
     }
   };
+
+  // =================== AUTO-SUBMISSION APRÈS UPLOADS S3 ===================
+  useEffect(() => {
+    const faceKey = uploadedKeys.facePhotoKey;
+    const palmKey = uploadedKeys.palmPhotoKey;
+    if (
+      useDirectUpload &&
+      faceKey &&
+      palmKey &&
+      paymentIntentId &&
+      !isSubmitting &&
+      !autoSubmittedRef.current
+    ) {
+      console.log('[OnboardingForm] Les deux uploads sont terminés. Soumission automatique...');
+      autoSubmittedRef.current = true;
+      handleSubmit();
+    }
+  }, [uploadedKeys.facePhotoKey, uploadedKeys.palmPhotoKey, useDirectUpload, isSubmitting, paymentIntentId]);
   
   // =================== RENDU ===================
   
