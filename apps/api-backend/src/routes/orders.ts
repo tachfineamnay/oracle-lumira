@@ -695,6 +695,55 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       }
     } as any;
 
+    // Enforce identity fields (email/firstName/lastName) from multiple sources before saving
+    const pickFirstNonEmpty = (...vals: any[]): string | undefined => {
+      for (const v of vals) {
+        if (typeof v === 'string' && v.trim().length > 0) return v.trim();
+      }
+      return undefined;
+    };
+    const emailFinal = (pickFirstNonEmpty(
+      (formData as any)?.email,
+      (clientData as any)?.email,
+      (piMetadata as any)?.email,
+      (order.formData as any)?.email,
+      (typeof userDoc === 'object' ? (userDoc as any)?.email : undefined)
+    ) || '').toLowerCase();
+
+    const firstNameFallbackFromEmail = emailFinal && emailFinal.includes('@') ? emailFinal.split('@')[0] : undefined;
+    const firstNameFinal = pickFirstNonEmpty(
+      (formData as any)?.firstName,
+      (clientData as any)?.firstName,
+      (piMetadata as any)?.firstName,
+      (order.formData as any)?.firstName,
+      (typeof userDoc === 'object' ? (userDoc as any)?.firstName : undefined),
+      firstNameFallbackFromEmail,
+      'Client'
+    )!;
+    const lastNameFinal = pickFirstNonEmpty(
+      (formData as any)?.lastName,
+      (clientData as any)?.lastName,
+      (piMetadata as any)?.lastName,
+      (order.formData as any)?.lastName,
+      (typeof userDoc === 'object' ? (userDoc as any)?.lastName : undefined),
+      'Stripe'
+    )!;
+    const phoneFinal = pickFirstNonEmpty(
+      (formData as any)?.phone,
+      (clientData as any)?.phone,
+      (piMetadata as any)?.phone,
+      (order.formData as any)?.phone,
+      (typeof userDoc === 'object' ? (userDoc as any)?.phone : undefined)
+    );
+
+    order.formData = {
+      ...order.formData,
+      email: emailFinal,
+      firstName: firstNameFinal,
+      lastName: lastNameFinal,
+      phone: phoneFinal ?? (order.formData as any)?.phone,
+    } as any;
+
     order.clientInputs = {
       ...order.clientInputs,
       birthTime: clientInputs.birthTime ?? order.clientInputs?.birthTime,
@@ -717,7 +766,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       });
     }
 
-    res.json({ success: true, order });
+    res.json({ success: true, order, normalizedFormData: order.formData });
   } catch (catchError) {
     structuredLogger.error('[CLIENT-SUBMIT] CRITICAL GLOBAL ERROR - Unexpected error', catchError, req);
     structuredLogger.error('[CLIENT-SUBMIT] Request context', {
