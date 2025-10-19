@@ -655,17 +655,6 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
           ))}
         </div>
 
-        {/* Soumission explicite (CTA complet) */}
-        <div className="mt-8">
-          <button
-            onClick={handleFormSubmit}
-            disabled={isSubmitting || !formData.facePhoto || !formData.palmPhoto}
-            className="w-full px-6 py-3 text-lg font-bold text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Envoi en cours...' : 'Terminer et envoyer mon analyse'}
-          </button>
-        </div>
-
         {/* Contenu des étapes */}
         <AnimatePresence mode="wait">
           {currentStep === 0 && (
