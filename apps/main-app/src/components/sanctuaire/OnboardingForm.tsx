@@ -462,23 +462,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
     }
   };
 
-  // =================== AUTO-SUBMISSION APRÈS UPLOADS S3 ===================
-  useEffect(() => {
-    const faceKey = uploadedKeys.facePhotoKey;
-    const palmKey = uploadedKeys.palmPhotoKey;
-    if (
-      useDirectUpload &&
-      faceKey &&
-      palmKey &&
-      paymentIntentId &&
-      !isSubmitting &&
-      !autoSubmittedRef.current
-    ) {
-      console.log('[OnboardingForm] Les deux uploads sont terminés. Soumission automatique...');
-      autoSubmittedRef.current = true;
-      handleSubmit();
-    }
-  }, [uploadedKeys.facePhotoKey, uploadedKeys.palmPhotoKey, useDirectUpload, isSubmitting, paymentIntentId]);
+  // Soumission désormais déclenchée explicitement par l'utilisateur via le bouton "Finaliser".
   
   // =================== RENDU ===================
   
