@@ -462,10 +462,138 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
     }
   };
 
-  // Soumission explicite déclenchée par l’utilisateur (alias vers handleSubmit)
+  // Déduire un content-type fiable selon file/type/extension
+  const deriveContentType = (file: File): string => {
+    if (file.type) return file.type;
+    const name = (file as any)?.name ? String((file as any).name).toLowerCase() : '';
+    if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+    if (name.endsWith('.png')) return 'image/png';
+    if (name.endsWith('.webp')) return 'image/webp';
+    if (name.endsWith('.gif')) return 'image/gif';
+    if (name.endsWith('.heic')) return 'image/heic';
+    if (name.endsWith('.heif')) return 'image/heif';
+    if (name.endsWith('.tif') || name.endsWith('.tiff')) return 'image/tiff';
+    if (name.endsWith('.bmp')) return 'image/bmp';
+    return 'application/octet-stream';
+  };
+
+  // Helper: upload un fichier vers S3 et retourne la clé
+  const uploadToS3 = async (file: File, logicalType: 'face_photo' | 'palm_photo'): Promise<string> => {
+    const contentType = deriveContentType(file);
+    const originalName = ((file as any)?.name) || `${logicalType}.bin`;
+
+    const presign = await fetch(`${API_BASE}/uploads/presign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: logicalType, contentType, originalName })
+    });
+    if (!presign.ok) {
+      const err = await presign.json().catch(() => ({}));
+      throw new Error(err.error || `Presign failed (${presign.status})`);
+    }
+    const { uploadUrl, key } = await presign.json();
+
+    const putRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: file
+    });
+    if (!putRes.ok) {
+      throw new Error(`S3 upload failed (${putRes.status})`);
+    }
+    return key as string;
+  };
+
+  // Orchestration: garantir deux uploads puis soumettre au backend
   const handleFormSubmit = async () => {
-    if (isSubmitting) return;
-    await handleSubmit();
+    const faceFile = formData.facePhoto;
+    const palmFile = formData.palmPhoto;
+    if (!faceFile || !palmFile) {
+      console.error('[OnboardingForm] Tentative de soumission sans les deux photos.');
+      setError('Veuillez sélectionner vos deux photos (visage et paume).');
+      return;
+    }
+
+    if (!paymentIntentId) {
+      setError('PaymentIntentId manquant. Impossible de soumettre.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      console.log('[OnboardingForm] Démarrage de la soumission... Upload des deux photos en parallèle.');
+
+      // Si des clés existent déjà (uploads déjà faits), on ne ré-upload pas
+      let faceKey = uploadedKeys.facePhotoKey;
+      let palmKey = uploadedKeys.palmPhotoKey;
+
+      const tasks: Promise<void>[] = [];
+      if (!faceKey) {
+        tasks.push(uploadToS3(faceFile, 'face_photo').then(k => { faceKey = k; }));
+      }
+      if (!palmKey) {
+        tasks.push(uploadToS3(palmFile, 'palm_photo').then(k => { palmKey = k; }));
+      }
+      if (tasks.length > 0) {
+        await Promise.all(tasks);
+      }
+
+      if (!faceKey || !palmKey) {
+        throw new Error('Impossible de récupérer les clés S3 des photos.');
+      }
+
+      // Construire la charge utile finale
+      const jsonData = {
+        email: userData.email,
+        phone: userData.phone,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        dateOfBirth: formData.birthDate,
+        birthTime: formData.birthTime,
+        birthPlace: formData.birthPlace,
+        specificQuestion: formData.specificQuestion,
+        objective: formData.objective,
+      };
+      const payload = {
+        formData: jsonData,
+        uploadedKeys: { facePhotoKey: faceKey, palmPhotoKey: palmKey }
+      };
+
+      console.log('[OnboardingForm] Envoi des données finales au backend...');
+      const response = await fetch(
+        `${API_BASE}/orders/by-payment-intent/${paymentIntentId}/client-submit`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: `Erreur serveur (HTTP ${response.status})` }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      console.log('✅ [OnboardingForm] Flux complet terminé avec succès !');
+
+      // Success path (mêmes effets que handleSubmit)
+      updateUserProfile({
+        email: userData.email,
+        phone: userData.phone,
+        birthDate: formData.birthDate,
+        birthTime: formData.birthTime,
+        objective: formData.specificQuestion,
+        additionalInfo: formData.objective,
+        profileCompleted: true,
+        submittedAt: new Date(),
+        facePhoto: formData.facePhoto,
+        palmPhoto: formData.palmPhoto
+      });
+      sessionStorage.removeItem('first_visit');
+      localStorage.removeItem('last_payment_intent_id');
+      if (onComplete) onComplete();
+    } catch (e: any) {
+      console.error('❌ [OnboardingForm] Une erreur est survenue durant le processus de soumission final:', e);
+      setError(e?.message || 'Erreur lors de la soumission finale');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Soumission désormais déclenchée explicitement par l'utilisateur via le bouton "Finaliser".
@@ -672,7 +800,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             </button>
           ) : (
             <button
-              onClick={handleSubmit}
+              onClick={handleFormSubmit}
               disabled={!canProceed() || isSubmitting}
               className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
