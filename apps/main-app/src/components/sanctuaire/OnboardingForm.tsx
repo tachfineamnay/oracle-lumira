@@ -505,7 +505,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   };
 
   // Orchestration: garantir deux uploads puis soumettre au backend
-  const handleFormSubmit = async () => {
+  const handleFinalize = async () => {
     const faceFile = formData.facePhoto;
     const palmFile = formData.palmPhoto;
     if (!faceFile || !palmFile) {
@@ -789,7 +789,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             </button>
           ) : (
             <button
-              onClick={handleFormSubmit}
+            onClick={handleFinalize}
               disabled={!canProceed() || isSubmitting}
               className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
