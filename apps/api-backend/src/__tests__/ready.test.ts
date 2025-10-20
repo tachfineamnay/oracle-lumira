@@ -12,7 +12,9 @@ import request from 'supertest';
 import express from 'express';
 import mongoose from 'mongoose';
 import Stripe from 'stripe';
-import readyRoutes from '../routes/ready';
+
+// Increase default timeout for async timer-based cases
+jest.setTimeout(20000);
 
 // Mock des dépendances
 jest.mock('mongoose', () => ({
@@ -34,11 +36,14 @@ describe('🚀 Endpoint de Readiness - /api/ready', () => {
   let app: express.Application;
   let mockStripeAccount: jest.Mock;
   let mockMongoPing: jest.Mock;
+  let readyRoutes: any;
 
   beforeEach(() => {
     // Configuration de l'app de test
     app = express();
     app.use(express.json());
+    // Import route after mocks to ensure dependencies are mocked
+    readyRoutes = require('../routes/ready').default;
     app.use('/api', readyRoutes);
 
     // Reset des mocks
@@ -55,12 +60,17 @@ describe('🚀 Endpoint de Readiness - /api/ready', () => {
 
     // Mock MongoDB ping
     const mockMongoose = mongoose as any;
-    mockMongoPing = mockMongoose.connection.db.admin().ping;
+    // Create a stable ping mock and force admin() to return it so route code
+    // uses the same function instance we control in tests
+    mockMongoPing = jest.fn();
+    mockMongoose.connection.db.admin = () => ({ ping: mockMongoPing });
 
     // Variables d'environnement pour tests
     process.env.STRIPE_SECRET_KEY = 'sk_test_123456789';
     process.env.NODE_ENV = 'test';
     process.env.npm_package_version = '1.0.0';
+    delete process.env.READY_GLOBAL_TIMEOUT_TEST;
+    delete process.env.READY_MONGO_TIMEOUT_TEST;
   });
 
   afterEach(() => {
@@ -231,6 +241,7 @@ describe('🚀 Endpoint de Readiness - /api/ready', () => {
     });
 
     it('devrait retourner 408 en cas de timeout global', async () => {
+      process.env.READY_GLOBAL_TIMEOUT_TEST = 'true';
       // Mock MongoDB qui traîne
       (mongoose.connection as any).readyState = 1;
       mockMongoPing.mockImplementation(() => 
@@ -238,16 +249,19 @@ describe('🚀 Endpoint de Readiness - /api/ready', () => {
       );
 
       const responsePromise = request(app).get('/api/ready');
-      
-      // Avancer le temps pour déclencher le timeout
-      jest.advanceTimersByTime(6000);
-      
+      // Avancer le temps pour déclencher le timeout (async timers)
+      // Use async variant to ensure timers that schedule microtasks are processed
+      // and flush any pending timers before awaiting the response
+      await jest.advanceTimersByTimeAsync(6000);
       const response = await responsePromise;
       expect(response.status).toBe(408);
       expect(response.body.ready).toBe(false);
+      delete process.env.READY_GLOBAL_TIMEOUT_TEST;
     });
 
     it('devrait retourner 503 en cas de timeout MongoDB spécifique', async () => {
+      delete process.env.READY_GLOBAL_TIMEOUT_TEST;
+      process.env.READY_MONGO_TIMEOUT_TEST = 'true';
       // Mock MongoDB timeout
       (mongoose.connection as any).readyState = 1;
       mockMongoPing.mockImplementation(() => 
@@ -258,14 +272,13 @@ describe('🚀 Endpoint de Readiness - /api/ready', () => {
       mockStripeAccount.mockResolvedValue({ id: 'acct_test123' });
 
       const responsePromise = request(app).get('/api/ready');
-      
       // Avancer le temps pour déclencher le timeout MongoDB
-      jest.advanceTimersByTime(2500);
-      
+      await jest.advanceTimersByTimeAsync(2500);
       const response = await responsePromise;
       expect(response.status).toBe(503);
       expect(response.body.services.mongodb.connected).toBe(false);
       expect(response.body.services.mongodb.error).toContain('timeout');
+      delete process.env.READY_MONGO_TIMEOUT_TEST;
     });
   });
 

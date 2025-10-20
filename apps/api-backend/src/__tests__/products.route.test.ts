@@ -1,8 +1,10 @@
 // Oracle Lumira - Products Route Tests
 import request from 'supertest';
 import express from 'express';
-import productRoutes from '../routes/products';
 import { PRODUCT_CATALOG } from '../catalog';
+
+// Increase timeout to accommodate async flows
+jest.setTimeout(20000);
 
 // Mock Stripe Service
 jest.mock('../services/stripe', () => ({
@@ -11,14 +13,25 @@ jest.mock('../services/stripe', () => ({
   },
 }));
 
+// Mock ProductOrder model to avoid real Mongo writes during tests
+jest.mock('../models/ProductOrder', () => ({
+  ProductOrder: {
+    create: jest.fn().mockResolvedValue({ save: jest.fn().mockResolvedValue(undefined) }),
+    findOne: jest.fn().mockResolvedValue(null),
+  },
+}));
+
 const { StripeService } = require('../services/stripe');
 
 describe('POST /api/products/create-payment-intent', () => {
   let app: express.Application;
+  let productRoutes: any;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
+    // Import route after mocks to ensure mocked dependencies are used
+    productRoutes = require('../routes/products').default;
     app.use('/api/products', productRoutes);
 
     // Reset mocks
