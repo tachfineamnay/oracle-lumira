@@ -14,6 +14,7 @@ import {
   AlertCircle,
   RotateCcw
 } from 'lucide-react';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 interface ValidationQueueProps {
   orders: Order[];
@@ -92,7 +93,9 @@ const ValidationQueue: React.FC<ValidationQueueProps> = ({
             <p className="text-sm">Les contenus générés apparaîtront ici pour validation</p>
           </div>
         ) : (
-          orders.map((order, index) => (
+          orders.map((order, index) => {
+            const levelDisplayName = getLevelNameSafely(order.level);
+            return (
             <motion.div
               key={order._id}
               onClick={() => onSelectOrder(order)}
@@ -111,9 +114,9 @@ const ValidationQueue: React.FC<ValidationQueueProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
-                      levelColors[order.levelName] || levelColors['Simple']
+                      levelColors[levelDisplayName] || levelColors['Simple']
                     }`}>
-                      Niveau {order.level} - {order.levelName}
+                      Niveau {order.level} - {levelDisplayName}
                     </span>
                     <div className="flex items-center gap-1 text-green-400">
                       <Euro className="w-3 h-3" />
@@ -204,7 +207,8 @@ const ValidationQueue: React.FC<ValidationQueueProps> = ({
                 </div>
               </div>
             </motion.div>
-          ))
+            );
+          })
         )}
       </div>
 

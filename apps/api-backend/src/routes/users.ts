@@ -6,6 +6,7 @@ import { authenticateToken, requireRole } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import { getS3Service } from '../services/s3';
 import { aggregateCapabilities, getHighestLevel, getLevelMetadata } from '../config/entitlements';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 const router = express.Router();
 
@@ -244,8 +245,8 @@ router.get('/orders/completed', authenticateSanctuaire, async (req: any, res: an
     const formattedOrders = orders.map(order => ({
       id: order._id,
       orderNumber: order.orderNumber,
-      level: order.level,
-      levelName: order.levelName,
+        level: order.level,
+        levelName: getLevelNameSafely(order.level),
       amount: order.amount,
       status: order.status,
       createdAt: order.createdAt,

@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { Order } from '../models/Order';
 import { ProductOrder } from '../models/ProductOrder';
 import { User } from '../models/User';
+import { getLevelNameFromLevel } from '../utils/orderUtils';
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -11,10 +12,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 // Level configuration
 const LEVELS = {
-  1: { name: 'Simple', price: 0, description: '1 carte + PDF 2p' },
-  2: { name: 'Intuitive', price: 1400, description: 'Profil âme + PDF 4p + audio 5min' }, // 14€ in cents
-  3: { name: 'Alchimique', price: 2900, description: 'Blocages + rituel + PDF 6-8p + audio 12min' }, // 29€
-  4: { name: 'Intégrale', price: 4900, description: 'Cartographie + mandala + PDF 15p + audio 25min' } // 49€
+  1: { name: getLevelNameFromLevel(1), price: 0, description: '1 carte + PDF 2p' },
+  2: { name: getLevelNameFromLevel(2), price: 1400, description: 'Profil âme + PDF 4p + audio 5min' }, // 14€ in cents
+  3: { name: getLevelNameFromLevel(3), price: 2900, description: 'Blocages + rituel + PDF 6-8p + audio 12min' }, // 29€
+  4: { name: getLevelNameFromLevel(4), price: 4900, description: 'Cartographie + mandala + PDF 15p + audio 25min' } // 49€
 };
 
 // Create payment intent
@@ -179,8 +180,7 @@ async function createOrder(
     userId,
     userEmail,
     level,
-    levelName: levelConfig.name,
-    amount,
+        amount,
     currency: 'eur',
     status: amount === 0 ? 'paid' : 'pending',
     paymentIntentId,

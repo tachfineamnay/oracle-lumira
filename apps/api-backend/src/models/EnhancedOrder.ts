@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 // Utility function for safe date conversion
 function toDateSafe(v: unknown): Date | null {
@@ -10,107 +11,7 @@ function toDateSafe(v: unknown): Date | null {
   return null;
 }
 
-export interface IOrder extends Document {
-  _id: mongoose.Types.ObjectId;
-  orderNumber: string;
-  userId?: mongoose.Types.ObjectId; // Optional for guest orders
-  userEmail: string;
-  
-  // Service configuration
-  service: 'basic' | 'premium' | 'vip';
-  level: 1 | 2 | 3 | 4;
-  levelName: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale';
-  expertId?: mongoose.Types.ObjectId;
-  duration: number; // in minutes
-  
-  // Payment information
-  amount: number; // in cents
-  currency: string;
-  status: 'pending' | 'confirmed' | 'paid' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
-  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
-  paymentIntentId?: string;
-  stripeSessionId?: string;
-  stripePaymentIntentId?: string;
-  
-  // User form data
-  formData: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-    dateOfBirth?: Date;
-    specificQuestion?: string;
-    preferences?: {
-      audioVoice?: 'masculine' | 'feminine';
-      deliveryFormat?: 'email' | 'whatsapp';
-    };
-  };
-  
-  // Client uploaded files
-  files?: [{
-    filename: string;
-    originalName: string;
-    path: string;
-    mimetype: string;
-    size: number;
-    uploadedAt: Date;
-  }];
-  
-  // Client additional inputs
-  clientInputs?: {
-    birthTime?: string;
-    birthPlace?: string;
-    specificContext?: string;
-    lifeQuestion?: string;
-  };
-  
-  // Expert processing
-  expertPrompt?: string;
-  expertInstructions?: string;
-  expertNotes?: string;
-  
-  // Session management for live consultations
-  sessionUrl?: string;
-  sessionStartTime?: Date;
-  sessionEndTime?: Date;
-  actualDuration?: number;
-  
-  // Quality control
-  rating?: number;
-  review?: string;
-  
-  // Content delivery
-  generatedContent?: {
-    audioUrl?: string;
-    transcript?: string;
-    additionalFiles?: string[];
-    deliveryStatus?: 'pending' | 'sent' | 'delivered' | 'failed';
-    deliveredAt?: Date;
-  };
-  
-  // Timestamps
-  createdAt: Date;
-  updatedAt: Date;
-  paidAt?: Date;
-  completedAt?: Date;
-  
-  // Notification preferences
-  notifications?: {
-    sms?: boolean;
-    email?: boolean;
-    whatsapp?: boolean;
-  };
-  
-  // Metadata
-  metadata?: {
-    source?: string;
-    referrer?: string;
-    userAgent?: string;
-    ipAddress?: string;
-  };
-}
-
-const OrderSchema: Schema = new Schema({
+{
   orderNumber: { 
     type: String, 
     required: true, 
@@ -140,12 +41,7 @@ const OrderSchema: Schema = new Schema({
     enum: [1, 2, 3, 4], 
     required: true 
   },
-  levelName: { 
-    type: String, 
-    enum: ['Simple', 'Intuitive', 'Alchimique', 'Intégrale'], 
-    required: true 
-  },
-  expertId: { 
+    expertId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Expert',
     required: false
@@ -368,4 +264,7 @@ OrderSchema.methods.generateSessionUrl = function(): string {
   return `${baseUrl}/session/${this._id}?token=${this.orderNumber}`;
 };
 
-export const Order = mongoose.model<IOrder>('Order', OrderSchema);
+// Virtual property for levelName (derived from level)
+OrderSchema.virtual('levelName').get(function (this: { level: number }) {
+  return getLevelNameSafely(this.level);
+});

@@ -15,6 +15,7 @@ import { LoadingSpinner } from './LoadingSpinner';
 import type { Order } from '../types/Order';
 import { api, endpoints } from '../utils/api';
 import toast from 'react-hot-toast';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 interface ContentGeneratorProps {
   order: Order | null;
@@ -117,7 +118,7 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
 
   const generatePromptTemplate = (order: Order): string => {
     const client = order.formData;
-    const level = order.levelName;
+    const level = getLevelNameSafely(order.level);
     const birthDate = client.dateOfBirth ? new Date(client.dateOfBirth).toLocaleDateString('fr-FR') : 'Non renseignée';
 
     let template = `CONSULTATION ORACLE LUMIRA - NIVEAU ${level.toUpperCase()}
@@ -432,4 +433,3 @@ PERSONNALISATION:
 };
 
 export default ContentGenerator;
-

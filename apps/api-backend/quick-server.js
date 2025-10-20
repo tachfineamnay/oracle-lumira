@@ -63,7 +63,6 @@ app.post('/api/stripe/create-payment-intent', async (req, res) => {
       orderNumber,
       userEmail: formData.email,
       level: parseInt(level),
-      levelName: levelConfig.name,
       formData,
       price: levelConfig.price,
       paymentIntentId: 'pi_test_' + Date.now() + '_' + level,

@@ -7,6 +7,7 @@ import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
 import { useInitializeUserLevel } from '../contexts/UserLevelContext';
 import { useOrderStatus } from '../hooks/useOrderStatus';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 const ConfirmationTemple: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const ConfirmationTemple: React.FC = () => {
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const redirectStartedRef = useRef(false);
   const { initializeFromPurchase } = useInitializeUserLevel();
+  const derivedLevelName = orderData ? getLevelNameSafely(orderData.level) : 'Simple';
 
   // Gestion de la redirection automatique quand l'accès est accordé
   useEffect(() => {
@@ -43,11 +45,11 @@ const ConfirmationTemple: React.FC = () => {
       // Initialiser le contexte utilisateur
       const productData = {
         id: orderData.level.toString(),
-        name: orderData.levelName,
+        name: derivedLevelName,
         level: orderData.level as any,
         amountCents: orderData.amount,
         currency: 'eur',
-        description: `Niveau ${orderData.levelName}`,
+        description: `Niveau ${derivedLevelName}`,
         features: [],
         metadata: {},
       };
@@ -96,7 +98,7 @@ const ConfirmationTemple: React.FC = () => {
 
       return () => clearInterval(countdown);
     }
-  }, [accessGranted, orderData, orderId, navigate, searchParams, initializeFromPurchase, stopPolling]);
+  }, [accessGranted, orderData, orderId, navigate, searchParams, initializeFromPurchase, stopPolling, derivedLevelName]);
 
   // Gérer les erreurs
   useEffect(() => {
@@ -177,7 +179,7 @@ const ConfirmationTemple: React.FC = () => {
   }
 
   // Données de la commande (depuis le nouveau hook)
-  const productName = orderData.levelName;
+  const productName = derivedLevelName;
   const orderAmount = orderData.amount;
   const orderIdShort = orderData._id.substring(0, 8);
 

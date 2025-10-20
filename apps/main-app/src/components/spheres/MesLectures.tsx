@@ -22,6 +22,7 @@ import { CapabilityGuard } from '../auth/CapabilityGuard';
 import { useAudioPlayer } from '../../contexts/AudioPlayerContext';
 import { sanctuaireService } from '../../services/sanctuaire';
 import AssetsModal from '../sanctuaire/AssetsModal';
+import { getLevelNameSafely } from '../../utils/orderUtils';
 
 // =================== TYPES ===================
 
@@ -64,7 +65,7 @@ const MesLectures: React.FC = () => {
         createdAt: order.createdAt,
         deliveredAt: order.deliveredAt,
         level: order.level,
-        levelName: order.levelName,
+        levelName: getLevelNameSafely(order.level),
         pdfUrl: order.generatedContent?.pdfUrl,
         audioUrl: order.generatedContent?.audioUrl,
         mandalaSvg: order.generatedContent?.mandalaSvg,

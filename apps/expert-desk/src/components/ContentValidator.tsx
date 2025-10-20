@@ -17,6 +17,7 @@ import {
   Eye
 } from 'lucide-react';
 import { api, endpoints } from '../utils/api';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 interface ContentValidatorProps {
   order: Order | null;
@@ -73,6 +74,8 @@ const ContentValidator: React.FC<ContentValidatorProps> = ({
       </div>
     );
   }
+
+  const levelDisplayName = getLevelNameSafely(order.level);
 
   const levelColors: Record<string, string> = {
     'Simple': 'text-gray-400 bg-gray-500/10 border-gray-500/20',
@@ -144,9 +147,9 @@ const ContentValidator: React.FC<ContentValidatorProps> = ({
           
           <div className="flex items-center gap-2">
             <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
-              levelColors[order.levelName] || levelColors['Simple']
+              levelColors[levelDisplayName] || levelColors['Simple']
             }`}>
-              Niveau {order.level} - {order.levelName}
+              Niveau {order.level} - {levelDisplayName}
             </span>
             {order.revisionCount && order.revisionCount > 0 && (
               <div className="flex items-center gap-1 text-orange-400 bg-orange-400/10 px-2 py-1 rounded-lg border border-orange-400/20">

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '../utils/api';
+import { getLevelNameFromLevel, getLevelNameSafely, levelKeyToLevelNumber } from '../utils/orderUtils';
 const API_BASE_URL = getApiBaseUrl();
 
 export interface CreatePaymentIntentRequest {
@@ -154,17 +155,21 @@ class StripeAPI {
 
   // Helper method to get level display name
   getLevelDisplayName(level: string): string {
-    const levelNames: Record<string, string> = {
-      '1': 'Simple',
-      '2': 'Intuitive',
-      '3': 'Alchimique',
-      '4': 'Intégrale',
-      simple: 'Simple',
-      intuitive: 'Intuitive',
-      alchimique: 'Alchimique',
-      integrale: 'Intégrale',
-    };
-    return levelNames[level.toLowerCase()] || level;
+    if (!level) {
+      return getLevelNameSafely(NaN);
+    }
+
+    const numericLevel = Number(level);
+    if (Number.isFinite(numericLevel)) {
+      return getLevelNameSafely(numericLevel);
+    }
+
+    try {
+      const normalizedLevel = levelKeyToLevelNumber(level);
+      return getLevelNameFromLevel(normalizedLevel);
+    } catch {
+      return level;
+    }
   }
 }
 

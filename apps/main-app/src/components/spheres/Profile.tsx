@@ -23,6 +23,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useUserLevel } from '../../contexts/UserLevelContext';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
+import { getLevelNameSafely } from '../../utils/orderUtils';
 
 interface EditableField {
   key: string;
@@ -388,7 +389,7 @@ const Profile: React.FC = () => {
                         {order.formData?.specificQuestion || 'Lecture spirituelle'}
                       </div>
                       <div className="text-xs text-white/60 mt-1">
-                        Commandée le {new Date(order.createdAt).toLocaleDateString('fr-FR')} • {order.levelName}
+                        Commandée le {new Date(order.createdAt).toLocaleDateString('fr-FR')} • {getLevelNameSafely(order.level)}
                       </div>
                     </div>
                     <div className="px-3 py-1 bg-green-400/20 border border-green-400/30 rounded-full text-green-400 text-xs font-medium">

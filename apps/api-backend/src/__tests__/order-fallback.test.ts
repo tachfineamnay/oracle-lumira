@@ -10,6 +10,7 @@
 import { ProductOrder } from '../models/ProductOrder';
 import { Order } from '../models/Order';
 import { User } from '../models/User';
+import { getLevelNameFromLevel } from '../utils/orderUtils';
 import mongoose from 'mongoose';
 
 describe('🔧 TACTICAL FIX - Order Fallback to ProductOrder', () => {
@@ -83,13 +84,14 @@ describe('🔧 TACTICAL FIX - Order Fallback to ProductOrder', () => {
         lastName: 'User'
       };
 
+      const level = 1;
       const mockOrder = {
         _id: new mongoose.Types.ObjectId(),
         orderNumber: 'LU2501140001',
         userId: mockUser._id,
         userEmail: 'test@example.com',
-        level: 1,
-        levelName: 'Simple',
+        level,
+        levelName: getLevelNameFromLevel(level),
         amount: 2700,
         currency: 'eur',
         status: 'processing',

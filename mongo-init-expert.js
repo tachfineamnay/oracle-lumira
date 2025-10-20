@@ -42,7 +42,6 @@ db.orders.insertMany([
   {
     orderNumber: 'LUM-2024-001',
     level: 1,
-    levelName: 'Niveau 1 - Guidance Spirituelle',
     customerEmail: 'client1@email.com',
     customerName: 'Marie Dupont',
     status: 'paid',
@@ -66,7 +65,6 @@ db.orders.insertMany([
   {
     orderNumber: 'LUM-2024-002',
     level: 2,
-    levelName: 'Niveau 2 - Lecture Avancée',
     customerEmail: 'client2@email.com',
     customerName: 'Sophie Martin',
     status: 'paid',
@@ -90,7 +88,6 @@ db.orders.insertMany([
   {
     orderNumber: 'LUM-2024-003',
     level: 3,
-    levelName: 'Niveau 3 - Consultation Complète',
     customerEmail: 'client3@email.com',
     customerName: 'Jean Moreau',
     status: 'paid',

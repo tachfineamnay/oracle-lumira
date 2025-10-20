@@ -246,11 +246,11 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
             }
 
             const levelKeyStripe = String((pi.metadata as any)?.level || 'initie').toLowerCase();
-            const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Int�grale' }> = {
+            const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale' }> = {
               initie: { num: 1, name: 'Simple' },
               mystique: { num: 2, name: 'Intuitive' },
               profond: { num: 3, name: 'Alchimique' },
-              integrale: { num: 4, name: 'Int�grale' },
+              integrale: { num: 4, name: 'Intégrale' },
             };
             const levelInfo = levelMap[levelKeyStripe] || levelMap['initie'];
             const amount = typeof (pi as any).amount === 'number' ? (pi as any).amount : 0;
@@ -272,7 +272,6 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 userId: user._id,
                 userEmail: user.email,
                 level: levelInfo.num,
-                levelName: levelInfo.name,
                 amount,
                 currency,
                 paymentIntentId
@@ -284,7 +283,6 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 userId: user._id,
                 userEmail: user.email,
                 level: levelInfo.num,
-                levelName: levelInfo.name,
                 amount,
                 currency,
                 status: 'paid',
@@ -340,24 +338,23 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
                 lastName: 'Client'
               });
             }
-            const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Int�grale' }> = {
+            const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale' }> = {
               initie: { num: 1, name: 'Simple' },
               mystique: { num: 2, name: 'Intuitive' },
               profond: { num: 3, name: 'Alchimique' },
-              integrale: { num: 4, name: 'Int�grale' },
+              integrale: { num: 4, name: 'Intégrale' },
             };
             const levelInfo = levelMap[levelKey] || levelMap['initie'];
             const orderNumber = `LUM-${Date.now()}`;
             order = await Order.create({
-              orderNumber: orderNumber,
-              userId: user._id,
-              userEmail: user.email,
-              level: levelInfo.num,
-              levelName: levelInfo.name,
-              amount: 0,
-              currency: 'eur',
-              status: 'paid',
-              paymentIntentId,
+            orderNumber: orderNumber,
+            userId: user._id,
+            userEmail: user.email,
+            level: levelInfo.num,
+            amount: 0,
+            currency: 'eur',
+            status: 'paid',
+            paymentIntentId,
               paidAt: new Date(),
               formData: {
                 firstName: user.firstName,
@@ -388,11 +385,11 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
               lastName: 'Client'
             });
           }
-          const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Int?grale' }> = {
+          const levelMap: Record<string, { num: 1 | 2 | 3 | 4; name: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale' }> = {
             initie: { num: 1, name: 'Simple' },
             mystique: { num: 2, name: 'Intuitive' },
             profond: { num: 3, name: 'Alchimique' },
-            integrale: { num: 4, name: 'Int?grale' },
+            integrale: { num: 4, name: 'Intégrale' },
           };
           const levelInfo = levelMap[levelKey] || levelMap['initie'];
           
@@ -412,7 +409,6 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
               userId: user._id,
               userEmail: user.email,
               level: levelInfo.num,
-              levelName: levelInfo.name,
               paymentIntentId
             }, req);
 
@@ -422,8 +418,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
               userId: user._id,
               userEmail: user.email,
               level: levelInfo.num,
-              levelName: levelInfo.name,
-              amount: 0,
+            amount: 0,
               currency: 'eur',
               status: 'paid',
               paymentIntentId,
@@ -892,7 +887,6 @@ router.get('/:id', async (req: any, res: any) => {
             paymentIntentId: productOrder.paymentIntentId,
             status: mappedStatus,
             level: levelInfo.num,
-            levelName: levelInfo.name,
             amount: productOrder.amount,
             currency: productOrder.currency,
             userEmail: productOrder.customerEmail,
@@ -1173,7 +1167,6 @@ router.get('/:id/content', authenticateSanctuaire, async (req: any, res: any) =>
         id: order._id,
         orderNumber: order.orderNumber,
         level: order.level,
-        levelName: order.levelName,
         amount: order.amount,
         createdAt: order.createdAt,
         deliveredAt: order.deliveredAt
@@ -1205,3 +1198,9 @@ router.get('/:id/content', authenticateSanctuaire, async (req: any, res: any) =>
     res.status(500).json({ error: 'Erreur lors de la récupération du contenu' });
   }
 });
+
+
+
+
+
+

@@ -12,6 +12,7 @@ import {
   Phone,
   CheckCircle
 } from 'lucide-react';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 interface OrdersQueueProps {
   orders: Order[];
@@ -77,7 +78,9 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
             <p className="text-sm">Les nouvelles commandes apparaîtront ici</p>
           </div>
         ) : (
-          orders.map((order, index) => (
+          orders.map((order, index) => {
+            const levelDisplayName = getLevelNameSafely(order.level);
+            return (
             <motion.div
               key={order._id}
               onClick={() => onSelectOrder(order)}
@@ -96,9 +99,9 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${
-                      levelColors[order.levelName] || levelColors['Simple']
+                      levelColors[levelDisplayName] || levelColors['Simple']
                     }`}>
-                      Niveau {order.level} - {order.levelName}
+                      Niveau {order.level} - {levelDisplayName}
                     </span>
                     <div className="flex items-center gap-1 text-green-400">
                       <Euro className="w-3 h-3" />
@@ -168,7 +171,8 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
                 </div>
               </div>
             </motion.div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -184,3 +188,6 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
 };
 
 export default OrdersQueue;
+
+
+

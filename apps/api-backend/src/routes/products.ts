@@ -13,6 +13,7 @@ import Stripe from 'stripe';
 import { ProductOrder } from '../models/ProductOrder';
 import { User } from '../models/User';
 import { Order } from '../models/Order';
+import { getLevelNameFromLevel } from '../utils/orderUtils';
 
 const router = Router();
 
@@ -205,8 +206,7 @@ router.post(
               userEmail: user.email,
               userName: `${user.firstName} ${user.lastName}`,
               level: levelInfo.num,
-              levelName: levelInfo.name,
-              amount: product.amountCents,
+                            amount: product.amountCents,
               currency: product.currency,
               status: 'paid' as const,
               paymentIntentId: mockPaymentIntentId,
@@ -838,8 +838,7 @@ async function ensureDeskOrderForPayment(paymentIntent: Stripe.PaymentIntent) {
       userEmail: user.email,
       userName: `${user.firstName} ${user.lastName}`,
       level: levelInfo.num,
-      levelName: levelInfo.name,
-      amount: paymentIntent.amount,
+            amount: paymentIntent.amount,
       currency: paymentIntent.currency,
       status: 'paid' as const,
       paymentIntentId: paymentIntent.id,
@@ -870,8 +869,7 @@ async function ensureDeskOrderForPayment(paymentIntent: Stripe.PaymentIntent) {
       orderId: newOrder._id,
       orderNumber: newOrder.orderNumber,
       level: newOrder.level,
-      levelName: newOrder.levelName,
-      status: newOrder.status,
+            status: newOrder.status,
       userEmail: newOrder.userEmail,
       amount: newOrder.amount
     });
@@ -984,20 +982,20 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
       });
     }
 
-    // Mapping des niveaux
-    const levelNames = {
-      1: 'Simple',
-      2: 'Intuitive', 
-      3: 'Alchimique',
-      4: 'Intégrale'
-    };
+    const levelNumber = Number(level);
+    let levelName: string;
+    try {
+      levelName = getLevelNameFromLevel(levelNumber);
+    } catch {
+      res.status(400).json({ error: 'Invalid level' });
+      return;
+    }
 
     // Créer la commande pour Expert Desk
     const order = await Order.create({
       userId: user._id,
       userEmail: user.email,
-      level: level,
-      levelName: levelNames[level as keyof typeof levelNames] || 'Simple',
+      level: levelNumber,
       amount: amount,
       currency: 'eur',
       status: 'pending',
@@ -1011,6 +1009,7 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
       orderId: order._id,
       orderNumber: order.orderNumber,
       level: order.level,
+      levelName,
       client: `${formData.firstName} ${formData.lastName}`
     });
 
@@ -1018,6 +1017,8 @@ router.post('/create-order', async (req: Request, res: Response): Promise<void> 
       success: true,
       orderId: order._id,
       orderNumber: order.orderNumber,
+      level: order.level,
+      levelName,
       message: 'Test order created successfully'
     });
 

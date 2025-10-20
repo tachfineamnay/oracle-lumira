@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
@@ -7,7 +8,7 @@ export interface IOrder extends Document {
   userEmail: string;
   userName?: string; // Added for user name
   level: 1 | 2 | 3 | 4;
-  levelName: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale';
+  levelName?: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale';
   amount: number; // in cents
   currency: string;
   status: 'pending' | 'paid' | 'processing' | 'awaiting_validation' | 'completed' | 'failed' | 'refunded';
@@ -129,12 +130,7 @@ const orderSchema = new Schema<IOrder>({
     required: true,
     enum: [1, 2, 3, 4]
   },
-  levelName: {
-    type: String,
-    required: true,
-    enum: ['Simple', 'Intuitive', 'Alchimique', 'Intégrale']
-  },
-  amount: {
+    amount: {
     type: Number,
     required: true,
     min: 0
@@ -240,13 +236,7 @@ const orderSchema = new Schema<IOrder>({
   deliveryMethod: { type: String, enum: ['email', 'whatsapp'] }
 }, {
   timestamps: true,
-  toJSON: {
-    transform: (doc: any, ret: any) => {
-      delete ret.__v;
-      return ret;
-    }
-  }
-});
+  toJSON: { virtuals: true, transform: (doc: any, ret: any) => { delete ret.__v; return ret; } }, toObject: { virtuals: true } });
 
 // Generate order number before saving
 orderSchema.pre('save', async function(next) {
@@ -279,7 +269,12 @@ orderSchema.index({ status: 1 });
 orderSchema.index({ level: 1 });
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ 'expertReview.status': 1 });
-orderSchema.index({ 'expertValidation.validationStatus': 1 });
+
+
+// Virtual property for levelName (derived from level)
+orderSchema.virtual('levelName').get(function (this: { level: number }) {
+  return getLevelNameSafely(this.level);
+});
 orderSchema.index({ status: 1, 'expertValidation.validationStatus': 1 });
 
 export const Order = mongoose.model<IOrder>('Order', orderSchema);

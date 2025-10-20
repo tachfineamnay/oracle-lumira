@@ -8,6 +8,7 @@ import Joi from 'joi';
 import axios from 'axios';
 import bcrypt from 'bcryptjs';
 import { getS3Service } from '../services/s3';
+import { getLevelNameSafely } from '../utils/orderUtils';
 
 const router = express.Router();
 
@@ -809,7 +810,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
       orderId: order._id,
       orderNumber: order.orderNumber,
       level: order.level,
-      levelName: order.levelName,
+      levelName: getLevelNameSafely(order.level),
       client: {
         firstName: order.formData.firstName,
         lastName: order.formData.lastName,
@@ -1212,7 +1213,7 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
           originalPrompt: order.expertPrompt,
           originalInstructions: order.expertInstructions,
           level: order.level,
-          levelName: order.levelName,
+          levelName: getLevelNameSafely(order.level),
           client: {
             firstName: order.formData.firstName,
             lastName: order.formData.lastName,
