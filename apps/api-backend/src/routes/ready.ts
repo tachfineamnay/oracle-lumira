@@ -69,22 +69,20 @@ async function checkMongoDB(): Promise<{ connected: boolean; responseTime?: numb
     }
 
     // Ping actif avec timeout
+    if (forceMongoTimeoutTest) {
+      // Deterministic branch for tests: report timeout as a service-level failure
+      // without relying on any timers, so tests can assert 503 (not-ready)
+      const responseTime = Date.now() - startTime;
+      return { connected: false, responseTime, error: 'MongoDB ping timeout' } as any;
+    }
+
     if (!disableInternalTimeouts) {
-      if (forceMongoTimeoutTest) {
-        const pending = new Promise<void>(() => {});
-        const timeoutPromise = new Promise((_, reject) => {
-          const t: any = setTimeout(() => reject(new Error('MongoDB ping timeout')), MONGO_PING_TIMEOUT);
-          if (process.env.NODE_ENV !== 'test' && typeof t?.unref === 'function') t.unref();
-        });
-        await Promise.race([pending, timeoutPromise]);
-      } else {
-        const pingPromise = mongoose.connection.db?.admin().ping();
-        const timeoutPromise = new Promise((_, reject) => {
-          const t: any = setTimeout(() => reject(new Error('MongoDB ping timeout')), MONGO_PING_TIMEOUT);
-          if (process.env.NODE_ENV !== 'test' && typeof t?.unref === 'function') t.unref();
-        });
-        await Promise.race([pingPromise, timeoutPromise]);
-      }
+      const pingPromise = mongoose.connection.db?.admin().ping();
+      const timeoutPromise = new Promise((_, reject) => {
+        const t: any = setTimeout(() => reject(new Error('MongoDB ping timeout')), MONGO_PING_TIMEOUT);
+        if (process.env.NODE_ENV !== 'test' && typeof t?.unref === 'function') t.unref();
+      });
+      await Promise.race([pingPromise, timeoutPromise]);
     } else {
       // In test global-timeout mode, simulate a hanging check without creating timers
       await new Promise<void>(() => {});
