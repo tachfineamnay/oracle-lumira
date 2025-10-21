@@ -43,7 +43,7 @@ const ProfileIcon: React.FC = () => {
       )}
       {/* Bouton Accueil */}
       <button
-        onClick={() => navigate('/sanctuaire')}
+        onClick={() => navigate('/sanctuaire/dashboard')}
         className="flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white hover:bg-white/20 transition-all"
         title="Retour à l'accueil"
       >
@@ -123,7 +123,7 @@ const ContextualHint: React.FC = () => {
   const navigate = useNavigate();
 
   // Si on est sur la page principale /sanctuaire, afficher le contenu approprié
-  if (path === '/sanctuaire') {
+  if (path === '/sanctuaire' || path === '/sanctuaire/dashboard') {
     // Si le profil n'est pas complété, afficher le formulaire
     if (!userLevel.profile?.profileCompleted) {
       return (
@@ -554,6 +554,7 @@ const Sanctuaire: React.FC = () => {
   }, [isAuthenticated, isLoading, navigate, searchParams]);
 
   const progress = Math.round(((Number(userLevel.currentLevel) || 1) / 4) * 100);
+  const isHome = location.pathname === '/sanctuaire' || location.pathname === '/sanctuaire/dashboard';
   return (
     <PageLayout variant="dark">
       {/* Onboarding Form en overlay si first_visit ou profil incomplet */}
@@ -562,12 +563,12 @@ const Sanctuaire: React.FC = () => {
       {/* Icône Profil - Toujours visible */}
       <ProfileIcon />
       
-      {/* Sidebar pour les sous-pages */}
+      {/* Sidebar persistante */}
       <SanctuaireSidebar progress={[progress, 0, 0, 0]} />
       
       {/* Contenu principal avec marge pour sidebar sur sous-pages */}
       <AudioPlayerProvider>
-      <div className={location.pathname !== '/sanctuaire' ? 'ml-64' : ''}>
+      <div className={'ml-64'}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="space-y-8 py-6 sm:py-8 lg:py-12"
@@ -576,7 +577,7 @@ const Sanctuaire: React.FC = () => {
             transition={{ duration: 0.6, staggerChildren: 0.1 }}
           >
             {/* Header pour les sous-pages uniquement */}
-            {location.pathname !== '/sanctuaire' && (
+            {!isHome && (
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -605,7 +606,7 @@ const Sanctuaire: React.FC = () => {
             <ContextualHint />
 
             {/* Content Area - Uniquement pour les sous-pages */}
-            {location.pathname !== '/sanctuaire' && (
+            {!isHome && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

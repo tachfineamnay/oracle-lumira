@@ -23,6 +23,9 @@ import { useAudioPlayer } from '../../contexts/AudioPlayerContext';
 import { sanctuaireService } from '../../services/sanctuaire';
 import AssetsModal from '../sanctuaire/AssetsModal';
 import { getLevelNameSafely } from '../../utils/orderUtils';
+import { useSanctuaryAccess } from '../../hooks/useSanctuaryAccess';
+import AccessGate from '../ui/AccessGate';
+import { SanctuaryLevel } from '../../config/sanctuary-access';
 
 // =================== TYPES ===================
 
@@ -46,6 +49,7 @@ const MesLectures: React.FC = () => {
   const navigate = useNavigate();
   const { orders, isLoading, user, hasCapability } = useSanctuaire();
   const { play, setTrack } = useAudioPlayer();
+  const { canAccess } = useSanctuaryAccess();
   
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [modal, setModal] = useState<{ 
@@ -111,6 +115,19 @@ const MesLectures: React.FC = () => {
             </GlassCard>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  // =================== ACCESS GATE ===================
+
+  if (!canAccess('oracle.viewHistory')) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <AccessGate
+          feature="Historique des tirages"
+          requiredLevel={SanctuaryLevel.PROFOND}
+        />
       </div>
     );
   }

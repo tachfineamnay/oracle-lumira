@@ -1,9 +1,10 @@
 // Oracle Lumira - Sidebar pour navigation du Sanctuaire
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Star, Book, Layers, MessageCircle, Home, TrendingUp } from 'lucide-react';
+import { Star, Book, Layers, MessageCircle, Home, TrendingUp, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import GlassCard from '../ui/GlassCard';
+import { useSanctuaryAccess } from '../../hooks/useSanctuaryAccess';
 
 type Props = {
   progress?: number[];
@@ -12,7 +13,7 @@ type Props = {
 const NAVIGATION_ITEMS = [
   { 
     key: 'home', 
-    to: '/sanctuaire', 
+    to: '/sanctuaire/dashboard', 
     icon: <Home className="w-5 h-5" />, 
     label: 'Accueil',
     exact: true 
@@ -46,11 +47,9 @@ const NAVIGATION_ITEMS = [
 const SanctuaireSidebar: React.FC<Props> = ({ progress = [] }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { canAccess } = useSanctuaryAccess();
 
-  // Ne pas afficher la sidebar sur la page d'accueil
-  if (location.pathname === '/sanctuaire') {
-    return null;
-  }
+  const isHistoryAccessible = canAccess('oracle.viewHistory');
 
   return (
     <motion.aside 
@@ -84,16 +83,18 @@ const SanctuaireSidebar: React.FC<Props> = ({ progress = [] }) => {
               : location.pathname.startsWith(item.to);
             
             const prog = progress[index] || 0;
+            const isLocked = item.key === 'rawDraws' && !isHistoryAccessible;
 
             return (
               <NavLink
                 key={item.key}
                 to={item.to}
-                className={`group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
+                className={`group relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
                   isActive 
                     ? 'bg-amber-400/10 text-amber-300 border border-amber-400/20' 
-                    : 'text-white/70 hover:bg-white/5 hover:text-white'
+                    : `text-white/70 hover:bg-white/5 hover:text-white ${isLocked ? 'opacity-90' : ''}`
                 }`}
+                title={isLocked ? 'Historique réservé aux niveaux supérieurs' : undefined}
               >
                 <div className="relative">
                   {item.icon}
@@ -104,6 +105,11 @@ const SanctuaireSidebar: React.FC<Props> = ({ progress = [] }) => {
                   )}
                 </div>
                 <span className="font-medium text-sm flex-1">{item.label}</span>
+                {isLocked && (
+                  <div className="flex items-center gap-1 text-amber-300/80">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                )}
                 {prog > 0 && (
                   <div className="w-8 h-1 bg-white/10 rounded-full overflow-hidden">
                     <div 

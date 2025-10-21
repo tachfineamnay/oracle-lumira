@@ -46,6 +46,7 @@ const AppRoutes: React.FC = () => (
         <SanctuaireProvider>
           <Routes>
             <Route index element={<Sanctuaire />} />
+            <Route path="dashboard" element={<Sanctuaire />} />
             <Route path="path" element={
               <React.Suspense fallback={<SphereSkeleton />}>
                 <LazySpiritualPath />

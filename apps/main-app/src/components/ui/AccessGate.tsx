@@ -23,8 +23,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Sparkles, ArrowRight, Crown } from 'lucide-react';
-import { SanctuaryLevel, LEVEL_NAMES, LEVEL_COLORS } from '../config/sanctuary-access';
-import GlassCard from './ui/GlassCard';
+import { SanctuaryLevel, LEVEL_NAMES, LEVEL_COLORS } from '../../config/sanctuary-access';
+import GlassCard from './GlassCard';
 
 // =================== TYPES ===================
 
