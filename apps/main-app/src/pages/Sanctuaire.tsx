@@ -496,10 +496,57 @@ const Sanctuaire: React.FC = () => {
   const location = useLocation();
   const { userLevel } = useUserLevel();
   const [searchParams] = useSearchParams();
-  const { isAuthenticated, isLoading, authenticateWithEmail } = useSanctuaire();
+  const {
+    isAuthenticated,
+    isLoading,
+    authenticateWithEmail,
+    authCooldownUntil,
+    lastAuthError,
+    clearAuthError,
+  } = useSanctuaire();
+  const [cooldownRemainingMs, setCooldownRemainingMs] = React.useState(0);
+  const cooldownActive = authCooldownUntil ? authCooldownUntil > Date.now() : false;
+  const cooldownSeconds = Math.max(0, Math.ceil(cooldownRemainingMs / 1000));
   
   // État pour afficher l'onboarding
   const [showOnboarding, setShowOnboarding] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!authCooldownUntil) {
+      setCooldownRemainingMs(0);
+      return;
+    }
+
+    const update = () => {
+      setCooldownRemainingMs(Math.max(0, authCooldownUntil - Date.now()));
+    };
+
+    update();
+    const timer = window.setInterval(update, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [authCooldownUntil]);
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      clearAuthError();
+      setCooldownRemainingMs(0);
+    }
+  }, [isAuthenticated, clearAuthError]);
+
+  const handleRetryAuth = React.useCallback(() => {
+    if (cooldownActive) {
+      return;
+    }
+    const storedEmail = typeof window !== 'undefined' ? window.sessionStorage.getItem('sanctuaire_email') : null;
+    if (!storedEmail) {
+      return;
+    }
+    clearAuthError();
+    authenticateWithEmail(storedEmail).catch((err) => {
+      console.error('Erreur lors du retry auth sanctuaire:', err);
+    });
+  }, [authenticateWithEmail, clearAuthError, cooldownActive]);
 
   // Détection first_visit pour afficher OnboardingForm
   React.useEffect(() => {
@@ -524,6 +571,10 @@ const Sanctuaire: React.FC = () => {
     const token = searchParams.get('token');
     const sessionEmail = sessionStorage.getItem('sanctuaire_email');
 
+    if (cooldownActive) {
+      return;
+    }
+
     if (email && !isAuthenticated && !isLoading) {
       sessionStorage.setItem('sanctuaire_email', email);
       if (token?.startsWith('fv_')) {
@@ -537,7 +588,7 @@ const Sanctuaire: React.FC = () => {
         authenticateWithEmail(sessionEmail).catch(console.error);
       }
     }
-  }, [searchParams, isAuthenticated, isLoading, authenticateWithEmail]);
+  }, [searchParams, isAuthenticated, isLoading, authenticateWithEmail, cooldownActive]);
 
   // Effet 2: Redirection vers /sanctuaire/login si aucune info d'auth disponible
   React.useEffect(() => {
@@ -603,6 +654,41 @@ const Sanctuaire: React.FC = () => {
 
             {/* Contextual Hint */}
             <ExistingClientLoginBar />
+            {lastAuthError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <GlassCard className="p-4 mb-4 bg-red-400/10 border border-red-400/30">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-red-200 font-medium">{lastAuthError}</p>
+                      {cooldownActive && (
+                        <p className="text-xs text-red-200/80 mt-1">
+                          Reessayez dans {cooldownSeconds}s.
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleRetryAuth}
+                        disabled={cooldownActive}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cooldownActive ? 'bg-white/10 text-white/40 cursor-not-allowed' : 'bg-red-400/20 text-red-200 hover:bg-red-400/30'}`}
+                      >
+                        Reessayer
+                      </button>
+                      <button
+                        onClick={clearAuthError}
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white/70 hover:bg-white/15 transition-colors"
+                      >
+                        Fermer
+                      </button>
+                    </div>
+                  </div>
+                </GlassCard>
+              </motion.div>
+            )}
             <ContextualHint />
 
             {/* Content Area - Uniquement pour les sous-pages */}

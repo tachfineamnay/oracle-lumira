@@ -19,7 +19,7 @@ import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
 import DrawsWaiting from '../sanctuaire/DrawsWaiting';
 import { CapabilityGuard } from '../auth/CapabilityGuard';
-import { useAudioPlayer } from '../../contexts/AudioPlayerContext';
+import { AudioPlayerProvider, useAudioPlayer } from '../../contexts/AudioPlayerContext';
 import { sanctuaireService } from '../../services/sanctuaire';
 import AssetsModal from '../sanctuaire/AssetsModal';
 import { getLevelNameSafely } from '../../utils/orderUtils';
@@ -45,7 +45,7 @@ interface Lecture {
 
 // =================== COMPOSANT PRINCIPAL ===================
 
-const MesLectures: React.FC = () => {
+const MesLecturesContent: React.FC = () => {
   const navigate = useNavigate();
   const { orders, isLoading, user, hasCapability } = useSanctuaire();
   const { play, setTrack } = useAudioPlayer();
@@ -401,5 +401,11 @@ const LectureCard: React.FC<LectureCardProps> = ({
     </motion.div>
   );
 };
+
+const MesLectures: React.FC = () => (
+  <AudioPlayerProvider>
+    <MesLecturesContent />
+  </AudioPlayerProvider>
+);
 
 export default MesLectures;

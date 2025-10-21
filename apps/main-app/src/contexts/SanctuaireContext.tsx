@@ -13,8 +13,26 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { sanctuaireService, CompletedOrder, SanctuaireStats, SanctuaireUser, OrderContent } from '../services/sanctuaire';
 import axios from 'axios';
 import { getApiBaseUrl } from '../lib/apiBase';
+import { ApiError } from '../utils/api';
 
 const API_BASE = getApiBaseUrl();
+const AUTH_COOLDOWN_MS = 60 * 1000; // 1 minute between auth attempts by default
+
+const getInitialCooldown = (): number | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const stored = window.sessionStorage.getItem('sanctuaire_auth_cooldown');
+  if (!stored) {
+    return null;
+  }
+  const timestamp = Number(stored);
+  if (Number.isNaN(timestamp) || timestamp <= Date.now()) {
+    window.sessionStorage.removeItem('sanctuaire_auth_cooldown');
+    return null;
+  }
+  return timestamp;
+};
 
 // =================== TYPES ===================
 
@@ -51,13 +69,16 @@ interface SanctuaireContextValue {
   // === STATE ===
   isLoading: boolean;
   error: string | null;
-  
+  authCooldownUntil: number | null;
+  lastAuthError: string | null;
+
   // === ACTIONS ===
-  authenticateWithEmail: (email: string) => Promise<{ token: string; user: SanctuaireUser }>;
+  authenticateWithEmail: (email: string, options?: { force?: boolean }) => Promise<{ token: string; user: SanctuaireUser }>;
   logout: () => void;
   refresh: () => Promise<void>;
   getOrderContent: (orderId: string) => Promise<OrderContent>;
   downloadFile: (url: string, filename: string) => Promise<void>;
+  clearAuthError: () => void;
 }
 
 // =================== CONTEXT ===================
@@ -88,6 +109,41 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
   // === GLOBAL STATE ===
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authCooldownUntil, setAuthCooldownUntil] = useState<number | null>(() => getInitialCooldown());
+  const [lastAuthError, setLastAuthError] = useState<string | null>(null);
+
+  const updateAuthCooldown = useCallback((timestamp: number | null) => {
+    setAuthCooldownUntil(timestamp);
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (timestamp && timestamp > Date.now()) {
+      window.sessionStorage.setItem('sanctuaire_auth_cooldown', String(timestamp));
+    } else {
+      window.sessionStorage.removeItem('sanctuaire_auth_cooldown');
+    }
+  }, []);
+
+  const clearAuthError = useCallback(() => {
+    setLastAuthError(null);
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    if (!authCooldownUntil || typeof window === 'undefined') {
+      return;
+    }
+
+    const checkCooldown = () => {
+      if (authCooldownUntil && authCooldownUntil <= Date.now()) {
+        updateAuthCooldown(null);
+      }
+    };
+
+    checkCooldown();
+    const timer = window.setInterval(checkCooldown, 1000);
+    return () => window.clearInterval(timer);
+  }, [authCooldownUntil, updateAuthCooldown]);
 
   // =================== ENTITLEMENTS LOADER ===================
   
@@ -181,31 +237,73 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
 
   // =================== ACTIONS ===================
   
-  const authenticateWithEmail = useCallback(async (email: string) => {
+  const authenticateWithEmail = useCallback(async (email: string, options: { force?: boolean } = {}) => {
+    const force = options.force ?? false;
+    const now = Date.now();
+
+    if (!force && authCooldownUntil && authCooldownUntil > now) {
+      const remainingSeconds = Math.ceil((authCooldownUntil - now) / 1000);
+      const message = `Trop de tentatives d'authentification. Patientez ${remainingSeconds}s avant de reessayer.`;
+      setLastAuthError(message);
+      setError(message);
+      throw new Error(message);
+    }
+
     try {
       setIsLoading(true);
-      setError(null);
-      
+      clearAuthError();
+
       console.log('[SanctuaireProvider] Authentification avec email:', email);
       const result = await sanctuaireService.authenticateWithEmail(email);
-      
+
       setIsAuthenticated(true);
       setUser(result.user);
-      
-      // Charger toutes les données après login
+      updateAuthCooldown(null);
+      clearAuthError();
+
       await loadAllData();
-      
+
       return result;
     } catch (err: any) {
-      setError(err.message || 'Erreur d\'authentification');
+      if (err instanceof ApiError) {
+        if (err.status === 429) {
+          const nextRetry = Date.now() + AUTH_COOLDOWN_MS;
+          updateAuthCooldown(nextRetry);
+          const message = "Trop de tentatives d'authentification. Merci de reessayer dans une minute.";
+          setLastAuthError(message);
+          setError(message);
+        } else if (err.status === 401) {
+          sanctuaireService.logout();
+          setIsAuthenticated(false);
+          setUser(null);
+          setOrders([]);
+          setStats(null);
+          setEntitlements({
+            capabilities: [],
+            products: [],
+            highestLevel: null,
+            levelMetadata: null,
+            orderCount: 0,
+            productOrderCount: 0,
+          });
+          updateAuthCooldown(null);
+        } else {
+          setLastAuthError(err.message);
+          setError(err.message);
+        }
+      } else {
+        const message = err?.message || "Erreur d'authentification";
+        setLastAuthError(message);
+        setError(message);
+      }
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [loadAllData]);
+  }, [authCooldownUntil, clearAuthError, loadAllData, updateAuthCooldown]);
 
   const logout = useCallback(() => {
-    console.log('[SanctuaireProvider] Déconnexion');
+    console.log('[SanctuaireProvider] Deconnexion');
     sanctuaireService.logout();
     setIsAuthenticated(false);
     setUser(null);
@@ -219,8 +317,9 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
       orderCount: 0,
       productOrderCount: 0,
     });
-    setError(null);
-  }, []);
+    updateAuthCooldown(null);
+    clearAuthError();
+  }, [clearAuthError, updateAuthCooldown]);
 
   const refresh = useCallback(async () => {
     console.log('[SanctuaireProvider] Refresh manuel déclenché');
@@ -277,13 +376,16 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     // State
     isLoading,
     error,
-    
+    authCooldownUntil,
+    lastAuthError,
+
     // Actions
     authenticateWithEmail,
     logout,
     refresh,
     getOrderContent,
     downloadFile: sanctuaireService.downloadFile.bind(sanctuaireService),
+    clearAuthError,
   };
 
   return (
@@ -315,3 +417,6 @@ export const useSanctuaire = (): SanctuaireContextValue => {
 };
 
 export default SanctuaireContext;
+
+
+
