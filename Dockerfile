@@ -18,6 +18,8 @@ ENV VITE_APP_DOMAIN=$VITE_APP_DOMAIN
 COPY apps/main-app/package*.json ./apps/main-app/
 RUN cd apps/main-app && npm install
 COPY apps/main-app ./apps/main-app/
+# Clean Vite cache before building to ensure fresh compilation
+RUN cd apps/main-app && rm -rf dist .vite node_modules/.vite
 RUN cd apps/main-app && npm run build
 
 # Stage 2: Nginx static server
