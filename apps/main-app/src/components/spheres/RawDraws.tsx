@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import GlassCard from '../ui/GlassCard';
-import EmptyState from '../ui/EmptyState';
 import { FileText, Headphones, Image, Lock } from 'lucide-react';
 import { SecondaryButton } from '../ui/Buttons';
 import AssetsModal from '../sanctuaire/AssetsModal';
+import DrawsWaiting from '../sanctuaire/DrawsWaiting';
 import { sanctuaireService } from '../../services/sanctuaire';
 import { useAudioPlayer } from '../../contexts/AudioPlayerContext';
-import { useEntitlements } from '../../hooks/useEntitlements';
 import { CapabilityGuard } from '../auth/CapabilityGuard';
+import { useSanctuaire } from '../../contexts/SanctuaireContext';
 
 type Order = {
   id: string;
@@ -38,9 +37,8 @@ const RawDraws: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageSize] = useState(10);
-  const navigate = useNavigate();
   const { play, setTrack } = useAudioPlayer();
-  const { hasCapability } = useEntitlements();
+  const { user } = useSanctuaire();
   const [modal, setModal] = useState<{ open: boolean; pdfUrl?: string; mandalaSvg?: string; title?: string }>({ open: false });
 
   useEffect(() => {
@@ -94,15 +92,12 @@ const RawDraws: React.FC = () => {
   }
 
   if (!orders || orders.length === 0) {
+    // Afficher la page d'attente élégante
     return (
-      <EmptyState
-        type="draws"
-        title="Vos Révélations vous attendent"
-        message="L'Oracle prépare vos tirages personnalisés. Chaque révélation vous guidera vers votre vérité intérieure et éclairera votre chemin spirituel."
-        action={{
-          label: 'Demander un nouveau tirage',
-          onClick: () => navigate('/commande')
-        }}
+      <DrawsWaiting
+        userEmail={user?.email}
+        userPhone={user?.phone}
+        estimatedTime="24 heures"
       />
     );
   }

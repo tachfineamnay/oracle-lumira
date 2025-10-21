@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
-import EmptyState from '../ui/EmptyState';
+import DrawsWaiting from '../sanctuaire/DrawsWaiting';
 import { CapabilityGuard } from '../auth/CapabilityGuard';
 import { useAudioPlayer } from '../../contexts/AudioPlayerContext';
 import { sanctuaireService } from '../../services/sanctuaire';
@@ -44,7 +44,7 @@ interface Lecture {
 
 const MesLectures: React.FC = () => {
   const navigate = useNavigate();
-  const { orders, isLoading, hasCapability } = useSanctuaire();
+  const { orders, isLoading, user, hasCapability } = useSanctuaire();
   const { play, setTrack } = useAudioPlayer();
   
   const [lectures, setLectures] = useState<Lecture[]>([]);
@@ -119,14 +119,10 @@ const MesLectures: React.FC = () => {
 
   if (!lectures || lectures.length === 0) {
     return (
-      <EmptyState
-        type="draws"
-        title="Aucune lecture disponible"
-        message="Vos révélations Oracle apparaîtront ici une fois validées par nos experts. Commencez votre voyage spirituel dès maintenant."
-        action={{
-          label: 'Commander une lecture',
-          onClick: () => navigate('/commande')
-        }}
+      <DrawsWaiting
+        userEmail={user?.email}
+        userPhone={user?.phone}
+        estimatedTime="24 heures"
       />
     );
   }
