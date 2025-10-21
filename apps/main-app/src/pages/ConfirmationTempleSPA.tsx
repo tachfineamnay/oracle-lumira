@@ -8,6 +8,7 @@ import GlassCard from '../components/ui/GlassCard';
 import { useInitializeUserLevel } from '../contexts/UserLevelContext';
 import { useOrderStatus } from '../hooks/useOrderStatus';
 import { getLevelNameSafely } from '../utils/orderUtils';
+import { apiRequest } from '../utils/api';
 
 const ConfirmationTemple: React.FC = () => {
   const navigate = useNavigate();
@@ -34,6 +35,43 @@ const ConfirmationTemple: React.FC = () => {
   const redirectStartedRef = useRef(false);
   const { initializeFromPurchase } = useInitializeUserLevel();
   const derivedLevelName = orderData ? getLevelNameSafely(orderData.level) : 'Simple';
+
+  // =================== AUTHENTIFICATION POST-PAIEMENT ===================
+  // Obtenir un token valide dès l'arrivée sur la page de confirmation
+  useEffect(() => {
+    const attemptAuth = async () => {
+      try {
+        const email = searchParams.get('email');
+        if (!email) {
+          console.warn('[Auth] Pas d\'email dans l\'URL, impossible de s\'authentifier');
+          return;
+        }
+
+        console.log('[Auth] Tentative d\'authentification avec email:', email);
+        const response = await apiRequest<{ token: string }>('/users/auth/sanctuaire', {
+          method: 'POST',
+          body: JSON.stringify({ email })
+        });
+        
+        if (response && response.token) {
+          const { token } = response;
+          localStorage.setItem('sanctuaire_token', token);
+          console.log('[Auth] ✅ Token reçu et sauvegardé avec succès');
+        } else {
+          console.error('[Auth] ❌ Réponse API sans token:', response);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('[Auth] ❌ Échec de l\'authentification post-paiement:', errorMessage);
+        // Ne pas bloquer le flux si l'auth échoue - l'utilisateur pourra réessayer plus tard
+      }
+    };
+
+    if (orderId) {
+      attemptAuth();
+    }
+  }, [searchParams, orderId]);
+  // =================== FIN AUTHENTIFICATION ===================
 
   // Gestion de la redirection automatique quand l'accès est accordé
   useEffect(() => {
