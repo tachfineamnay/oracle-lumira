@@ -64,6 +64,22 @@ const apiLimiter = rateLimit({
   },
 });
 
+// Public routes limiter - Much more permissive for non-sensitive endpoints
+const publicRoutesLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 1000, // Allow many more requests for public routes (browsing, catalog)
+  message: 'Too many requests from this IP for public routes, please try again after 5 minutes',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor && typeof forwardedFor === 'string') {
+      return forwardedFor.split(',')[0].trim();
+    }
+    return req.ip || 'unknown';
+  },
+});
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -105,8 +121,8 @@ app.options('*', cors(corsOptions));
 
 console.log('? [API] server.ts - CORS configured for production');
 
-// Apply general rate limiting to all requests
-app.use(apiLimiter);
+// NOTE: Rate limiting is now applied selectively per route group (see below)
+// instead of globally to avoid blocking legitimate traffic to public routes
 
 // =================== GLOBAL LOGGING MIDDLEWARE ===================
 // Add requestId to all requests for log correlation
@@ -174,16 +190,19 @@ app.get('/api/healthz', (req, res) => {
 app.use('/api/health', healthRoutes);
 app.use('/api', readyRoutes);
 
-// API Routes
-app.use('/api/stripe', stripeRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/debug', envDebugRoutes);
-app.use('/api/uploads', uploadsRoutes);
-// Mount real expert routes (production-ready)
-app.use('/api/expert', expertRoutes);
+// =================== SELECTIVE RATE LIMITING ===================
+// Apply lenient rate limiting to public/read-only routes
+app.use('/api/products', publicRoutesLimiter, productRoutes);
+app.use('/api/debug', publicRoutesLimiter, envDebugRoutes);
+
+// Apply strict rate limiting to sensitive routes (payments, auth, submissions)
+app.use('/api/stripe', apiLimiter, stripeRoutes);
+app.use('/api/payments', apiLimiter, paymentRoutes);
+app.use('/api/orders', apiLimiter, orderRoutes);
+app.use('/api/users', apiLimiter, userRoutes);
+app.use('/api/expert', apiLimiter, expertRoutes);
+app.use('/api/uploads', apiLimiter, uploadsRoutes);
+// =================== END SELECTIVE RATE LIMITING ===================
 
 // Test/debug routes only in non-production environments
 if (process.env.NODE_ENV !== 'production') {
