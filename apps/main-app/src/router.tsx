@@ -19,13 +19,15 @@ import Sanctuaire from './pages/Sanctuaire';
 import LoginSanctuaire from './pages/LoginSanctuaire';
 import SphereSkeleton from './components/ui/SphereSkeleton';
 
-// Lazy imports pour l'ancien système (legacy)
+// Lazy imports pour les composants du Sanctuaire
 const LazySpiritualPath = React.lazy(() => import('./components/spheres/SpiritualPath'));
-const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
-const LazyMesLectures = React.lazy(() => import('./components/spheres/MesLectures'));
+const LazyMesLectures = React.lazy(() => import('./components/spheres/MesLectures')); // Composant MIS À JOUR avec DrawsWaiting
 const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
 const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
-const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
+const LazyProfile = React.lazy(() => import('./components/spheres/Profile')); // Composant MIS À JOUR avec données API
+
+// Legacy: RawDraws uniquement pour routes legacy (non utilisé en production)
+const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
 
 const AppRoutes: React.FC = () => (
   <Routes>
@@ -37,6 +39,7 @@ const AppRoutes: React.FC = () => (
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     
     {/* ROUTE PRINCIPALE SANCTUAIRE - Enveloppée dans SanctuaireProvider */}
+    {/* ✅ UTILISE LES COMPOSANTS MIS À JOUR (Profile + MesLectures avec DrawsWaiting) */}
     <Route
       path="/sanctuaire/*"
       element={
@@ -48,6 +51,7 @@ const AppRoutes: React.FC = () => (
                 <LazySpiritualPath />
               </React.Suspense>
             } />
+            {/* Route draws: utilise MesLectures (contient DrawsWaiting pour état vide) */}
             <Route path="draws" element={
               <React.Suspense fallback={<SphereSkeleton />}>
                 <LazyMesLectures />
@@ -63,6 +67,7 @@ const AppRoutes: React.FC = () => (
                 <LazyConversations />
               </React.Suspense>
             } />
+            {/* Route profile: utilise Profile (injection données API email/phone) */}
             <Route path="profile" element={
               <React.Suspense fallback={<SphereSkeleton />}>
                 <LazyProfile />
