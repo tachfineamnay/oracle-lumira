@@ -5,6 +5,7 @@ export interface SanctuaireUser {
   email: string;
   firstName: string;
   lastName: string;
+  phone?: string;
   level: number;
 }
 

@@ -239,11 +239,19 @@ const SanctuaireSimple: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-white/70 mb-1">Email</label>
-                    <p className="text-white">{user?.email}</p>
+                    <p className="text-white">{user?.email || 'Non renseigné'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-1">Prénom</label>
+                    <p className="text-white">{user?.firstName || 'Non renseigné'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-white/70 mb-1">Nom</label>
-                    <p className="text-white">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-white">{user?.lastName || 'Non renseigné'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/70 mb-1">Téléphone</label>
+                    <p className="text-white">{user?.phone || 'Non renseigné'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-white/70 mb-1">Niveau</label>

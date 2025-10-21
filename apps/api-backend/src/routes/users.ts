@@ -265,8 +265,10 @@ router.get('/orders/completed', authenticateSanctuaire, async (req: any, res: an
       total: formattedOrders.length,
       user: {
         id: req.user._id,
+        email: req.user.email,
         firstName: req.user.firstName,
         lastName: req.user.lastName,
+        phone: req.user.phone || undefined,
         level: formattedOrders.length
       }
     });

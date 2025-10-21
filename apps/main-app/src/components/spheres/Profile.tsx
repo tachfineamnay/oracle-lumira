@@ -19,7 +19,6 @@ import {
   Camera,
   Image as ImageIcon
 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
 import { useUserLevel } from '../../contexts/UserLevelContext';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
@@ -34,19 +33,34 @@ interface EditableField {
 }
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
   const { userLevel, updateUserProfile } = useUserLevel();
-  const { orders, isLoading: ordersLoading } = useSanctuaire();
+  const { user: sanctuaireUser, orders, isLoading: ordersLoading } = useSanctuaire();
   const [isEditing, setIsEditing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  
+  // PRIORITÉ : Utiliser les données de SanctuaireContext si disponibles
+  const email = sanctuaireUser?.email || userLevel.profile?.email || '';
+  const phone = sanctuaireUser?.phone || userLevel.profile?.phone || '';
+  
   const [editData, setEditData] = useState({
-    email: userLevel.profile?.email || '',
-    phone: userLevel.profile?.phone || '',
+    email: email,
+    phone: phone,
     birthDate: userLevel.profile?.birthDate || '',
     birthTime: userLevel.profile?.birthTime || '',
     objective: userLevel.profile?.objective || '',
     additionalInfo: userLevel.profile?.additionalInfo || ''
   });
+
+  // Synchroniser editData quand les données du Sanctuaire arrivent
+  React.useEffect(() => {
+    if (sanctuaireUser) {
+      setEditData(prev => ({
+        ...prev,
+        email: sanctuaireUser.email || prev.email,
+        phone: sanctuaireUser.phone || prev.phone
+      }));
+    }
+  }, [sanctuaireUser]);
 
   const profile = userLevel.profile;
   const hasCompletedProfile = profile?.profileCompleted;
@@ -73,18 +87,32 @@ const Profile: React.FC = () => {
 
   const editableFields: EditableField[] = [
     {
+      key: 'firstName',
+      label: 'Prénom',
+      type: 'text',
+      icon: <User className="w-4 h-4" />,
+      value: sanctuaireUser?.firstName || 'Non renseigné'
+    },
+    {
+      key: 'lastName',
+      label: 'Nom',
+      type: 'text',
+      icon: <User className="w-4 h-4" />,
+      value: sanctuaireUser?.lastName || 'Non renseigné'
+    },
+    {
       key: 'email',
       label: 'Email',
       type: 'email',
       icon: <Mail className="w-4 h-4" />,
-      value: isEditing ? editData.email : (profile?.email || 'Non renseigné')
+      value: isEditing ? editData.email : (email || 'Non renseigné')
     },
     {
       key: 'phone',
       label: 'Téléphone',
       type: 'tel',
       icon: <Phone className="w-4 h-4" />,
-      value: isEditing ? editData.phone : (profile?.phone || 'Non renseigné')
+      value: isEditing ? editData.phone : (phone || 'Non renseigné')
     },
     {
       key: 'birthDate',
