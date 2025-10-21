@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useUserLevel } from '../../contexts/UserLevelContext';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
+import { useSanctuaryAccess } from '../../hooks/useSanctuaryAccess';
 import GlassCard from '../ui/GlassCard';
 import { getLevelNameSafely } from '../../utils/orderUtils';
 
@@ -34,7 +35,8 @@ interface EditableField {
 
 const Profile: React.FC = () => {
   const { userLevel, updateUserProfile } = useUserLevel();
-  const { user: sanctuaireUser, orders, isLoading: ordersLoading } = useSanctuaire();
+  const { user: sanctuaireUser, orders, isLoading: ordersLoading, levelMetadata } = useSanctuaire() as any;
+  const { accessRights, levelName } = useSanctuaryAccess();
   const [isEditing, setIsEditing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   
@@ -64,6 +66,15 @@ const Profile: React.FC = () => {
 
   const profile = userLevel.profile;
   const hasCompletedProfile = profile?.profileCompleted;
+  // Determine latest order (most recent by deliveredAt or createdAt)
+  const latestOrder = React.useMemo(() => {
+    if (!orders || orders.length === 0) return null;
+    const withDate = orders.map((o: any) => ({ ...o, _ts: new Date(o.deliveredAt || o.createdAt).getTime() }));
+    withDate.sort((a: any, b: any) => b._ts - a._ts);
+    return withDate[0];
+  }, [orders]);
+
+  const currentLevelName = (levelMetadata && (levelMetadata as any).name) || (latestOrder ? getLevelNameSafely(latestOrder.level) : levelName);
 
   const handleSave = () => {
     updateUserProfile({
@@ -162,7 +173,7 @@ const Profile: React.FC = () => {
             Complétez votre profil spirituel dans l'espace d'accueil pour accéder à toutes les fonctionnalités de votre sanctuaire.
           </p>
           <button
-            onClick={() => window.location.href = '/sanctuaire'}
+            onClick={() => window.location.href = '/sanctuaire/dashboard'}
             className="px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-medium rounded-xl hover:from-amber-500 hover:to-amber-600 transition-all"
           >
             Compléter mon profil
@@ -174,6 +185,57 @@ const Profile: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Acces & Statut de commande */}
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
+        <GlassCard className="p-6 bg-gradient-to-br from-amber-400/10 to-amber-500/5 border-amber-400/20">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="text-sm text-white/60">Votre Niveau</div>
+              <div className="text-xl font-playfair italic text-amber-400">{currentLevelName || 'Gratuit'}</div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <div className="text-sm text-white/60">Tirages / jour</div>
+                <div className="text-white font-medium">{accessRights.oracle.dailyDraws === -1 ? 'Illimites' : accessRights.oracle.dailyDraws}</div>
+              </div>
+              <div>
+                <div className="text-sm text-white/60">Temps de reponse</div>
+                <div className="text-white font-medium">{accessRights.oracle.responseTime}</div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
+            {latestOrder ? (
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <div className="text-white font-medium">Commande #{latestOrder.orderNumber || (latestOrder.id && latestOrder.id.slice(0,8))}</div>
+                  <div className="text-xs text-white/60 mt-1">Passee le {new Date(latestOrder.createdAt).toLocaleDateString('fr-FR')} · {getLevelNameSafely(latestOrder.level)}</div>
+                  <div className="text-sm mt-1">
+                    {latestOrder.deliveredAt ? (
+                      <span className="text-green-400">Analyse prete</span>
+                    ) : (
+                      <span className="text-amber-400">En cours de preparation</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  {latestOrder.deliveredAt ? (
+                    <button onClick={() => (window.location.href = '/sanctuaire/draws')} className="px-4 py-2 rounded-lg bg-green-400/20 text-green-400 border border-green-400/30 hover:bg-green-400/30 transition">Acceder a mes lectures</button>
+                  ) : (
+                    <button onClick={() => (window.location.href = '/sanctuaire/draws')} className="px-4 py-2 rounded-lg bg-amber-400/20 text-amber-400 border border-amber-400/30 hover:bg-amber-400/30 transition">Suivre ma commande</button>
+                  )}
+                  <button onClick={() => (window.location.href = '/commande')} className="px-4 py-2 rounded-lg bg-white/5 text-white/80 hover:text-white border border-white/10 hover:bg-white/10 transition">Nouvelle lecture</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="text-white/80">Aucune commande recente</div>
+                <button onClick={() => (window.location.href = '/commande')} className="px-4 py-2 rounded-lg bg-amber-400/20 text-amber-400 border border-amber-400/30 hover:bg-amber-400/30 transition">Commander une lecture</button>
+              </div>
+            )}
+          </div>
+        </GlassCard>
+      </motion.div>
       {/* Header avec statut */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -379,7 +441,7 @@ const Profile: React.FC = () => {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/sanctuaire'}
+              onClick={() => window.location.href = '/sanctuaire/dashboard'}
               className="flex items-center gap-3 p-4 bg-purple-400/10 border border-purple-400/20 rounded-xl text-purple-400 hover:bg-purple-400/20 transition-all"
             >
               <History className="w-5 h-5" />
@@ -499,3 +561,7 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
+
+
+
+
