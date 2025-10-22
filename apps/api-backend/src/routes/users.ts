@@ -228,7 +228,7 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
     // Récupérer toutes les commandes complétées de l'utilisateur
     const completedOrders = await Order.find({
       userId: userId,
-      status: 'completed'
+      status: { $in: ['paid', 'completed'] }
     }).select('level orderNumber paymentIntentId');
     
     // Récupérer aussi les ProductOrder complétées (nouveau système)
