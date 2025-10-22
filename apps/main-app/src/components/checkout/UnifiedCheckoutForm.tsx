@@ -169,10 +169,15 @@ const CheckoutFormInner = ({
       console.log('👳 [CheckoutFormInner] Confirming payment with customer data already in Stripe metadata');
 
       // Confirm payment
+      const successUrl = `${window.location.origin}/payment-success?orderId=${encodeURIComponent(
+        orderId
+      )}&email=${encodeURIComponent(email.value)}`;
+
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success`,
+          // Propagate orderId and email so Confirmation can auto-auth Sanctuaire
+          return_url: successUrl,
           payment_method_data: {
             billing_details: {
               name: `${firstName} ${lastName}`,

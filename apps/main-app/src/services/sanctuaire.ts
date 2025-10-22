@@ -103,7 +103,8 @@ class SanctuaireService {
    * Authentification sanctuaire avec email
    */
   async authenticateWithEmail(email: string): Promise<{ token: string; user: SanctuaireUser }> {
-    const response = await apiRequest<{ success: boolean; token: string; user: SanctuaireUser }>('/users/auth/sanctuaire', {
+    // Use v2 which accepts paid orders and completed product orders
+    const response = await apiRequest<{ success: boolean; token: string; user: SanctuaireUser }>('/users/auth/sanctuaire-v2', {
       method: 'POST',
       body: JSON.stringify({ email })
     });

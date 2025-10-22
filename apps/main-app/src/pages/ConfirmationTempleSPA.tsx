@@ -48,7 +48,7 @@ const ConfirmationTemple: React.FC = () => {
         }
 
         console.log('[Auth] Tentative d\'authentification avec email:', email);
-        const response = await apiRequest<{ token: string }>('/users/auth/sanctuaire', {
+        const response = await apiRequest<{ token: string }>('/users/auth/sanctuaire-v2', {
           method: 'POST',
           body: JSON.stringify({ email })
         });

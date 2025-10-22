@@ -115,6 +115,76 @@ router.post('/auth/sanctuaire', async (req: any, res: any) => {
   }
 });
 
+// Auth Sanctuaire v2: allow paid Orders and completed ProductOrders
+router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+
+    const user = await User.findOne({ email: String(email).toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouve' });
+    }
+
+    const [completedOrdersCount, paidOrdersCount, completedProductOrdersCount] = await Promise.all([
+      Order.countDocuments({ userId: user._id, status: 'completed' }),
+      Order.countDocuments({ userId: user._id, status: 'paid' }),
+      ProductOrder.countDocuments({ customerEmail: user.email.toLowerCase(), status: 'completed' }),
+    ]);
+
+    if (completedOrdersCount + paidOrdersCount + completedProductOrdersCount === 0) {
+      return res.status(403).json({
+        error: 'Aucune commande trouvee',
+        message: 'Vous devez avoir au moins une commande payee pour acceder au sanctuaire',
+      });
+    }
+
+    const [orders, productOrders] = await Promise.all([
+      Order.find({ userId: user._id, status: { $in: ['paid', 'completed'] } }).select('level'),
+      ProductOrder.find({ customerEmail: user.email.toLowerCase(), status: 'completed' }).select('productId'),
+    ]);
+
+    const levelMap: Record<string, number> = { initie: 1, mystique: 2, profond: 3, integrale: 4 };
+    let highestLevel = 0;
+    for (const o of orders) {
+      const lvl = (o as any).level;
+      if (typeof lvl === 'number') highestLevel = Math.max(highestLevel, lvl);
+    }
+    for (const po of productOrders) {
+      const pid = String((po as any).productId || '').toLowerCase();
+      if (pid in levelMap) highestLevel = Math.max(highestLevel, levelMap[pid]);
+    }
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Server configuration error: JWT secret missing' });
+    }
+    const token = jwt.sign(
+      { userId: user._id, email: user.email, type: 'sanctuaire_access' },
+      secret,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone || undefined,
+        level: highestLevel,
+      },
+    });
+  } catch (error) {
+    console.error('Sanctuaire auth v2 error:', error);
+    res.status(500).json({ error: 'Erreur authentification sanctuaire' });
+  }
+});
+
 // Middleware pour authentifier les utilisateurs sanctuaire
 const authenticateSanctuaire = async (req: any, res: any, next: any) => {
   try {
@@ -497,4 +567,3 @@ router.get('/files/presign', async (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to generate signed URL' });
   }
 });
-
