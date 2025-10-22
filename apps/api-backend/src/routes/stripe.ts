@@ -202,6 +202,48 @@ async function createOrder(
 async function handlePaymentSuccess(paymentIntent: any) {
   console.log('Webhook payment_intent.succeeded received:', paymentIntent.id);
 
+  // 0) Upsert user based on PaymentIntent metadata (first purchase support)
+  try {
+    const md: any = paymentIntent.metadata || {};
+    const customerEmail: string | undefined = (md.customerEmail || md.userEmail || paymentIntent.receipt_email || '').toLowerCase();
+    const customerFirstName: string | undefined = md.customerFirstName || md.firstName;
+    const customerLastName: string | undefined = md.customerLastName || md.lastName;
+    const customerPhone: string | undefined = md.customerPhone || md.phone;
+
+    if (customerEmail) {
+      const user = await User.findOneAndUpdate(
+        { email: customerEmail },
+        {
+          $setOnInsert: {
+            email: customerEmail,
+            firstName: customerFirstName || 'Client',
+            lastName: customerLastName || 'Oracle',
+            subscriptionStatus: 'active',
+          },
+          $set: {
+            firstName: customerFirstName || 'Client',
+            lastName: customerLastName || 'Oracle',
+            phone: customerPhone,
+          },
+          $inc: { totalOrders: 1 },
+          $currentDate: { lastOrderAt: true },
+        },
+        { upsert: true, new: true, runValidators: true }
+      );
+
+      // Attach for downstream helpers if needed
+      paymentIntent.metadata = {
+        ...(paymentIntent.metadata || {}),
+        userId: user._id.toString(),
+        userEmail: user.email,
+      };
+
+      console.log('[Webhook] User upserted', { userId: user._id.toString(), email: user.email });
+    }
+  } catch (error) {
+    console.error('[Webhook] User upsert failed', error);
+  }
+
   // 1) Ensure ProductOrder exists and is marked completed (idempotent)
   try {
     const productOrder = await ProductOrder.findOne({ paymentIntentId: paymentIntent.id });
