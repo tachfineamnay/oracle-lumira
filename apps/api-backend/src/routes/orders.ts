@@ -893,6 +893,12 @@ router.get('/:id', async (req: any, res: any) => {
             productId: productOrder.productId,
             createdAt: productOrder.createdAt,
             updatedAt: productOrder.updatedAt,
+            // Provide metadata expected by OnboardingForm fallback
+            metadata: {
+              customerEmail: (productOrder as any)?.metadata?.customerEmail || productOrder.customerEmail || '',
+              customerPhone: (productOrder as any)?.metadata?.customerPhone || '',
+              customerName: (productOrder as any)?.metadata?.customerName || '',
+            },
             // Frontend compatibility fields
             accessGranted,
             sanctuaryUrl: accessGranted ? '/sanctuaire' : null,
