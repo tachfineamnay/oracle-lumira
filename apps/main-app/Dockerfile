@@ -2,9 +2,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies only for the main-app to avoid monorepo path confusion
+# Use root workspace lockfile for deterministic installs
+# 1) Copy root package.json + lockfile
+COPY package*.json ./
+# 2) Copy the workspace package.json so npm can resolve the workspace
 COPY apps/main-app/package*.json ./apps/main-app/
-RUN cd apps/main-app && npm ci --include=dev
+# 3) Install only the workspace dependencies using the root lockfile
+RUN npm ci --include=dev --workspace apps/main-app
 
 # Copy source and build with a clean Vite cache each time
 COPY apps/main-app ./apps/main-app/
@@ -64,4 +68,3 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost/health.json || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
-
