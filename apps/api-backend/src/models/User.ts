@@ -40,7 +40,10 @@ const userSchema = new Schema<IUser>({
   phone: {
     type: String,
     trim: true,
-    match: [/^[\+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number']
+    // Accept E.164 (+XXXXXXXX) OR national numbers starting with 0 (FR-like)
+    // - E.164: +[1-9]\d{6,14}
+    // - National: 0 followed by 8 to 10 digits (allows 0704126010)
+    match: [/^(?:\+?[1-9]\d{6,14}|0\d{8,10})$/, 'Please enter a valid phone number']
   },
   dateOfBirth: {
     type: Date
