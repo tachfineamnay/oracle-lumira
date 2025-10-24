@@ -32,18 +32,8 @@ const ConfirmationPage: React.FC = () => {
         
         // Initialiser le niveau utilisateur si commande complétée
         if (status.order.status === 'completed' && status.accessGranted) {
-          const productData = {
-            id: status.product.id,
-            name: status.product.name,
-            level: status.product.level as any,
-            amountCents: status.order.amount,
-            currency: status.order.currency,
-            description: `Niveau ${status.product.level}`,
-            features: [],
-            metadata: {},
-          };
-          
-          initializeFromPurchase(productData, orderId);
+          // Migration: initializeFromPurchase removed - SanctuaireProvider handles initialization
+          console.log('[ConfirmationPage] Commande complétée, accès accordé');
         }
         
         setIsLoading(false);
@@ -55,7 +45,7 @@ const ConfirmationPage: React.FC = () => {
     };
 
     fetchOrderStatus();
-  }, [orderId, initializeFromPurchase]);
+  }, [orderId]);
 
   // Countdown pour redirection automatique
   useEffect(() => {

@@ -81,27 +81,16 @@ const ConfirmationTemple: React.FC = () => {
       console.log('[ConfirmationTemple] Accès accordé ! Démarrage du compte à rebours...');
       
       // Initialiser le contexte utilisateur
-      const productData = {
-        id: orderData.level.toString(),
-        name: derivedLevelName,
-        level: orderData.level as any,
-        amountCents: orderData.amount,
-        currency: 'eur',
-        description: `Niveau ${derivedLevelName}`,
-        features: [],
-        metadata: {},
-      };
-      
       try {
-        if (orderId) {
-          initializeFromPurchase(productData, orderId);
-        }
+        // Migration: initializeFromPurchase removed - SanctuaireProvider handles initialization
+        console.log('[ConfirmationTemple] Accès accordé, niveau:', derivedLevelName);
+        
         // Stocker le PaymentIntentId pour l'upload côté Sanctuaire
         if (orderData.paymentIntentId) {
           localStorage.setItem('oraclelumira_last_payment_intent_id', orderData.paymentIntentId);
         }
       } catch (err) {
-        console.error('[ConfirmationTemple] Erreur initialisation contexte:', err);
+        console.error('[ConfirmationTemple] Erreur initialisation:', err);
       }
 
       // Démarrer le compte à rebours
@@ -136,7 +125,7 @@ const ConfirmationTemple: React.FC = () => {
 
       return () => clearInterval(countdown);
     }
-  }, [accessGranted, orderData, orderId, navigate, searchParams, initializeFromPurchase, stopPolling, derivedLevelName]);
+  }, [accessGranted, orderData, orderId, navigate, searchParams, stopPolling, derivedLevelName]);
 
   // Gérer les erreurs
   useEffect(() => {
