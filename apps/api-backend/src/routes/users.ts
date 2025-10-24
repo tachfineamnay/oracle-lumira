@@ -6,7 +6,37 @@ import jwt from 'jsonwebtoken';
 import { getS3Service } from '../services/s3';
 import { aggregateCapabilities, getHighestLevel, getLevelMetadata } from '../config/entitlements';
 import { getLevelNameSafely } from '../utils/orderUtils';
-import { resolveLevelFromIdentifiers } from '../utils/orderLifecycle';
+
+// Helper local pour résoudre le niveau depuis les métadonnées
+const resolveLevelFromOrder = (order: any): number => {
+  // 1. Priorité : champ level direct
+  if (typeof order.level === 'number' && order.level >= 1 && order.level <= 4) {
+    return order.level;
+  }
+  
+  // 2. Fallback : metadata.level ou productId
+  const levelKey = order.metadata?.level || order.productId || '';
+  const mapping: Record<string, number> = {
+    'initie': 1,
+    'mystique': 2,
+    'profond': 3,
+    'integrale': 4
+  };
+  
+  const normalized = String(levelKey).toLowerCase();
+  return mapping[normalized] || 1; // Défaut: niveau 1
+};
+
+// Helper pour obtenir les produits accordés par niveau
+const getGrantedProductsByLevel = (level: number): string[] => {
+  const products: Record<number, string[]> = {
+    1: ['initie'],
+    2: ['initie', 'mystique'],
+    3: ['initie', 'mystique', 'profond'],
+    4: ['initie', 'mystique', 'profond', 'integrale']
+  };
+  return products[level] || products[1];
+};
 
 const router = express.Router();
 
@@ -142,15 +172,13 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
         return res.status(404).json({ error: 'Utilisateur non trouve' });
       }
 
-      const checkoutCustomer = (latestOrder.checkout && latestOrder.checkout.customer) || {};
       const formData = (latestOrder as any).formData || {};
       const firstName =
-        checkoutCustomer.firstName ||
         formData.firstName ||
         lowerEmail.split('@')[0] ||
         'Client';
-      const lastName = checkoutCustomer.lastName || formData.lastName || 'Stripe';
-      const phone = checkoutCustomer.phone || formData.phone;
+      const lastName = formData.lastName || 'Lumira';
+      const phone = formData.phone;
 
       user = await User.create({ email: lowerEmail, firstName, lastName, phone });
     }
@@ -176,19 +204,11 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
     const grantedProducts = new Set<string>();
 
     for (const order of accessibleOrders) {
-      const levelInfo = resolveLevelFromIdentifiers(
-        order.checkout?.productId,
-        order.checkout?.metadata?.level
-      );
-      const level =
-        typeof (order as any).level === 'number' ? (order as any).level : levelInfo.level;
+      const level = resolveLevelFromOrder(order);
       highestLevel = Math.max(highestLevel, level);
 
-      const products =
-        order.grantedProducts && order.grantedProducts.length
-          ? order.grantedProducts
-          : levelInfo.grantedProducts;
-      products.forEach((productId) => grantedProducts.add(productId));
+      const products = getGrantedProductsByLevel(level);
+      products.forEach((productId: string) => grantedProducts.add(productId));
     }
 
     const secret = process.env.JWT_SECRET;
@@ -368,22 +388,11 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
     const levels: number[] = [];
 
     for (const order of scopedOrders) {
-      const levelInfo = resolveLevelFromIdentifiers(
-        order.checkout?.productId,
-        order.checkout?.metadata?.level
-      );
-
-      const level =
-        typeof (order as any).level === 'number'
-          ? (order as any).level
-          : levelInfo.level;
+      const level = resolveLevelFromOrder(order);
       levels.push(level);
 
-      const products =
-        order.grantedProducts && order.grantedProducts.length
-          ? order.grantedProducts
-          : levelInfo.grantedProducts;
-      products.forEach((productId) => productIds.add(productId));
+      const products = getGrantedProductsByLevel(level);
+      products.forEach((productId: string) => productIds.add(productId));
     }
 
     const productsArray = Array.from(productIds);
