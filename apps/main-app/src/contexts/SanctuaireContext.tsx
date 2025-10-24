@@ -36,6 +36,18 @@ const getInitialCooldown = (): number | null => {
 
 // =================== TYPES ===================
 
+export interface UserProfile {
+  birthDate?: string;
+  birthTime?: string;
+  birthPlace?: string;
+  specificQuestion?: string;
+  objective?: string;
+  facePhotoUrl?: string;
+  palmPhotoUrl?: string;
+  profileCompleted?: boolean;
+  submittedAt?: Date;
+}
+
 export interface EntitlementsData {
   capabilities: string[];
   products: string[];
@@ -53,6 +65,9 @@ interface SanctuaireContextValue {
   // === AUTHENTICATION ===
   isAuthenticated: boolean;
   user: SanctuaireUser | null;
+  
+  // === PROFILE ===
+  profile: UserProfile | null;
   
   // === ENTITLEMENTS (CAPABILITIES) ===
   capabilities: string[];
@@ -76,6 +91,7 @@ interface SanctuaireContextValue {
   authenticateWithEmail: (email: string, options?: { force?: boolean }) => Promise<{ token: string; user: SanctuaireUser }>;
   logout: () => void;
   refresh: () => Promise<void>;
+  updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
   getOrderContent: (orderId: string) => Promise<OrderContent>;
   downloadFile: (url: string, filename: string) => Promise<void>;
   clearAuthError: () => void;
@@ -91,6 +107,9 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
   // === AUTHENTICATION STATE ===
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<SanctuaireUser | null>(null);
+  
+  // === PROFILE STATE ===
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   
   // === ENTITLEMENTS STATE ===
   const [entitlements, setEntitlements] = useState<EntitlementsData>({
@@ -144,6 +163,36 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     const timer = window.setInterval(checkCooldown, 1000);
     return () => window.clearInterval(timer);
   }, [authCooldownUntil, updateAuthCooldown]);
+
+  // =================== PROFILE LOADER ===================
+  
+  const loadProfile = useCallback(async () => {
+    const token = sanctuaireService.getStoredToken();
+    if (!token) {
+      console.log('[SanctuaireProvider] Pas de token, skip profile');
+      return;
+    }
+
+    try {
+      const response = await axios.get<{ profile: UserProfile }>(
+        `${API_BASE}/users/profile`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log('[SanctuaireProvider] Profil chargé:', response.data.profile);
+      setProfile(response.data.profile || null);
+    } catch (err: any) {
+      console.error('[SanctuaireProvider] Erreur profile:', err.response?.data || err.message);
+      
+      // En cas d'erreur 401, on ne throw pas mais on nettoie
+      if (err.response?.status === 401) {
+        localStorage.removeItem('sanctuaire_token');
+        setIsAuthenticated(false);
+      }
+    }
+  }, []);
 
   // =================== ENTITLEMENTS LOADER ===================
   
@@ -209,6 +258,7 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
       
       // Charger les 3 sources en parallèle
       await Promise.all([
+        loadProfile(),
         loadEntitlements(),
         loadOrdersAndStats()
       ]);
@@ -218,7 +268,7 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     } finally {
       setIsLoading(false);
     }
-  }, [loadEntitlements, loadOrdersAndStats]);
+  }, [loadProfile, loadEntitlements, loadOrdersAndStats]);
 
   // =================== INITIAL LOAD ===================
   
@@ -328,6 +378,32 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   }, [isAuthenticated, loadAllData]);
 
+  const updateProfile = useCallback(async (profileData: Partial<UserProfile>) => {
+    try {
+      const token = sanctuaireService.getStoredToken();
+      if (!token) {
+        throw new Error('Non authentifié');
+      }
+
+      console.log('[SanctuaireProvider] Mise à jour profil:', profileData);
+      
+      const response = await axios.patch<{ profile: UserProfile }>(
+        `${API_BASE}/users/profile`,
+        profileData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log('[SanctuaireProvider] Profil mis à jour avec succès');
+      setProfile(response.data.profile);
+      
+    } catch (err: any) {
+      console.error('[SanctuaireProvider] Erreur updateProfile:', err.response?.data || err.message);
+      throw err;
+    }
+  }, []);
+
   const getOrderContent = useCallback(async (orderId: string): Promise<OrderContent> => {
     try {
       setError(null);
@@ -361,6 +437,9 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     isAuthenticated,
     user,
     
+    // Profile
+    profile,
+    
     // Entitlements
     capabilities: entitlements.capabilities,
     products: entitlements.products,
@@ -383,6 +462,7 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     authenticateWithEmail,
     logout,
     refresh,
+    updateProfile,
     getOrderContent,
     downloadFile: sanctuaireService.downloadFile.bind(sanctuaireService),
     clearAuthError,

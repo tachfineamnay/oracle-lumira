@@ -1,12 +1,12 @@
 import express from 'express';
 import { User } from '../models/User';
 import { Order } from '../models/Order';
-import { ProductOrder } from '../models/ProductOrder';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import { getS3Service } from '../services/s3';
 import { aggregateCapabilities, getHighestLevel, getLevelMetadata } from '../config/entitlements';
 import { getLevelNameSafely } from '../utils/orderUtils';
+import { resolveLevelFromIdentifiers } from '../utils/orderLifecycle';
 
 const router = express.Router();
 
@@ -115,7 +115,7 @@ router.post('/auth/sanctuaire', async (req: any, res: any) => {
   }
 });
 
-// Auth Sanctuaire v2: allow paid Orders and completed ProductOrders
+// Auth Sanctuaire v2: unified Order-based access
 router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
   try {
     const { email } = req.body || {};
@@ -126,59 +126,76 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
     const lowerEmail = String(email).toLowerCase();
     let user = await User.findOne({ email: lowerEmail });
 
-    // Auto-create minimal user if absent but ProductOrders exist for this email
     if (!user) {
-      const latestPO = await ProductOrder.findOne({ customerEmail: lowerEmail })
+      const latestOrder = await Order.findOne({
+        $or: [
+          { userEmail: lowerEmail },
+          { 'checkout.customer.email': lowerEmail },
+          { 'formData.email': lowerEmail },
+        ],
+        status: { $in: ['paid', 'completed'] },
+      })
         .sort({ createdAt: -1 })
         .lean();
 
-      if (!latestPO) {
+      if (!latestOrder) {
         return res.status(404).json({ error: 'Utilisateur non trouve' });
       }
 
-      const meta: any = (latestPO as any).metadata || {};
-      const name = String(meta.customerName || lowerEmail.split('@')[0] || 'Client').trim();
-      const parts = name.split(' ');
-      const firstName = parts[0] || 'Client';
-      const lastName = parts.slice(1).join(' ') || 'Stripe';
-      const phone = meta.customerPhone || undefined;
+      const checkoutCustomer = (latestOrder.checkout && latestOrder.checkout.customer) || {};
+      const formData = (latestOrder as any).formData || {};
+      const firstName =
+        checkoutCustomer.firstName ||
+        formData.firstName ||
+        lowerEmail.split('@')[0] ||
+        'Client';
+      const lastName = checkoutCustomer.lastName || formData.lastName || 'Stripe';
+      const phone = checkoutCustomer.phone || formData.phone;
 
       user = await User.create({ email: lowerEmail, firstName, lastName, phone });
     }
 
-    const [completedOrdersCount, paidOrdersCount, completedProductOrdersCount] = await Promise.all([
-      Order.countDocuments({ userId: user._id, status: 'completed' }),
-      Order.countDocuments({ userId: user._id, status: 'paid' }),
-      ProductOrder.countDocuments({ customerEmail: user.email.toLowerCase(), status: 'completed' }),
-    ]);
+    const accessibleOrders = await Order.find({
+      $or: [
+        { userId: user._id },
+        { userEmail: lowerEmail },
+        { 'checkout.customer.email': lowerEmail },
+        { 'formData.email': lowerEmail },
+      ],
+      status: { $in: ['paid', 'completed'] },
+    });
 
-    if (completedOrdersCount + paidOrdersCount + completedProductOrdersCount === 0) {
+    if (accessibleOrders.length === 0) {
       return res.status(403).json({
         error: 'Aucune commande trouvee',
         message: 'Vous devez avoir au moins une commande payee pour acceder au sanctuaire',
       });
     }
 
-    const [orders, productOrders] = await Promise.all([
-      Order.find({ userId: user._id, status: { $in: ['paid', 'completed'] } }).select('level'),
-      ProductOrder.find({ customerEmail: user.email.toLowerCase(), status: 'completed' }).select('productId'),
-    ]);
-
-    const levelMap: Record<string, number> = { initie: 1, mystique: 2, profond: 3, integrale: 4 };
     let highestLevel = 0;
-    for (const o of orders) {
-      const lvl = (o as any).level;
-      if (typeof lvl === 'number') highestLevel = Math.max(highestLevel, lvl);
-    }
-    for (const po of productOrders) {
-      const pid = String((po as any).productId || '').toLowerCase();
-      if (pid in levelMap) highestLevel = Math.max(highestLevel, levelMap[pid]);
+    const grantedProducts = new Set<string>();
+
+    for (const order of accessibleOrders) {
+      const levelInfo = resolveLevelFromIdentifiers(
+        order.checkout?.productId,
+        order.checkout?.metadata?.level
+      );
+      const level =
+        typeof (order as any).level === 'number' ? (order as any).level : levelInfo.level;
+      highestLevel = Math.max(highestLevel, level);
+
+      const products =
+        order.grantedProducts && order.grantedProducts.length
+          ? order.grantedProducts
+          : levelInfo.grantedProducts;
+      products.forEach((productId) => grantedProducts.add(productId));
     }
 
     const secret = process.env.JWT_SECRET;
     if (!secret) {
       return res.status(500).json({ error: 'Server configuration error: JWT secret missing' });
     }
+
     const token = jwt.sign(
       { userId: user._id, email: user.email, type: 'sanctuaire_access' },
       secret,
@@ -196,6 +213,7 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
         phone: user.phone || undefined,
         level: highestLevel,
       },
+      products: Array.from(grantedProducts),
     });
   } catch (error) {
     console.error('Sanctuaire auth v2 error:', error);
@@ -234,6 +252,86 @@ const authenticateSanctuaire = async (req: any, res: any, next: any) => {
   }
 };
 
+// =================== ENDPOINT PROFILE - GESTION PROFIL UTILISATEUR ===================
+// GET /api/users/profile - Récupère le profil complet de l'utilisateur connecté
+router.get('/profile', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const user = await User.findById(req.user._id).select('email firstName lastName phone profile');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    res.json({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      profile: user.profile || {
+        profileCompleted: false
+      }
+    });
+  } catch (error) {
+    console.error('[PROFILE] Erreur GET:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération du profil' });
+  }
+});
+
+// PATCH /api/users/profile - Met à jour le profil utilisateur
+router.patch('/profile', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const updates = req.body;
+    
+    // Validation des champs autorisés
+    const allowedFields = [
+      'birthDate', 'birthTime', 'birthPlace',
+      'specificQuestion', 'objective',
+      'facePhotoUrl', 'palmPhotoUrl',
+      'profileCompleted', 'submittedAt'
+    ];
+    
+    const profileUpdates: any = {};
+    Object.keys(updates).forEach(key => {
+      if (allowedFields.includes(key)) {
+        profileUpdates[key] = updates[key];
+      }
+    });
+    
+    // Si profileCompleted passe à true, ajouter submittedAt automatiquement
+    if (profileUpdates.profileCompleted === true && !profileUpdates.submittedAt) {
+      profileUpdates.submittedAt = new Date();
+    }
+    
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { 
+        $set: { 
+          profile: profileUpdates
+        },
+        updatedAt: new Date()
+      },
+      { new: true, runValidators: false }
+    ).select('email firstName lastName phone profile');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    console.log('[PROFILE] Profil mis à jour pour userId:', req.user._id);
+    
+    res.json({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      profile: user.profile
+    });
+  } catch (error) {
+    console.error('[PROFILE] Erreur PATCH:', error);
+    res.status(500).json({ error: 'Erreur lors de la mise à jour du profil' });
+  }
+});
+
 // =================== ENDPOINT ENTITLEMENTS - SOURCE DE VÉRITÉ ===================
 // GET /api/users/entitlements - Récupère les capacités débloquées de l'utilisateur
 router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) => {
@@ -242,44 +340,21 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
     const userEmail = req.user.email;
     
     console.log('[ENTITLEMENTS] Requête pour userId:', userId, 'email:', userEmail);
-    
-    // Récupérer toutes les commandes complétées de l'utilisateur
-    const completedOrders = await Order.find({
-      userId: userId,
-      status: { $in: ['paid', 'completed'] }
-    }).select('level orderNumber paymentIntentId');
-    
-    // Récupérer aussi les ProductOrder complétées (nouveau système)
-    const completedProductOrders = await ProductOrder.find({
-      customerEmail: userEmail.toLowerCase(),
-      status: 'completed'
-    }).select('productId paymentIntentId');
-    
-    console.log('[ENTITLEMENTS] Orders trouvées:', completedOrders.length);
-    console.log('[ENTITLEMENTS] ProductOrders trouvées:', completedProductOrders.length);
-    
-    // Mapper les niveaux des Order vers productId
-    const levelToProductId: Record<number, string> = {
-      1: 'initie',
-      2: 'mystique',
-      3: 'profond',
-      4: 'integrale'
-    };
-    
-    const orderProductIds = completedOrders
-      .map(order => levelToProductId[order.level])
-      .filter(Boolean);
-    
-    const productOrderIds = completedProductOrders
-      .map(po => po.productId.toLowerCase());
-    
-    // Fusionner les deux listes et dédupliquer
-    const allProductIds = [...new Set([...orderProductIds, ...productOrderIds])];
-    
-    console.log('[ENTITLEMENTS] Produits détectés:', allProductIds);
-    
-    // Si aucun produit, retourner un tableau vide
-    if (allProductIds.length === 0) {
+
+    const normalizedEmail = String(userEmail || '').toLowerCase();
+    const scopedOrders = await Order.find({
+      $or: [
+        { userId },
+        { userEmail: normalizedEmail },
+        { 'checkout.customer.email': normalizedEmail },
+        { 'formData.email': normalizedEmail },
+      ],
+      status: { $in: ['paid', 'completed'] },
+    });
+
+    console.log('[ENTITLEMENTS] Orders trouvées:', scopedOrders.length);
+
+    if (scopedOrders.length === 0) {
       return res.json({
         capabilities: [],
         products: [],
@@ -289,11 +364,32 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
       });
     }
     
-    // Agréger toutes les capacités
-    const capabilities = aggregateCapabilities(allProductIds);
-    
-    // Déterminer le niveau le plus élevé
-    const highestLevel = getHighestLevel(allProductIds);
+    const productIds = new Set<string>();
+    const levels: number[] = [];
+
+    for (const order of scopedOrders) {
+      const levelInfo = resolveLevelFromIdentifiers(
+        order.checkout?.productId,
+        order.checkout?.metadata?.level
+      );
+
+      const level =
+        typeof (order as any).level === 'number'
+          ? (order as any).level
+          : levelInfo.level;
+      levels.push(level);
+
+      const products =
+        order.grantedProducts && order.grantedProducts.length
+          ? order.grantedProducts
+          : levelInfo.grantedProducts;
+      products.forEach((productId) => productIds.add(productId));
+    }
+
+    const productsArray = Array.from(productIds);
+
+    const capabilities = aggregateCapabilities(productsArray);
+    const highestLevel = productsArray.length > 0 ? getHighestLevel(productsArray) : null;
     const levelMetadata = highestLevel ? getLevelMetadata(highestLevel) : null;
     
     console.log('[ENTITLEMENTS] Capacités débloquées:', capabilities.length);
@@ -301,11 +397,10 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
     
     res.json({
       capabilities,
-      products: allProductIds,
+      products: productsArray,
       highestLevel,
       levelMetadata,
-      orderCount: completedOrders.length,
-      productOrderCount: completedProductOrders.length
+      orderCount: scopedOrders.length,
     });
     
   } catch (error) {

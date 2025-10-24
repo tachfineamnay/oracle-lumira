@@ -1,5 +1,17 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface IUserProfile {
+  birthDate?: string;
+  birthTime?: string;
+  birthPlace?: string;
+  specificQuestion?: string;
+  objective?: string;
+  facePhotoUrl?: string;
+  palmPhotoUrl?: string;
+  profileCompleted?: boolean;
+  submittedAt?: Date;
+}
+
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   email: string;
@@ -14,6 +26,7 @@ export interface IUser extends Document {
   subscriptionStatus: 'active' | 'inactive' | 'trial';
   totalOrders: number;
   lastOrderAt?: Date;
+  profile?: IUserProfile;
 }
 
 const userSchema = new Schema<IUser>({
@@ -69,6 +82,20 @@ const userSchema = new Schema<IUser>({
   },
   lastOrderAt: {
     type: Date
+  },
+  profile: {
+    type: {
+      birthDate: { type: String },
+      birthTime: { type: String },
+      birthPlace: { type: String },
+      specificQuestion: { type: String },
+      objective: { type: String },
+      facePhotoUrl: { type: String },
+      palmPhotoUrl: { type: String },
+      profileCompleted: { type: Boolean, default: false },
+      submittedAt: { type: Date }
+    },
+    default: undefined
   }
 }, {
   timestamps: true,

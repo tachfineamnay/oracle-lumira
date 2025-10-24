@@ -8,24 +8,18 @@ import SanctuaireSidebar from '../components/layout/SanctuaireSidebar';
 import GlassCard from '../components/ui/GlassCard';
 import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeForm';
 import { OnboardingForm } from '../components/sanctuaire/OnboardingForm';
-import { useAuth } from '../hooks/useAuth';
 import { labels } from '../lib/sphereLabels';
-import { useUserLevel } from '../contexts/UserLevelContext';
 import ExistingClientLoginBar from '../components/sanctuaire/ExistingClientLoginBar';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
-import { useSanctuaire as useSanctuaireOld } from '../hooks/useSanctuaire';
 import { useSanctuaire } from '../contexts/SanctuaireContext';
-import { useEntitlements } from '../hooks/useEntitlements';
 import { CapabilityGuard, LockedCard } from '../components/auth/CapabilityGuard';
 
 const ProfileIcon: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { userLevel } = useUserLevel();
-  const { highestLevel, levelMetadata, hasCapability } = useEntitlements();
+  const { user, profile, highestLevel, levelMetadata } = useSanctuaire();
 
-  const hasProfileData = userLevel.profile?.profileCompleted;
+  const hasProfileData = profile?.profileCompleted;
 
   return (
     <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
@@ -76,9 +70,9 @@ const ProfileIcon: React.FC = () => {
                   {hasProfileData ? 'Profil Complété' : 'Profil à compléter'}
                 </span>
               </div>
-              {hasProfileData && userLevel.profile?.submittedAt && (
+              {hasProfileData && profile?.submittedAt && (
                 <p className="text-xs text-white/70">
-                  Soumis le {new Date(userLevel.profile.submittedAt).toLocaleDateString('fr-FR')}
+                  Soumis le {new Date(profile.submittedAt).toLocaleDateString('fr-FR')}
                 </p>
               )}
             </div>
@@ -119,13 +113,13 @@ const ProfileIcon: React.FC = () => {
 const ContextualHint: React.FC = () => {
   const location = useLocation();
   const path = location.pathname;
-  const { userLevel } = useUserLevel();
+  const { profile } = useSanctuaire();
   const navigate = useNavigate();
 
   // Si on est sur la page principale /sanctuaire, afficher le contenu approprié
   if (path === '/sanctuaire' || path === '/sanctuaire/dashboard') {
     // Si le profil n'est pas complété, afficher le formulaire
-    if (!userLevel.profile?.profileCompleted) {
+    if (!profile?.profileCompleted) {
       return (
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -176,7 +170,7 @@ const ContextualHint: React.FC = () => {
         </div>
 
         {/* Statut de la dernière commande si applicable */}
-        {userLevel.profile?.submittedAt && (
+        {profile?.submittedAt && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -491,10 +485,9 @@ const ContextualHint: React.FC = () => {
 };
 
 const Sanctuaire: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useSanctuaire();
   const navigate = useNavigate();
   const location = useLocation();
-  const { userLevel } = useUserLevel();
   const [searchParams] = useSearchParams();
   const {
     isAuthenticated,
@@ -551,12 +544,12 @@ const Sanctuaire: React.FC = () => {
   // Détection first_visit pour afficher OnboardingForm
   React.useEffect(() => {
     const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
-    const hasIncompleteProfile = userLevel?.profile && !userLevel.profile.profileCompleted;
+    const hasIncompleteProfile = profile && !profile.profileCompleted;
     
     if (isAuthenticated && (isFirstVisit || hasIncompleteProfile)) {
       setShowOnboarding(true);
     }
-  }, [isAuthenticated, userLevel?.profile]);
+  }, [isAuthenticated, profile]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
@@ -604,7 +597,7 @@ const Sanctuaire: React.FC = () => {
     }
   }, [isAuthenticated, isLoading, navigate, searchParams]);
 
-  const progress = Math.round(((Number(userLevel.currentLevel) || 1) / 4) * 100);
+  const progress = 0; // Calcul du progrès basé sur le profil
   const isHome = location.pathname === '/sanctuaire' || location.pathname === '/sanctuaire/dashboard';
   return (
     <PageLayout variant="dark">

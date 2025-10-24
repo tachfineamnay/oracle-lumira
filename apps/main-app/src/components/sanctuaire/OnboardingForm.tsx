@@ -23,7 +23,6 @@ import {
   Mail, Phone, User
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
-import { useUserLevel } from '../../contexts/UserLevelContext';
 import GlassCard from '../ui/GlassCard';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -54,8 +53,7 @@ interface OnboardingFormProps {
 // =================== COMPOSANT PRINCIPAL ===================
 
 export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) => {
-  const { user } = useSanctuaire();
-  const { updateUserProfile } = useUserLevel(); // ✨ Ajout pour marquer profileCompleted
+  const { user, updateProfile } = useSanctuaire();
   
   // État utilisateur (pré-rempli)
   const [userData, setUserData] = useState<UserData>({
@@ -298,7 +296,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             email: user.email,
             firstName: user.firstName || '',
             lastName: user.lastName || '',
-            phone: '' // SanctuaireUser n'a pas phone
+            phone: user.phone || ''
           });
           setIsLoadingUserData(false);
           return;
@@ -433,21 +431,18 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       
       console.log('✅ [OnboardingForm] Soumission réussie');
       
-      // ✨ CRITIQUE : Marquer le profil comme complété dans UserLevelContext
-      updateUserProfile({
-        email: userData.email,
-        phone: userData.phone,
+      // ✨ CRITIQUE : Marquer le profil comme complété dans SanctuaireContext
+      await updateProfile({
         birthDate: formData.birthDate,
         birthTime: formData.birthTime,
-        objective: formData.specificQuestion,
-        additionalInfo: formData.objective,
-        profileCompleted: true, // ✅ Clé critique pour débloquer le dashboard
+        birthPlace: formData.birthPlace,
+        specificQuestion: formData.specificQuestion,
+        objective: formData.objective,
+        profileCompleted: true,
         submittedAt: new Date(),
-        facePhoto: formData.facePhoto,
-        palmPhoto: formData.palmPhoto
       });
       
-      console.log('✨ [OnboardingForm] profileCompleted marqué à true dans UserLevelContext');
+      console.log('✨ [OnboardingForm] profileCompleted marqué à true dans SanctuaireContext');
       
       sessionStorage.removeItem('first_visit');
       localStorage.removeItem('last_payment_intent_id');
@@ -572,19 +567,17 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
 
       console.log('✅ [OnboardingForm] Flux complet terminé avec succès !');
 
-      // Success path (mêmes effets que handleSubmit)
-      updateUserProfile({
-        email: userData.email,
-        phone: userData.phone,
+      // Success path : marquer le profil comme complété
+      await updateProfile({
         birthDate: formData.birthDate,
         birthTime: formData.birthTime,
-        objective: formData.specificQuestion,
-        additionalInfo: formData.objective,
+        birthPlace: formData.birthPlace,
+        specificQuestion: formData.specificQuestion,
+        objective: formData.objective,
         profileCompleted: true,
         submittedAt: new Date(),
-        facePhoto: formData.facePhoto,
-        palmPhoto: formData.palmPhoto
       });
+      
       sessionStorage.removeItem('first_visit');
       localStorage.removeItem('last_payment_intent_id');
       if (onComplete) onComplete();
