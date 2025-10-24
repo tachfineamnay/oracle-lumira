@@ -16,7 +16,7 @@
  */
 
 import React, { ReactNode } from 'react';
-import { useEntitlements } from '../../hooks/useEntitlements';
+import { useSanctuaire } from '../../contexts/SanctuaireContext';
 
 // =================== TYPES ===================
 
@@ -60,7 +60,7 @@ export const CapabilityGuard: React.FC<CapabilityGuardProps> = ({
   mode = 'show-fallback',
   showLoader = true,
 }) => {
-  const { hasCapability, isLoading } = useEntitlements();
+  const { hasCapability, isLoading } = useSanctuaire();
 
   // Pendant le chargement
   if (isLoading && showLoader) {
@@ -172,7 +172,7 @@ export const LockedCard: React.FC<LockedCardProps> = ({
  * Hook simplifié pour vérifier une capacité directement dans un composant
  */
 export function useCapabilityCheck(capability: string): boolean {
-  const { hasCapability, isLoading } = useEntitlements();
+  const { hasCapability, isLoading } = useSanctuaire();
   
   // Retourner false pendant le chargement par sécurité
   if (isLoading) return false;

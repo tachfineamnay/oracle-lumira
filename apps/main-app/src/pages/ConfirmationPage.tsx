@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, Loader, AlertCircle, ArrowRight, Star } from 'lucide-react';
 import ProductOrderService from '../services/productOrder';
-import { useInitializeUserLevel } from '../contexts/UserLevelContext';
+
 import type { OrderStatus } from '../types/products';
 
 const ConfirmationPage: React.FC = () => {

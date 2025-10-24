@@ -19,7 +19,7 @@ import {
   Camera,
   Image as ImageIcon
 } from 'lucide-react';
-import { useUserLevel } from '../../contexts/UserLevelContext';
+
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import { useSanctuaryAccess } from '../../hooks/useSanctuaryAccess';
 import GlassCard from '../ui/GlassCard';
@@ -42,7 +42,7 @@ const Profile: React.FC = () => {
   
   // PRIORITÉ : Utiliser les données de SanctuaireContext si disponibles
   const email = sanctuaireUser?.email || userLevel.profile?.email || '';
-  const phone = sanctuaireUser?.phone || userLevel.profile?.phone || '';
+  const phone = sanctuaireUser?.phone || profile?.phone || '';
   
   const [editData, setEditData] = useState({
     email: email,

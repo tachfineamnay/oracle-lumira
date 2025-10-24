@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
-import { useSanctuaire } from '../hooks/useSanctuaire';
+import { useSanctuaire } from '../contexts/SanctuaireContext';
 
 interface ReadingCard {
   id: string;

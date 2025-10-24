@@ -5,7 +5,7 @@ import { CheckCircle, ArrowRight, Loader, AlertCircle, Crown } from 'lucide-reac
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
-import { useInitializeUserLevel } from '../contexts/UserLevelContext';
+
 import { useOrderStatus } from '../hooks/useOrderStatus';
 import { getLevelNameSafely } from '../utils/orderUtils';
 import { apiRequest } from '../utils/api';

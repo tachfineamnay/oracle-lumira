@@ -17,7 +17,7 @@ import {
   Mail,
   Phone
 } from 'lucide-react';
-import { useUserLevel } from '../../contexts/UserLevelContext';
+import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import { apiRequest } from '../../utils/api';
 import { getApiBaseUrl } from '../../lib/apiBase';
 import GlassCard from '../ui/GlassCard';
@@ -36,7 +36,7 @@ interface FormData {
 type FormState = 'active' | 'submitted' | 'completed';
 
 export const SanctuaireWelcomeForm: React.FC = () => {
-  const { userLevel, updateUserProfile } = useUserLevel();
+  const { updateProfile } = useSanctuaire();
   const [formState, setFormState] = useState<FormState>('active');
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -136,15 +136,11 @@ export const SanctuaireWelcomeForm: React.FC = () => {
       }
       
       // Mettre à jour le profil utilisateur avec les fichiers
-      updateUserProfile({
-        email: (formData as any).email,
-        phone: (formData as any).phone,
+      await updateProfile({
         birthDate: formData.birthDate,
         birthTime: formData.birthTime,
-        objective: formData.objective,
-        additionalInfo: formData.additionalInfo,
-        facePhoto: formData.facePhoto,
-        palmPhoto: formData.palmPhoto,
+        specificQuestion: formData.objective,
+        objective: formData.additionalInfo,
         profileCompleted: true,
         submittedAt: new Date()
       });
@@ -165,7 +161,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
       console.log('[SANCTUAIRE] Setting isSubmitting to false');
       setIsSubmitting(false);
     }
-  }, [formData, updateUserProfile]);
+  }, [formData, updateProfile]);
 
   const handleEdit = () => {
     setFormState('active');

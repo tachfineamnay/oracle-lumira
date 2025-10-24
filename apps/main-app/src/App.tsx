@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { useMousePosition } from './hooks/useScrollAnimation';
-import { UserLevelProvider } from './contexts/UserLevelContext';
 
 // Centralized routes
 import AppRoutes from './router';
@@ -90,11 +89,9 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <div className="relative z-10">
-        <UserLevelProvider>
-          <Router>
-            <AppRoutes />
-          </Router>
-        </UserLevelProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
       </div>
     </div>
   );

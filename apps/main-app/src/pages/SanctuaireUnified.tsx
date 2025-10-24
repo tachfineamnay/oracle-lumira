@@ -20,9 +20,9 @@ import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
 import MandalaNav from '../components/mandala/MandalaNav';
 import SphereSkeleton from '../components/ui/SphereSkeleton';
-import { useSanctuaire } from '../hooks/useSanctuaire';
+import { useSanctuaire } from '../contexts/SanctuaireContext';
 import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeForm';
-import { useUserLevel } from '../contexts/UserLevelContext';
+
 
 interface ReadingCard {
   id: string;
@@ -40,7 +40,7 @@ const SanctuaireUnified: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedView, setSelectedView] = useState<'readings' | 'profile' | 'synthesis'>('readings');
-  const { userLevel } = useUserLevel();
+  // UserLevel migration: using SanctuaireContext
 
   const {
     isAuthenticated,

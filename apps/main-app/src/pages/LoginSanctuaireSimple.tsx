@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Mail, LogIn, Loader2, Star } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
-import { useSanctuaire } from '../hooks/useSanctuaire';
+import { useSanctuaire } from '../contexts/SanctuaireContext';
 
 const LoginSanctuaireSimple: React.FC = () => {
   const navigate = useNavigate();
