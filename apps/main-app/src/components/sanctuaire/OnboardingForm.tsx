@@ -607,7 +607,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
     >
-      <GlassCard className="w-full max-w-2xl bg-mystical-deep-blue/90 border-amber-400/30 p-6 max-h-[90vh] overflow-y-auto">
+      <GlassCard className="w-full max-w-2xl bg-cosmic-deep/95 border-purple-400/30 p-6 max-h-[90vh] overflow-y-auto">
         
         {/* En-tête */}
         <motion.div
@@ -615,10 +615,10 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
           animate={{ y: 0, opacity: 1 }}
           className="text-center mb-6"
         >
-          <div className="w-12 h-12 bg-gradient-to-br from-amber-400/30 to-purple-400/20 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Star className="w-6 h-6 text-amber-400" />
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-400/30 to-blue-400/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Star className="w-6 h-6 text-purple-400" />
           </div>
-          <h2 className="text-2xl font-playfair italic text-amber-400 mb-1">
+          <h2 className="text-2xl font-playfair italic text-purple-400 mb-1">
             Complétez votre Profil
           </h2>
           <p className="text-sm text-white/60">
@@ -632,16 +632,16 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             <div key={step} className="flex items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
                 step === currentStep
-                  ? 'bg-amber-400 text-mystical-900 scale-110'
+                  ? 'bg-purple-400 text-white scale-110'
                   : step < currentStep
-                  ? 'bg-amber-400/50 text-white'
+                  ? 'bg-purple-400/50 text-white'
                   : 'bg-white/10 text-white/40'
               }`}>
                 {step < currentStep ? <Check className="w-4 h-4" /> : step + 1}
               </div>
               {step < 3 && (
                 <div className={`w-8 h-0.5 mx-1 ${
-                  step < currentStep ? 'bg-amber-400/50' : 'bg-white/10'
+                  step < currentStep ? 'bg-purple-400/50' : 'bg-white/10'
                 }`} />
               )}
             </div>
@@ -775,7 +775,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             <button
               onClick={handleNext}
               disabled={!canProceed()}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-semibold rounded-lg hover:from-amber-500 hover:to-amber-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-purple-400/50 focus:outline-none"
             >
               <span>Suivant</span>
               <ChevronRight className="w-4 h-4" />
@@ -784,7 +784,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             <button
             onClick={handleFinalize}
               disabled={!canProceed() || isSubmitting}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-purple-400/50 focus:outline-none"
             >
               {isSubmitting ? (
                 <>

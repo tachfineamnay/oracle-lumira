@@ -46,7 +46,7 @@ const ProfileIcon: React.FC = () => {
 
       {/* Icône Profil avec dropdown */}
       <div className="relative group">
-        <button className="flex items-center gap-2 px-3 py-2 bg-amber-400/10 backdrop-blur-md border border-amber-400/20 rounded-lg text-amber-400 hover:bg-amber-400/20 transition-all">
+        <button className="flex items-center gap-2 px-3 py-2 bg-purple-400/10 backdrop-blur-md border border-purple-400/20 rounded-lg text-purple-400 hover:bg-purple-400/20 transition-all focus:ring-2 focus:ring-purple-400/50 focus:outline-none">
           <User className="w-4 h-4" />
           <span className="text-sm font-medium">
             {user?.firstName || 'Profil'}
@@ -54,7 +54,7 @@ const ProfileIcon: React.FC = () => {
         </button>
 
         {/* Dropdown Menu */}
-        <div className="absolute right-0 top-full mt-2 w-72 bg-mystical-900/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-cosmic-deep/95 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
           <div className="p-4">
             {/* Info utilisateur */}
             <div className="mb-4">
@@ -63,9 +63,9 @@ const ProfileIcon: React.FC = () => {
             </div>
 
             {/* Statut du profil */}
-            <div className="mb-4 p-3 bg-gradient-to-r from-amber-400/10 to-green-400/10 border border-amber-400/20 rounded-lg">
+            <div className="mb-4 p-3 bg-gradient-to-r from-purple-400/10 to-blue-400/10 border border-purple-400/20 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <div className={`w-2 h-2 rounded-full ${hasProfileData ? 'bg-green-400' : 'bg-amber-400'}`} />
+                <div className={`w-2 h-2 rounded-full ${hasProfileData ? 'bg-purple-400' : 'bg-blue-400'}`} />
                 <span className="text-sm font-medium text-white">
                   {hasProfileData ? 'Profil Complété' : 'Profil à compléter'}
                 </span>
@@ -128,7 +128,7 @@ const ContextualHint: React.FC = () => {
         >
       {/* Message de bienvenue simplifié */}
           <div className="text-center mb-8">
-            <h2 className="font-playfair italic text-3xl font-medium text-amber-400 mb-4">
+            <h2 className="font-playfair italic text-3xl font-medium text-purple-400 mb-4">
               Bienvenue dans votre Sanctuaire Spirituel
             </h2>
             <p className="text-white/80 text-lg mb-6">
@@ -156,7 +156,7 @@ const ContextualHint: React.FC = () => {
       >
         {/* Message de bienvenue personnalisé - Plus compact */}
         <div className="text-center mb-8">
-          <h2 className="font-playfair italic text-3xl font-medium text-amber-400 mb-2">
+          <h2 className="font-playfair italic text-3xl font-medium text-purple-400 mb-2">
             Votre Sanctuaire Personnel
           </h2>
           <p className="text-white/70">
@@ -194,7 +194,7 @@ const ContextualHint: React.FC = () => {
                     <span>Délai de traitement : 24h</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-amber-400" />
+                    <Star className="w-4 h-4 text-purple-400" />
                     <span>En cours d'analyse</span>
                   </div>
                 </div>
@@ -208,7 +208,7 @@ const ContextualHint: React.FC = () => {
                   </button>
                   <button
                     onClick={() => navigate('/commande')}
-                    className="px-4 py-2 bg-amber-400/20 text-amber-400 border border-amber-400/30 rounded-lg hover:bg-amber-400/30 transition-all"
+                    className="px-4 py-2 bg-purple-400/20 text-purple-400 border border-purple-400/30 rounded-lg hover:bg-purple-400/30 transition-all focus:ring-2 focus:ring-purple-400/50 focus:outline-none"
                   >
                     Nouvelle lecture
                   </button>
@@ -355,16 +355,16 @@ const ContextualHint: React.FC = () => {
           >
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="bg-gradient-to-br from-amber-400/10 to-orange-400/10 backdrop-blur-sm border border-amber-400/20 rounded-2xl p-6 cursor-pointer"
+              className="bg-gradient-to-br from-purple-400/10 to-pink-400/10 backdrop-blur-sm border border-purple-400/20 rounded-2xl p-6 cursor-pointer"
               onClick={() => navigate('/sanctuaire/mandala')}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-amber-400/20 rounded-full flex items-center justify-center">
-                    <Crown className="w-5 h-5 text-amber-400" />
+                  <div className="w-10 h-10 bg-purple-400/20 rounded-full flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="font-playfair italic text-xl font-medium text-amber-400">
+                    <h3 className="font-playfair italic text-xl font-medium text-purple-400">
                       Mandala Personnel
                     </h3>
                     <p className="font-inter text-sm text-white/60">
