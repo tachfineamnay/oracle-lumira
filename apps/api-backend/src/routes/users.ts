@@ -123,9 +123,27 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
       return res.status(400).json({ error: 'Email requis' });
     }
 
-    const user = await User.findOne({ email: String(email).toLowerCase() });
+    const lowerEmail = String(email).toLowerCase();
+    let user = await User.findOne({ email: lowerEmail });
+
+    // Auto-create minimal user if absent but ProductOrders exist for this email
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouve' });
+      const latestPO = await ProductOrder.findOne({ customerEmail: lowerEmail })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      if (!latestPO) {
+        return res.status(404).json({ error: 'Utilisateur non trouve' });
+      }
+
+      const meta: any = (latestPO as any).metadata || {};
+      const name = String(meta.customerName || lowerEmail.split('@')[0] || 'Client').trim();
+      const parts = name.split(' ');
+      const firstName = parts[0] || 'Client';
+      const lastName = parts.slice(1).join(' ') || 'Stripe';
+      const phone = meta.customerPhone || undefined;
+
+      user = await User.create({ email: lowerEmail, firstName, lastName, phone });
     }
 
     const [completedOrdersCount, paidOrdersCount, completedProductOrdersCount] = await Promise.all([
