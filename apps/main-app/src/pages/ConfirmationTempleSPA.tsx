@@ -33,7 +33,7 @@ const ConfirmationTemple: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const redirectStartedRef = useRef(false);
-  const { initializeFromPurchase } = useInitializeUserLevel();
+  // Migration: UserLevel initialization now handled by SanctuaireProvider
   const derivedLevelName = orderData ? getLevelNameSafely(orderData.level) : 'Simple';
 
   // =================== AUTHENTIFICATION POST-PAIEMENT ===================

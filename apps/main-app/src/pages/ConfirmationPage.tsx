@@ -11,7 +11,7 @@ const ConfirmationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const orderId = searchParams.get('order_id');
-  const { initializeFromPurchase } = useInitializeUserLevel();
+  // Migration: UserLevel initialization now handled by SanctuaireProvider
   
   const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);

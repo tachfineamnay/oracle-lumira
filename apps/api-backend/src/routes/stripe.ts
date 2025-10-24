@@ -221,8 +221,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
             subscriptionStatus: 'active',
           },
           $set: {
-            firstName: customerFirstName || 'Client',
-            lastName: customerLastName || 'Oracle',
             phone: customerPhone,
           },
           $inc: { totalOrders: 1 },
