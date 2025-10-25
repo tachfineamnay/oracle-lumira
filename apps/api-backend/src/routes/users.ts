@@ -183,6 +183,9 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
       user = await User.create({ email: lowerEmail, firstName, lastName, phone });
     }
 
+    // CORRECTION CRITIQUE : Assouplir la vérification pour accepter les commandes en transition
+    // Les webhooks Stripe peuvent prendre quelques secondes pour mettre à jour le statut final
+    // On autorise donc : 'paid' (paiement reçu), 'processing' (en traitement), et 'completed'
     const accessibleOrders = await Order.find({
       $or: [
         { userId: user._id },
@@ -190,13 +193,13 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
         { 'checkout.customer.email': lowerEmail },
         { 'formData.email': lowerEmail },
       ],
-      status: { $in: ['paid', 'completed'] },
+      status: { $in: ['paid', 'processing', 'completed'] },
     });
 
     if (accessibleOrders.length === 0) {
       return res.status(403).json({
         error: 'Aucune commande trouvee',
-        message: 'Vous devez avoir au moins une commande payee pour acceder au sanctuaire',
+        message: 'Vous devez avoir au moins une commande validée pour accéder au sanctuaire. Si vous venez de payer, veuillez patienter quelques instants.',
       });
     }
 

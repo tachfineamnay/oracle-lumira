@@ -109,12 +109,17 @@ const ConfirmationTemple: React.FC = () => {
             
             // Redirection SIMPLE vers /sanctuaire (sans paramètres inutiles)
             console.log('[ConfirmationTemple] Redirection vers /sanctuaire...');
-            try {
-              navigate('/sanctuaire', { replace: true });
-            } catch {
-              // Fallback dur en cas d'échec client-side
-              window.location.href = '/sanctuaire';
-            }
+            
+            // CORRECTION CRITIQUE : Ajouter un délai asynchrone pour éviter le crash contextuel React
+            // Le délai permet à React de terminer le cycle de rendu avant la navigation
+            setTimeout(() => {
+              try {
+                navigate('/sanctuaire', { replace: true });
+              } catch {
+                // Fallback dur en cas d'échec client-side
+                window.location.href = '/sanctuaire';
+              }
+            }, 150); // 150ms suffisent pour stabiliser le contexte React
             return 0;
           }
           return prev - 1;
@@ -152,12 +157,14 @@ const ConfirmationTemple: React.FC = () => {
       } catch {}
     }
     
-    // Redirection simple
-    try {
-      navigate('/sanctuaire', { replace: true });
-    } catch {
-      window.location.href = '/sanctuaire';
-    }
+    // Redirection simple avec temporisation pour éviter le crash contextuel
+    setTimeout(() => {
+      try {
+        navigate('/sanctuaire', { replace: true });
+      } catch {
+        window.location.href = '/sanctuaire';
+      }
+    }, 150);
   };
 
   const handleBackToHome = () => {
