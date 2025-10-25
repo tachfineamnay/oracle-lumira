@@ -66,7 +66,9 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   const [isLoadingUserData, setIsLoadingUserData] = useState(true);
   
   // État formulaire spirituel
+  // CORRECTION CRITIQUE : Démarrer à l'étape 1 si les infos de base sont déjà remplies
   const [currentStep, setCurrentStep] = useState<0 | 1 | 2 | 3>(0);
+  const [initialStepSet, setInitialStepSet] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     birthDate: '',
     birthTime: '',
@@ -343,6 +345,25 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
     
     loadUserData();
   }, [user, paymentIntentId]);
+  
+  // =================== AJUSTEMENT STEPPER (POST-CHECKOUT) ===================
+  
+  useEffect(() => {
+    if (!isLoadingUserData && !initialStepSet) {
+      // Si les infos de base sont déjà remplies (email, nom, téléphone),
+      // sauter l'Étape 0 (Bienvenue) et commencer directement à l'Étape 1 (Naissance)
+      const hasBasicInfo = !!(userData.email && userData.firstName && userData.phone);
+      
+      if (hasBasicInfo) {
+        console.log('✨ [OnboardingForm] Infos de base détectées → Démarrage à l\'Étape 2/4 (Naissance)');
+        setCurrentStep(1);
+      } else {
+        console.log('ℹ️ [OnboardingForm] Pas d\'infos de base → Démarrage à l\'Étape 1/4 (Bienvenue)');
+      }
+      
+      setInitialStepSet(true);
+    }
+  }, [isLoadingUserData, userData, initialStepSet]);
   
   // =================== VALIDATION PAR ÉTAPE ===================
   
