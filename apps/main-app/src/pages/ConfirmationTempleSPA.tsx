@@ -38,12 +38,15 @@ const ConfirmationTemple: React.FC = () => {
 
   // =================== AUTHENTIFICATION POST-PAIEMENT ===================
   // Obtenir un token valide dès l'arrivée sur la page de confirmation
+  const [tokenReady, setTokenReady] = useState(false);
+  
   useEffect(() => {
     const attemptAuth = async () => {
       try {
         const email = searchParams.get('email');
         if (!email) {
           console.warn('[Auth] Pas d\'email dans l\'URL, impossible de s\'authentifier');
+          setTokenReady(true); // Continuer sans token si pas d'email
           return;
         }
 
@@ -57,13 +60,15 @@ const ConfirmationTemple: React.FC = () => {
           const { token } = response;
           localStorage.setItem('sanctuaire_token', token);
           console.log('[Auth] ✅ Token reçu et sauvegardé avec succès');
+          setTokenReady(true);
         } else {
           console.error('[Auth] ❌ Réponse API sans token:', response);
+          setTokenReady(true); // Continuer même sans token
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('[Auth] ❌ Échec de l\'authentification post-paiement:', errorMessage);
-        // Ne pas bloquer le flux si l'auth échoue - l'utilisateur pourra réessayer plus tard
+        setTokenReady(true); // Continuer même en cas d'erreur
       }
     };
 
@@ -73,24 +78,20 @@ const ConfirmationTemple: React.FC = () => {
   }, [searchParams, orderId]);
   // =================== FIN AUTHENTIFICATION ===================
 
-  // Gestion de la redirection automatique quand l'accès est accordé
+  // Gestion de la redirection automatique quand l'accès est accordé ET le token est prêt
   useEffect(() => {
-    if (accessGranted && orderData) {
+    if (accessGranted && orderData && tokenReady) {
       if (redirectStartedRef.current) return;
       redirectStartedRef.current = true;
-      console.log('[ConfirmationTemple] Accès accordé ! Démarrage du compte à rebours...');
+      console.log('[ConfirmationTemple] Accès accordé et token prêt ! Démarrage du compte à rebours...');
       
-      // Initialiser le contexte utilisateur
+      // Stocker le PaymentIntentId pour l'upload côté Sanctuaire
       try {
-        // Migration: initializeFromPurchase removed - SanctuaireProvider handles initialization
-        console.log('[ConfirmationTemple] Accès accordé, niveau:', derivedLevelName);
-        
-        // Stocker le PaymentIntentId pour l'upload côté Sanctuaire
         if (orderData.paymentIntentId) {
           localStorage.setItem('oraclelumira_last_payment_intent_id', orderData.paymentIntentId);
         }
       } catch (err) {
-        console.error('[ConfirmationTemple] Erreur initialisation:', err);
+        console.error('[ConfirmationTemple] Erreur stockage PI:', err);
       }
 
       // Démarrer le compte à rebours
@@ -100,22 +101,19 @@ const ConfirmationTemple: React.FC = () => {
             clearInterval(countdown);
             stopPolling();
             
-            // Redirection avec paramètres d'auto-login
-            const email = searchParams.get('email');
-            const token = `fv_${Date.now()}`;
-            const pi = orderData.paymentIntentId;
-            const parts: string[] = [];
-            if (email) parts.push(`email=${encodeURIComponent(email)}`);
-            parts.push(`token=${token}`);
-            if (orderId) parts.push(`order_id=${encodeURIComponent(orderId)}`);
-            if (pi) parts.push(`payment_intent=${encodeURIComponent(pi)}`);
-            const qs = parts.length ? `?${parts.join('&')}` : '';
+            // Vérifier que le token est bien présent avant redirection
+            const storedToken = localStorage.getItem('sanctuaire_token');
+            if (!storedToken) {
+              console.error('[Auth] ⚠️ CRITIQUE: Token manquant avant redirection !');
+            }
             
+            // Redirection SIMPLE vers /sanctuaire (sans paramètres inutiles)
+            console.log('[ConfirmationTemple] Redirection vers /sanctuaire...');
             try {
-              navigate(`/sanctuaire${qs}`);
+              navigate('/sanctuaire', { replace: true });
             } catch {
               // Fallback dur en cas d'échec client-side
-              window.location.href = `/sanctuaire${qs}`;
+              window.location.href = '/sanctuaire';
             }
             return 0;
           }
@@ -125,7 +123,7 @@ const ConfirmationTemple: React.FC = () => {
 
       return () => clearInterval(countdown);
     }
-  }, [accessGranted, orderData, orderId, navigate, searchParams, stopPolling, derivedLevelName]);
+  }, [accessGranted, orderData, tokenReady, navigate, stopPolling]);
 
   // Gérer les erreurs
   useEffect(() => {
@@ -140,27 +138,25 @@ const ConfirmationTemple: React.FC = () => {
   const handleGoToSanctuary = () => {
     stopPolling();
     
-    // Redirection avec email et token d'auto-login
-    const email = searchParams.get('email');
-    const token = `fv_${Date.now()}`;
-    const pi = orderData?.paymentIntentId;
-    const parts: string[] = [];
-    if (email) parts.push(`email=${encodeURIComponent(email)}`);
-    parts.push(`token=${token}`);
-    if (orderId) parts.push(`order_id=${encodeURIComponent(orderId)}`);
-    if (pi) parts.push(`payment_intent=${encodeURIComponent(pi)}`);
-    const qs = parts.length ? `?${parts.join('&')}` : '';
+    // Vérifier que le token est présent
+    const storedToken = localStorage.getItem('sanctuaire_token');
+    if (!storedToken) {
+      console.error('[Auth] ⚠️ Token manquant lors du clic manuel !');
+    }
     
     // Stocker PI pour robustesse
-    try { 
-      if (pi) localStorage.setItem('oraclelumira_last_payment_intent_id', pi); 
-    } catch {}
+    const pi = orderData?.paymentIntentId;
+    if (pi) {
+      try { 
+        localStorage.setItem('oraclelumira_last_payment_intent_id', pi); 
+      } catch {}
+    }
     
+    // Redirection simple
     try {
-      navigate(`/sanctuaire${qs}`);
+      navigate('/sanctuaire', { replace: true });
     } catch {
-      // Fallback dur en cas d'échec client-side
-      window.location.href = `/sanctuaire${qs}`;
+      window.location.href = '/sanctuaire';
     }
   };
 
