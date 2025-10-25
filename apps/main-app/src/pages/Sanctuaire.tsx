@@ -14,6 +14,7 @@ import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
 import { useSanctuaire } from '../contexts/SanctuaireContext';
 import { CapabilityGuard, LockedCard } from '../components/auth/CapabilityGuard';
+import LoadingScreen from '../components/ui/LoadingScreen';
 
 const ProfileIcon: React.FC = () => {
   const navigate = useNavigate();
@@ -485,11 +486,9 @@ const ContextualHint: React.FC = () => {
 };
 
 const Sanctuaire: React.FC = () => {
-  const { user, profile } = useSanctuaire();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
   const {
+    user,
+    profile,
     isAuthenticated,
     isLoading,
     authenticateWithEmail,
@@ -497,6 +496,9 @@ const Sanctuaire: React.FC = () => {
     lastAuthError,
     clearAuthError,
   } = useSanctuaire();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [cooldownRemainingMs, setCooldownRemainingMs] = React.useState(0);
   const cooldownActive = authCooldownUntil ? authCooldownUntil > Date.now() : false;
   const cooldownSeconds = Math.max(0, Math.ceil(cooldownRemainingMs / 1000));
@@ -597,6 +599,13 @@ const Sanctuaire: React.FC = () => {
     }
   }, [isAuthenticated, isLoading, navigate, searchParams]);
 
+  // =================== PROTECTION CRITIQUE : ATTENTE DU CONTEXTE ===================
+  // Éviter le crash "useSanctuaire doit être utilisé à l'intérieur de SanctuaireProvider"
+  // en attendant que le contexte soit complètement initialisé avant de rendre les enfants
+  if (isLoading) {
+    return <LoadingScreen type="cosmic" message="Initialisation du Sanctuaire..." />;
+  }
+  
   const progress = 0; // Calcul du progrès basé sur le profil
   const isHome = location.pathname === '/sanctuaire' || location.pathname === '/sanctuaire/dashboard';
   return (

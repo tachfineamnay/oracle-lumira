@@ -350,20 +350,37 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   
   useEffect(() => {
     if (!isLoadingUserData && !initialStepSet) {
-      // Si les infos de base sont déjà remplies (email, nom, téléphone),
-      // sauter l'Étape 0 (Bienvenue) et commencer directement à l'Étape 1 (Naissance)
-      const hasBasicInfo = !!(userData.email && userData.firstName && userData.phone);
+      // LOGIQUE CORRIGÉE : Détecter les étapes complétées pour positionner le Stepper correctement
+      const hasBasicInfo = !!(userData.email && userData.firstName);
+      const hasBirthInfo = !!(formData.birthDate && formData.birthTime && formData.birthPlace);
+      const hasIntentionInfo = !!(formData.specificQuestion && formData.objective);
+      
+      // Déterminer l'étape de démarrage en fonction des données complétées
+      let startStep: 0 | 1 | 2 | 3 = 0;
       
       if (hasBasicInfo) {
-        console.log('✨ [OnboardingForm] Infos de base détectées → Démarrage à l\'Étape 2/4 (Naissance)');
-        setCurrentStep(1);
-      } else {
-        console.log('ℹ️ [OnboardingForm] Pas d\'infos de base → Démarrage à l\'Étape 1/4 (Bienvenue)');
+        startStep = 1; // Sauter Bienvenue, commencer à Naissance (Étape 2/4)
+        console.log('✨ [OnboardingForm] Infos de base présentes → Démarrage à l\'Étape 2/4 (Naissance)');
       }
       
+      if (hasBasicInfo && hasBirthInfo) {
+        startStep = 2; // Commencer à Intention (Étape 3/4)
+        console.log('✨ [OnboardingForm] Naissance complétée → Démarrage à l\'Étape 3/4 (Intention)');
+      }
+      
+      if (hasBasicInfo && hasBirthInfo && hasIntentionInfo) {
+        startStep = 3; // Commencer à Photos (Étape 4/4)
+        console.log('✨ [OnboardingForm] Intention complétée → Démarrage à l\'Étape 4/4 (Photos)');
+      }
+      
+      if (!hasBasicInfo) {
+        console.log('ℹ️ [OnboardingForm] Profil vide → Démarrage à l\'Étape 1/4 (Bienvenue)');
+      }
+      
+      setCurrentStep(startStep);
       setInitialStepSet(true);
     }
-  }, [isLoadingUserData, userData, initialStepSet]);
+  }, [isLoadingUserData, userData, formData.birthDate, formData.birthTime, formData.birthPlace, formData.specificQuestion, formData.objective, initialStepSet]);
   
   // =================== VALIDATION PAR ÉTAPE ===================
   
