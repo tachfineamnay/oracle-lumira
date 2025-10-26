@@ -274,8 +274,39 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
     
     // PASSAGE 8 - P0 : Traiter aussi les ProductOrders
     for (const productOrder of productOrders) {
-      // ProductOrder a le niveau dans metadata.level
-      const level = productOrder.metadata?.level || 1;
+      // PASSAGE 10 - P0 : ProductOrder.metadata.level peut être string ("initie") ou number
+      console.log('🔍 [INVESTIGATION 1] ProductOrder metadata:', productOrder.metadata);
+      
+      let level = 1; // Défaut
+      
+      // Si metadata.level est un nombre, l'utiliser directement
+      if (typeof productOrder.metadata?.level === 'number') {
+        level = productOrder.metadata.level;
+      }
+      // Si metadata.level est une string, mapper vers nombre
+      else if (typeof productOrder.metadata?.level === 'string') {
+        const levelMap: Record<string, number> = {
+          'initie': 1,
+          'mystique': 2,
+          'profond': 3,
+          'integrale': 4
+        };
+        const levelKey = productOrder.metadata.level.toLowerCase();
+        level = levelMap[levelKey] || 1;
+      }
+      // Sinon, essayer de déduire depuis productId
+      else if (productOrder.productId) {
+        const levelMap: Record<string, number> = {
+          'initie': 1,
+          'mystique': 2,
+          'profond': 3,
+          'integrale': 4
+        };
+        const levelKey = productOrder.productId.toLowerCase();
+        level = levelMap[levelKey] || 1;
+      }
+      
+      console.log('🔍 [INVESTIGATION 1] ProductOrder level calculé:', level);
       highestLevel = Math.max(highestLevel, level);
       
       const products = getGrantedProductsByLevel(level);
@@ -396,14 +427,19 @@ router.patch('/profile', authenticateSanctuaire, async (req: any, res: any) => {
       profileUpdates.submittedAt = new Date();
     }
     
+    // PASSAGE 10 - P0 : Utiliser $set avec des clés spécifiques au lieu d'écraser tout le profil
+    const setFields: any = { updatedAt: new Date() };
+    
+    // Appliquer chaque champ individuellement avec la notation pointillée
+    Object.keys(profileUpdates).forEach(key => {
+      setFields[`profile.${key}`] = profileUpdates[key];
+    });
+    
+    console.log('[PROFILE] PATCH avec $set:', setFields);
+    
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { 
-        $set: { 
-          profile: profileUpdates
-        },
-        updatedAt: new Date()
-      },
+      { $set: setFields },
       { new: true, runValidators: false }
     ).select('email firstName lastName phone profile');
     
