@@ -468,23 +468,13 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     clearAuthError,
   };
 
+  // INVESTIGATION 2 - P0 CRITIQUE : CONTEXT GUARD STRUCTUREL FINAL
+  // Le Provider DOIT TOUJOURS fournir le contexte, même pendant loading ou sans auth
+  // Les enfants (Sanctuaire.tsx) géreront eux-mêmes la redirection si !isAuthenticated
+  // NE PAS bloquer le rendu des children ici, sinon useSanctuaire() ne sera jamais callable
   return (
     <SanctuaireContext.Provider value={value}>
-      {/* INVESTIGATION 2 - P0 CRITIQUE : CONTEXT GUARD STRUCTUREL */}
-      {/* Si isLoading, afficher loading pour éviter le flash de contenu */}
-      {isLoading ? (
-        <div className="min-h-screen flex items-center justify-center bg-cosmic-void">
-          <div className="text-center space-y-4">
-            <div className="w-12 h-12 border-4 border-mystical-gold border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-white/70">Initialisation du Sanctuaire...</p>
-          </div>
-        </div>
-      ) : (
-        // Si pas de token après le loading, ne PAS rendre les children
-        // Ceci évite le crash "useSanctuaire doit être utilisé à l'intérieur de SanctuaireProvider"
-        // car les children utilisent useSanctuaire() sans contexte valide
-        children
-      )}
+      {children}
     </SanctuaireContext.Provider>
   );
 };

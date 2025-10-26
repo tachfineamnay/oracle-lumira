@@ -166,7 +166,11 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
 
     if (!user) {
       console.log('🔍 [INVESTIGATION 1] User non trouvé, recherche dernière commande...');
-      const latestOrder = await Order.findOne({
+      
+      // INVESTIGATION 1 - P0 : Recherche avec tolérance pour race condition webhook
+      // On cherche d'abord les commandes finalisées (paid, completed)
+      // Si aucune, on cherche les commandes en attente (pending) pour le flux post-paiement immédiat
+      let latestOrder = await Order.findOne({
         $or: [
           { userEmail: lowerEmail },
           { 'checkout.customer.email': lowerEmail },
@@ -177,11 +181,35 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
         .sort({ createdAt: -1 })
         .lean();
       
-      console.log('🔍 [INVESTIGATION 1] Dernière commande trouvée:', latestOrder ? `ID: ${(latestOrder as any)._id}` : 'NON');
+      console.log('🔍 [INVESTIGATION 1] Commande finalisée trouvée:', latestOrder ? `ID: ${(latestOrder as any)._id}` : 'NON');
+      
+      // Si aucune commande finalisée, chercher dans les commandes pending (race condition)
+      if (!latestOrder) {
+        console.log('🔍 [INVESTIGATION 1] Recherche commande pending (race condition webhook)...');
+        latestOrder = await Order.findOne({
+          $or: [
+            { userEmail: lowerEmail },
+            { 'checkout.customer.email': lowerEmail },
+            { 'formData.email': lowerEmail },
+          ],
+          status: 'pending',
+        })
+          .sort({ createdAt: -1 })
+          .lean();
+        
+        console.log('🔍 [INVESTIGATION 1] Commande pending trouvée:', latestOrder ? `ID: ${(latestOrder as any)._id}` : 'NON');
+      }
 
       if (!latestOrder) {
-        console.log('❌ [INVESTIGATION 1] CAUSE DU 404: Aucune commande trouvée pour', lowerEmail);
-        return res.status(404).json({ error: 'Utilisateur non trouve' });
+        console.log('❌ [INVESTIGATION 1] CAUSE DU 404→401: Aucune commande trouvée pour', lowerEmail);
+        // INVESTIGATION 1 - P0 CRITIQUE : Correction sémantique HTTP
+        // 404 (Not Found) est incorrect ici car l'email existe (utilisé pour le paiement)
+        // 401 (Unauthorized) est correct : l'utilisateur n'est pas autorisé car paiement non finalisé
+        // Ceci résout le race condition : le webhook n'a pas encore créé la commande
+        return res.status(401).json({ 
+          error: 'Authentification refusée',
+          message: 'Email ou paiement non finalisé. Si vous venez de payer, veuillez patienter quelques secondes et réessayer.'
+        });
       }
 
       const formData = (latestOrder as any).formData || {};
