@@ -274,15 +274,34 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   };
   
   // =================== CHARGEMENT PAYMENT INTENT ===================
+  // PASSAGE 6 - P0 : CORRECTION CLÉ LOCALSTORAGE
+  // La clé doit correspondre à celle définie dans ConfirmationTempleSPA.tsx ligne 102
   
   useEffect(() => {
-    const storedPI = localStorage.getItem('last_payment_intent_id');
+    // 1. Priorité : localStorage (défini par ConfirmationTempleSPA)
+    const storedPI = localStorage.getItem('oraclelumira_last_payment_intent_id');
     if (storedPI) {
+      console.log('✅ [OnboardingForm] PaymentIntentId chargé depuis localStorage:', storedPI);
       setPaymentIntentId(storedPI);
+      return;
+    }
+    
+    // 2. Fallback : URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlPI = urlParams.get('payment_intent');
+    if (urlPI) {
+      console.log('✅ [OnboardingForm] PaymentIntentId chargé depuis URL:', urlPI);
+      setPaymentIntentId(urlPI);
+      return;
+    }
+    
+    // 3. Dernier fallback : sessionStorage (ancien code)
+    const sessionPI = sessionStorage.getItem('sanctuaire_email');
+    if (sessionPI) {
+      console.log('⚠️ [OnboardingForm] PaymentIntentId depuis sessionStorage (legacy):', sessionPI);
+      // Note: ceci ne devrait pas arriver car sessionStorage stocke l'email, pas le PI
     } else {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlPI = urlParams.get('payment_intent');
-      if (urlPI) setPaymentIntentId(urlPI);
+      console.warn('❌ [OnboardingForm] Aucun PaymentIntentId trouvé !');
     }
   }, []);
   
@@ -617,7 +636,8 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       });
       
       sessionStorage.removeItem('first_visit');
-      localStorage.removeItem('last_payment_intent_id');
+      // PASSAGE 6 - P0 : Nettoyer la CLÉ CORRECTE du localStorage
+      localStorage.removeItem('oraclelumira_last_payment_intent_id');
       if (onComplete) onComplete();
     } catch (e: any) {
       console.error('❌ [OnboardingForm] Une erreur est survenue durant le processus de soumission final:', e);
