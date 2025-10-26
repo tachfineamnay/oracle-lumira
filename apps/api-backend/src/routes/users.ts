@@ -588,8 +588,6 @@ router.get('/:id([0-9a-fA-F]{24})/stats', authenticateToken, requireRole(['admin
   }
 });
 
-export { router as userRoutes };
-
 // ===== Sanctuaire file presign endpoint (private S3 access) =====
 // GET /api/users/files/presign?url=... or ?key=uploads/..
 router.get('/files/presign', async (req: any, res: any) => {
