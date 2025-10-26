@@ -155,13 +155,17 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
   try {
     const { email } = req.body || {};
     if (!email) {
+      console.log('❌ [INVESTIGATION 1] Email manquant dans le body');
       return res.status(400).json({ error: 'Email requis' });
     }
 
     const lowerEmail = String(email).toLowerCase();
+    console.log('🔍 [INVESTIGATION 1] Recherche user pour:', lowerEmail);
     let user = await User.findOne({ email: lowerEmail });
+    console.log('🔍 [INVESTIGATION 1] User trouvé:', user ? `ID: ${user._id}` : 'NON');
 
     if (!user) {
+      console.log('🔍 [INVESTIGATION 1] User non trouvé, recherche dernière commande...');
       const latestOrder = await Order.findOne({
         $or: [
           { userEmail: lowerEmail },
@@ -172,8 +176,11 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
       })
         .sort({ createdAt: -1 })
         .lean();
+      
+      console.log('🔍 [INVESTIGATION 1] Dernière commande trouvée:', latestOrder ? `ID: ${(latestOrder as any)._id}` : 'NON');
 
       if (!latestOrder) {
+        console.log('❌ [INVESTIGATION 1] CAUSE DU 404: Aucune commande trouvée pour', lowerEmail);
         return res.status(404).json({ error: 'Utilisateur non trouve' });
       }
 
@@ -230,6 +237,9 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
       { expiresIn: '24h' }
     );
 
+    console.log('✅ [INVESTIGATION 1] Token généré avec succès pour:', user.email);
+    console.log('✅ [INVESTIGATION 1] Niveau:', highestLevel, '| Produits:', Array.from(grantedProducts));
+
     res.json({
       success: true,
       token,
@@ -244,7 +254,7 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
       products: Array.from(grantedProducts),
     });
   } catch (error) {
-    console.error('Sanctuaire auth v2 error:', error);
+    console.error('❌ [INVESTIGATION 1] Erreur dans sanctuaire-v2:', error);
     res.status(500).json({ error: 'Erreur authentification sanctuaire' });
   }
 });
