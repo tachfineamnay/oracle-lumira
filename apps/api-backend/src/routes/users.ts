@@ -692,3 +692,6 @@ router.get('/files/presign', async (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to generate signed URL' });
   }
 });
+
+// EXPORT CRITIQUE : Sans cet export, le routeur n'est jamais monté dans server.ts
+export { router as userRoutes };
