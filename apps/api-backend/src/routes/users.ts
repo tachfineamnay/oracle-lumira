@@ -146,7 +146,12 @@ router.post('/auth/sanctuaire', async (req: any, res: any) => {
 });
 
 // Auth Sanctuaire v2: unified Order-based access
+// INVESTIGATION 1 - P0 : Logs de debug pour confirmer si la route est atteinte
 router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
+  console.log('🔍 [INVESTIGATION 1] Route /auth/sanctuaire-v2 ATTEINTE !');
+  console.log('🔍 [INVESTIGATION 1] Email reçu:', req.body?.email);
+  console.log('🔍 [INVESTIGATION 1] Method:', req.method, '| Path:', req.path);
+  
   try {
     const { email } = req.body || {};
     if (!email) {
