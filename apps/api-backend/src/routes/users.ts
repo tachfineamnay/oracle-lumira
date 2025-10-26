@@ -1,6 +1,7 @@
 import express from 'express';
 import { User } from '../models/User';
 import { Order } from '../models/Order';
+import { ProductOrder } from '../models/ProductOrder'; // PASSAGE 8 - P0
 import { authenticateToken, requireRole } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import { getS3Service } from '../services/s3';
@@ -226,6 +227,8 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
     // CORRECTION CRITIQUE : Assouplir la vérification pour accepter les commandes en transition
     // Les webhooks Stripe peuvent prendre quelques secondes pour mettre à jour le statut final
     // On autorise donc : 'paid' (paiement reçu), 'processing' (en traitement), et 'completed'
+    console.log('🔍 [INVESTIGATION 1] Recherche commandes pour userId:', user._id, '| email:', lowerEmail);
+    
     const accessibleOrders = await Order.find({
       $or: [
         { userId: user._id },
@@ -235,21 +238,45 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
       ],
       status: { $in: ['paid', 'processing', 'completed'] },
     });
+    
+    console.log('🔍 [INVESTIGATION 1] Orders trouvées dans collection Order:', accessibleOrders.length);
 
-    if (accessibleOrders.length === 0) {
+    // PASSAGE 8 - P0 : CHERCHER AUSSI DANS PRODUCTORDER
+    const productOrders = await ProductOrder.find({
+      userEmail: lowerEmail,
+      status: { $in: ['paid', 'processing', 'completed'] },
+    });
+    
+    console.log('🔍 [INVESTIGATION 1] ProductOrders trouvées:', productOrders.length);
+
+    if (accessibleOrders.length === 0 && productOrders.length === 0) {
+      console.log('❌ [INVESTIGATION 1] Aucune commande trouvée dans Order NI ProductOrder');
       return res.status(403).json({
         error: 'Aucune commande trouvee',
         message: 'Vous devez avoir au moins une commande validée pour accéder au sanctuaire. Si vous venez de payer, veuillez patienter quelques instants.',
       });
     }
+    
+    console.log('✅ [INVESTIGATION 1] Commandes trouvées ! Orders:', accessibleOrders.length, '| ProductOrders:', productOrders.length);
 
     let highestLevel = 0;
     const grantedProducts = new Set<string>();
 
+    // Traiter les Orders
     for (const order of accessibleOrders) {
       const level = resolveLevelFromOrder(order);
       highestLevel = Math.max(highestLevel, level);
 
+      const products = getGrantedProductsByLevel(level);
+      products.forEach((productId: string) => grantedProducts.add(productId));
+    }
+    
+    // PASSAGE 8 - P0 : Traiter aussi les ProductOrders
+    for (const productOrder of productOrders) {
+      // ProductOrder a le niveau dans metadata.level
+      const level = productOrder.metadata?.level || 1;
+      highestLevel = Math.max(highestLevel, level);
+      
       const products = getGrantedProductsByLevel(level);
       products.forEach((productId: string) => grantedProducts.add(productId));
     }
