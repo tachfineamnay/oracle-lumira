@@ -137,9 +137,17 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: a
       case 'payment_intent.canceled':
         await handlePaymentCanceled(event.data.object);
         break;
+      
+      // PHASE 3 - P3 : Réduire le bruit de log pour événements non critiques
+      case 'payment_intent.created':
+      case 'charge.succeeded':
+      case 'charge.updated':
+        // Événements informatifs uniquement - pas d'action requise
+        console.debug(`[Stripe Webhook] Événement ignoré: ${event.type}`);
+        break;
         
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.warn(`[Stripe Webhook] ⚠️ Type d'événement non géré: ${event.type}`);
     }
     
     res.json({ received: true });

@@ -101,21 +101,40 @@ class SanctuaireService {
 
   /**
    * Authentification sanctuaire avec email
+   * PHASE 3 - P2 : Gestion d'erreur améliorée pour distinguer 404 (route) vs 401/403 (auth)
    */
   async authenticateWithEmail(email: string): Promise<{ token: string; user: SanctuaireUser }> {
-    // Use v2 which accepts paid orders and completed product orders
-    const response = await apiRequest<{ success: boolean; token: string; user: SanctuaireUser }>('/users/auth/sanctuaire-v2', {
-      method: 'POST',
-      body: JSON.stringify({ email })
-    });
+    try {
+      // Use v2 which accepts paid orders and completed product orders
+      const response = await apiRequest<{ success: boolean; token: string; user: SanctuaireUser }>('/users/auth/sanctuaire-v2', {
+        method: 'POST',
+        body: JSON.stringify({ email })
+      });
 
-    if (response.success) {
-      this.token = response.token;
-      localStorage.setItem('sanctuaire_token', response.token);
-      return { token: response.token, user: response.user };
+      if (response.success) {
+        this.token = response.token;
+        localStorage.setItem('sanctuaire_token', response.token);
+        return { token: response.token, user: response.user };
+      }
+
+      throw new Error('Authentification échouée');
+    } catch (error: any) {
+      // PHASE 3 - P2 : Interception 404 = problème infrastructure, pas utilisateur
+      if (error.status === 404 || error.message?.includes('404')) {
+        throw new Error(
+          '⚠️ Erreur de connexion API: La route d\'authentification est introuvable. ' +
+          'Veuillez contacter le support technique.'
+        );
+      }
+      
+      // 401/403 = problème d'authentification légitime
+      if (error.status === 401 || error.status === 403) {
+        throw new Error(error.message || 'Utilisateur non trouvé ou accès refusé');
+      }
+      
+      // Autres erreurs
+      throw error;
     }
-
-    throw new Error('Authentification échouée');
   }
 
   /**

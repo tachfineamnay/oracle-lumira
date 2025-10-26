@@ -489,8 +489,13 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
 export const useSanctuaire = (): SanctuaireContextValue => {
   const context = useContext(SanctuaireContext);
   
+  // PHASE 2 - CORRECTION P0 : Message d'erreur explicite pour débogage
   if (context === undefined) {
-    throw new Error('useSanctuaire doit être utilisé à l\'intérieur de SanctuaireProvider');
+    throw new Error(
+      '❌ ERREUR CRITIQUE P0: useSanctuaire doit être utilisé à l\'intérieur de SanctuaireProvider. ' +
+      'Vérifiez que le composant parent est bien enveloppé dans <SanctuaireProvider>. ' +
+      'Cette erreur indique un problème de structure React, pas un problème d\'authentification.'
+    );
   }
   
   return context;
