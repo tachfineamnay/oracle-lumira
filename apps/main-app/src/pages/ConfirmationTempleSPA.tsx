@@ -37,8 +37,10 @@ const ConfirmationTemple: React.FC = () => {
   const derivedLevelName = orderData ? getLevelNameSafely(orderData.level) : 'Simple';
 
   // =================== AUTHENTIFICATION POST-PAIEMENT ===================
+  // PASSAGE 7 - P0 : RÉ-AUTHENTIFICATION QUAND ACCÈS ACCORDÉ
   // Obtenir un token valide dès l'arrivée sur la page de confirmation
   const [tokenReady, setTokenReady] = useState(false);
+  const [authAttempted, setAuthAttempted] = useState(false);
   
   useEffect(() => {
     const attemptAuth = async () => {
@@ -47,6 +49,7 @@ const ConfirmationTemple: React.FC = () => {
         if (!email) {
           console.warn('[Auth] Pas d\'email dans l\'URL, impossible de s\'authentifier');
           setTokenReady(true); // Continuer sans token si pas d'email
+          setAuthAttempted(true);
           return;
         }
 
@@ -63,19 +66,63 @@ const ConfirmationTemple: React.FC = () => {
           setTokenReady(true);
         } else {
           console.error('[Auth] ❌ Réponse API sans token:', response);
-          setTokenReady(true); // Continuer même sans token
+          setTokenReady(false); // PASSAGE 7 : NE PAS continuer sans token
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('[Auth] ❌ Échec de l\'authentification post-paiement:', errorMessage);
-        setTokenReady(true); // Continuer même en cas d'erreur
+        // PASSAGE 7 - P0 : Si erreur 403/401, c'est probablement un race condition
+        // On va réessayer quand accessGranted devient true
+        setTokenReady(false);
+      } finally {
+        setAuthAttempted(true);
       }
     };
 
-    if (orderId) {
+    if (orderId && !authAttempted) {
       attemptAuth();
     }
-  }, [searchParams, orderId]);
+  }, [searchParams, orderId, authAttempted]);
+  
+  // PASSAGE 7 - P0 : RÉ-AUTHENTIFICATION quand accès accordé mais pas de token
+  useEffect(() => {
+    const retryAuth = async () => {
+      const email = searchParams.get('email');
+      if (!email) {
+        console.warn('[Auth-Retry] Pas d\'email pour réessayer l\'auth');
+        setTokenReady(true); // Continuer quand même
+        return;
+      }
+      
+      try {
+        console.log('[Auth-Retry] 🔄 Ré-authentification après accès accordé...');
+        const response = await apiRequest<{ token: string }>('/users/auth/sanctuaire-v2', {
+          method: 'POST',
+          body: JSON.stringify({ email })
+        });
+        
+        if (response && response.token) {
+          const { token } = response;
+          localStorage.setItem('sanctuaire_token', token);
+          sessionStorage.setItem('sanctuaire_email', email);
+          console.log('[Auth-Retry] ✅ Token obtenu avec succès après retry !');
+          setTokenReady(true);
+        } else {
+          console.error('[Auth-Retry] ❌ Toujours pas de token après retry');
+          setTokenReady(true); // Continuer quand même pour éviter blocage
+        }
+      } catch (error) {
+        console.error('[Auth-Retry] ❌ Erreur lors du retry:', error);
+        setTokenReady(true); // Continuer quand même
+      }
+    };
+    
+    // Si accès accordé mais pas de token, réessayer l'auth
+    if (accessGranted && !tokenReady && authAttempted) {
+      console.log('[Auth-Retry] Accès accordé détecté mais pas de token, retry...');
+      retryAuth();
+    }
+  }, [accessGranted, tokenReady, authAttempted, searchParams]);
   // =================== FIN AUTHENTIFICATION ===================
 
   // Gestion de la redirection automatique quand l'accès est accordé ET le token est prêt
@@ -90,8 +137,14 @@ const ConfirmationTemple: React.FC = () => {
         if (orderData.paymentIntentId) {
           localStorage.setItem('oraclelumira_last_payment_intent_id', orderData.paymentIntentId);
         }
+        // PASSAGE 7 - P0 : Stocker l'email pour les retries automatiques dans Sanctuaire.tsx
+        const email = searchParams.get('email');
+        if (email) {
+          sessionStorage.setItem('sanctuaire_email', email);
+          console.log('[ConfirmationTemple] Email stocké pour retries:', email);
+        }
       } catch (err) {
-        console.error('[ConfirmationTemple] Erreur stockage PI:', err);
+        console.error('[ConfirmationTemple] Erreur stockage PI/email:', err);
       }
 
       // Démarrer le compte à rebours
@@ -154,6 +207,14 @@ const ConfirmationTemple: React.FC = () => {
     if (pi) {
       try { 
         localStorage.setItem('oraclelumira_last_payment_intent_id', pi); 
+      } catch {}
+    }
+    
+    // PASSAGE 7 - P0 : Stocker email pour retries
+    const email = searchParams.get('email');
+    if (email) {
+      try {
+        sessionStorage.setItem('sanctuaire_email', email);
       } catch {}
     }
     
