@@ -242,8 +242,9 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
     console.log('🔍 [INVESTIGATION 1] Orders trouvées dans collection Order:', accessibleOrders.length);
 
     // PASSAGE 8 - P0 : CHERCHER AUSSI DANS PRODUCTORDER
+    // PASSAGE 9 - P0 CRITIQUE : Utiliser customerEmail au lieu de userEmail !
     const productOrders = await ProductOrder.find({
-      userEmail: lowerEmail,
+      customerEmail: lowerEmail, // ✅ CORRIGÉ : customerEmail est le bon champ
       status: { $in: ['paid', 'processing', 'completed'] },
     });
     
