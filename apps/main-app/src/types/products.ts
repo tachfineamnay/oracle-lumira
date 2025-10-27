@@ -8,10 +8,12 @@ export interface Product {
   currency: string;
   level: 'initie' | 'mystique' | 'profond' | 'integrale';
   features: string[];
+  limitedOffer?: string;  // PASSAGE 26: Message offre limitee (ex: "100 premiers clients")
   metadata: {
     duration?: string;
     access?: string[];
     bonus?: string[];
+    comingSoon?: boolean;  // Pour niveau 4
   };
 }
 
@@ -70,6 +72,8 @@ export interface PaymentRequestButtonOptions {
 }
 
 // Temporary local catalog for UI defaults (prices as display strings)
+// IMPORTANT: Les prix DOIVENT etre charges depuis l'API (/api/products)
+// Ce catalog est un FALLBACK uniquement si l'API est indisponible
 export const PRODUCT_CATALOG: Record<string, Omit<Product, 'amountCents'> & { price: string }> = {
   initie: {
     id: 'initie',
@@ -78,6 +82,7 @@ export const PRODUCT_CATALOG: Record<string, Omit<Product, 'amountCents'> & { pr
     price: 'Gratuit',
     currency: 'eur',
     level: 'initie',
+    limitedOffer: '✨ Valable pour les 100 premiers clients',  // PASSAGE 26
     features: [
       'Lecture spirituelle PDF personnalisée',
       'Analyse complète de votre thème',
@@ -133,7 +138,7 @@ export const PRODUCT_CATALOG: Record<string, Omit<Product, 'amountCents'> & { pr
   integrale: {
     id: 'integrale',
     name: 'Niveau Intégral',
-    description: 'Transformation complète avec rituels personnalisés (Bientôt disponible)',
+    description: 'Transformation complète avec rituels personnalisés',
     price: 'Bientôt',
     currency: 'eur',
     level: 'integrale',
@@ -147,6 +152,7 @@ export const PRODUCT_CATALOG: Record<string, Omit<Product, 'amountCents'> & { pr
       duration: 'Illimité',
       access: ['pdf', 'audio', 'mandala', 'rituals'],
       bonus: ['ritual-kit', 'lunar-calendar'],
+      comingSoon: true,
     },
   },
 };

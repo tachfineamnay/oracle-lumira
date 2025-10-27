@@ -5,6 +5,7 @@ interface ProductSummaryHeaderProps {
   name: string;
   amount: number;
   features: string[];
+  limitedOffer?: string;  // PASSAGE 26: Message offre limitee
 }
 
 /**
@@ -20,8 +21,9 @@ export const ProductSummaryHeader = ({
   name,
   amount,
   features,
+  limitedOffer,  // PASSAGE 26
 }: ProductSummaryHeaderProps) => {
-  const formattedPrice = (amount / 100).toFixed(2);
+  const formattedPrice = amount === 0 ? 'Gratuit' : `${(amount / 100).toFixed(2)} €`;  // PASSAGE 26
 
   return (
     <motion.div
@@ -58,9 +60,15 @@ export const ProductSummaryHeader = ({
           
           <div className="text-right">
             <div className="text-3xl font-bold text-mystical-gold tracking-tight">
-              {formattedPrice} €
+              {formattedPrice}
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">TTC</p>
+            {amount === 0 ? (
+              <p className="text-xs text-mystical-gold/80 mt-1 font-medium">
+                {limitedOffer || '✨ Offre spéciale'}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-0.5">TTC</p>
+            )}
           </div>
         </div>
 

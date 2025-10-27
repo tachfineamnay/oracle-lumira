@@ -114,6 +114,7 @@ interface UnifiedCheckoutFormProps {
   productName: string;
   amountCents: number;
   features: string[];
+  limitedOffer?: string;  // PASSAGE 26: Message offre limitee
   onSuccess: (orderId: string, email: string) => void;
 }
 
@@ -333,6 +334,7 @@ export const UnifiedCheckoutForm = ({
   productName,
   amountCents,
   features,
+  limitedOffer,  // PASSAGE 26
   onSuccess,
 }: UnifiedCheckoutFormProps) => {
   // PaymentIntent state
@@ -519,6 +521,7 @@ export const UnifiedCheckoutForm = ({
         name={productName}
         amount={amountCents}
         features={features}
+        limitedOffer={limitedOffer}  // PASSAGE 26
       />
 
       {/* Express Payment Section (Priority) */}

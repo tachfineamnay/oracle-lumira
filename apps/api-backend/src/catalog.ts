@@ -9,6 +9,7 @@ export interface Product {
   currency: string;
   level: 'initie' | 'mystique' | 'profond' | 'integrale';
   features: string[];
+  limitedOffer?: string;  // PASSAGE 26: Message offre limitee
   metadata: {
     duration?: string;
     access?: string[];
@@ -25,6 +26,7 @@ export const PRODUCT_CATALOG: Record<string, Product> = {
     amountCents: 0, // GRATUIT - MVP
     currency: 'eur',
     level: 'initie',
+    limitedOffer: '✨ Valable pour les 100 premiers clients',  // PASSAGE 26
     features: [
       'Lecture spirituelle PDF personnalisée',
       'Analyse complète de votre thème',

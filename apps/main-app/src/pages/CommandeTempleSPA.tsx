@@ -222,6 +222,7 @@ const CommandeTempleSPA = () => {
           productName={product.name}
           amountCents={product.amountCents}
           features={product.features || []}
+          limitedOffer={product.limitedOffer}  // PASSAGE 26
           onSuccess={handlePaymentSuccess}
         />
       </div>
