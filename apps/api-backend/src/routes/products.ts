@@ -113,31 +113,36 @@ router.post(
         const now = new Date();
         const freeOrderId = `free_${startTime}_${Math.random().toString(36).substring(2, 10)}`;
         
-        // Créer ProductOrder
-        const productOrder = new ProductOrder({
-          productId,
-          customerEmail,
-          amount: 0,
-          currency: product.currency,
-          status: 'completed',
-          paymentIntentId: freeOrderId,
-          createdAt: now,
-          updatedAt: now,
-          completedAt: now,
-          metadata: {
-            ...metadata,
-            productName: product.name,
-            level: product.level,
-            requestId,
-            freeProduct: true,
-            customerName: customerName || '',
-            customerPhone: customerPhone || '',
-            customerEmail: customerEmail || '',
-          },
-        });
+        // Créer ProductOrder (ne pas échouer si MongoDB indisponible)
+        try {
+          const productOrder = new ProductOrder({
+            productId,
+            customerEmail,
+            amount: 0,
+            currency: product.currency,
+            status: 'completed',
+            paymentIntentId: freeOrderId,
+            createdAt: now,
+            updatedAt: now,
+            completedAt: now,
+            metadata: {
+              ...metadata,
+              productName: product.name,
+              level: product.level,
+              requestId,
+              freeProduct: true,
+              customerName: customerName || '',
+              customerPhone: customerPhone || '',
+              customerEmail: customerEmail || '',
+            },
+          });
 
-        await productOrder.save();
-        console.log(`[${requestId}] FREE - ProductOrder created:`, freeOrderId);
+          await productOrder.save();
+          console.log(`[${requestId}] FREE - ProductOrder created:`, freeOrderId);
+        } catch (dbError) {
+          console.error(`[${requestId}] FREE - Failed to save ProductOrder (MongoDB issue):`, dbError);
+          // Ne pas bloquer le flow - continuer quand même
+        }
 
         // Créer User et Order automatiquement
         if (customerEmail && customerEmail.includes('@')) {
