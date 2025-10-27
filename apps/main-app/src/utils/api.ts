@@ -48,10 +48,17 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
   };
 
   try {
+    // PASSAGE 18 - DEVOPS : Timeout de 30s pour éviter loading infini
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     const response = await fetch(url, {
       ...options,
       headers,
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -62,6 +69,12 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     return await response.json();
   } catch (error) {
     console.error(`API request failed for ${url}:`, error);
+    
+    // PASSAGE 18 - DEVOPS : Détecter timeout
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new ApiError(408, 'La requête a expiré. Vérifiez votre connexion.', null);
+    }
+    
     if (error instanceof ApiError) {
       throw error;
     }
