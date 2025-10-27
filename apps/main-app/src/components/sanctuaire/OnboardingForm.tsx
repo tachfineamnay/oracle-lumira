@@ -388,16 +388,14 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   
   useEffect(() => {
     if (!isLoadingUserData && !initialStepSet) {
-      // LOGIQUE CORRIGÉE : Détecter les étapes complétées pour positionner le Stepper correctement
-      const hasBasicInfo = !!(userData.email && userData.firstName);
+      // PASSAGE 17 - DEVOPS : TOUJOURS démarrer à étape 0 (Bienvenue) pour afficher résumé
+      // Le client DOIT voir ses infos collectées pendant paiement AVANT de continuer
+      // Flow UX : Étape 0 (Résumé) → Étape 1 (Naissance) → Étape 2 (Intention) → Étape 3 (Photos)
+      
       const hasBirthInfo = !!(formData.birthDate && formData.birthTime && formData.birthPlace);
       const hasIntentionInfo = !!(formData.specificQuestion && formData.objective);
       
-      // PASSAGE 13 - P0 : Logs de debug pour diagnostic
       console.log('🔍 [OnboardingForm] Ajustement stepper:', {
-        hasBasicInfo,
-        hasBirthInfo,
-        hasIntentionInfo,
         userData,
         formData: {
           birthDate: formData.birthDate,
@@ -408,34 +406,16 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
         }
       });
       
-      // Déterminer l'étape de démarrage en fonction des données complétées
+      // PASSAGE 17 - DEVOPS : Démarrage TOUJOURS à étape 0 pour afficher résumé paiement
       let startStep: 0 | 1 | 2 | 3 = 0;
       
-      if (hasBasicInfo) {
-        startStep = 1; // Sauter Bienvenue, commencer à Naissance (Étape 2/4)
-        console.log('✨ [OnboardingForm] Infos de base présentes → Démarrage à l\'Étape 2/4 (Naissance)');
-      }
-      
-      if (hasBasicInfo && hasBirthInfo) {
-        startStep = 2; // Commencer à Intention (Étape 3/4)
-        console.log('✨ [OnboardingForm] Naissance complétée → Démarrage à l\'Étape 3/4 (Intention)');
-      }
-      
-      if (hasBasicInfo && hasBirthInfo && hasIntentionInfo) {
-        startStep = 3; // Commencer à Photos (Étape 4/4)
-        console.log('✨ [OnboardingForm] Intention complétée → Démarrage à l\'Étape 4/4 (Photos)');
-      }
-      
-      if (!hasBasicInfo) {
-        console.log('ℹ️ [OnboardingForm] Profil vide → Démarrage à l\'Étape 1/4 (Bienvenue)');
-      }
+      console.log('✨ [OnboardingForm] Démarrage à l\'Étape 1/4 (Bienvenue - Résumé)');
       
       setCurrentStep(startStep);
       setInitialStepSet(true);
     }
-  }, [isLoadingUserData, userData, formData.birthDate, formData.birthTime, formData.birthPlace, formData.specificQuestion, formData.objective, initialStepSet]);
-  // PASSAGE 13 - P0 : userData déjà dans les dépendances (ligne 400), ajout logs debug
-  
+  }, [isLoadingUserData, formData.birthDate, formData.birthTime, formData.birthPlace, formData.specificQuestion, formData.objective, initialStepSet, userData]);
+
   // =================== VALIDATION PAR ÉTAPE ===================
   
   const canProceed = (): boolean => {
