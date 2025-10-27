@@ -709,11 +709,20 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   
   // =================== RENDU ===================
   
+  // PASSAGE 16 - DEVOPS : Afficher loader JUSQU'À chargement complet des données
+  // Ne PAS afficher étape 0 avec userData vide !
   if (isLoadingUserData) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+      >
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-purple-400 animate-spin" />
+          <p className="text-white/80 text-lg">🔍 Chargement de vos informations...</p>
+        </div>
+      </motion.div>
     );
   }
   
@@ -923,44 +932,51 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
 
 // =================== ÉTAPE 0 : BIENVENUE ===================
 
-const Step0Welcome: React.FC<{ userData: UserData }> = ({ userData }) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-    className="space-y-4"
-  >
-    <h3 className="text-xl font-semibold text-amber-400 text-center mb-4">
-      Bienvenue, {userData.firstName} {userData.lastName} !
-    </h3>
+const Step0Welcome: React.FC<{ userData: UserData }> = ({ userData }) => {
+  // PASSAGE 16 - DEVOPS : Fallback si données vides (sécurité)
+  const displayName = userData.firstName && userData.lastName 
+    ? `${userData.firstName} ${userData.lastName}`
+    : 'Client Oracle'; // Fallback si données non chargées
+    
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-4"
+    >
+      <h3 className="text-xl font-semibold text-amber-400 text-center mb-4">
+        Bienvenue, {displayName} !
+      </h3>
 
-    <div className="space-y-3 bg-white/5 border border-white/10 rounded-lg p-4">
-      <div className="flex items-center gap-3">
-        <Mail className="w-5 h-5 text-green-400 flex-shrink-0" />
-        <span className="text-white/80 text-sm flex-1 truncate">{userData.email}</span>
-        <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
-      </div>
-      
-      {userData.phone && (
+      <div className="space-y-3 bg-white/5 border border-white/10 rounded-lg p-4">
         <div className="flex items-center gap-3">
-          <Phone className="w-5 h-5 text-green-400 flex-shrink-0" />
-          <span className="text-white/80 text-sm">{userData.phone}</span>
-          <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+          <Mail className="w-5 h-5 text-green-400 flex-shrink-0" />
+          <span className="text-white/80 text-sm flex-1 truncate">{userData.email || 'Non renseigné'}</span>
+          {userData.email && <Check className="w-4 h-4 text-green-400 flex-shrink-0" />}
         </div>
-      )}
-      
-      <div className="flex items-center gap-3">
-        <User className="w-5 h-5 text-green-400 flex-shrink-0" />
-        <span className="text-white/80 text-sm">{userData.firstName} {userData.lastName}</span>
-        <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+        
+        {userData.phone && (
+          <div className="flex items-center gap-3">
+            <Phone className="w-5 h-5 text-green-400 flex-shrink-0" />
+            <span className="text-white/80 text-sm">{userData.phone}</span>
+            <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+          </div>
+        )}
+        
+        <div className="flex items-center gap-3">
+          <User className="w-5 h-5 text-green-400 flex-shrink-0" />
+          <span className="text-white/80 text-sm">{displayName}</span>
+          {userData.firstName && userData.lastName && <Check className="w-4 h-4 text-green-400 flex-shrink-0" />}
+        </div>
       </div>
-    </div>
 
-    <p className="text-xs text-center text-white/50 pt-2">
-      ✨ Vos informations de base sont enregistrées
-    </p>
-  </motion.div>
-);
+      <p className="text-xs text-center text-white/50 pt-2">
+        ✨ Vos informations de base sont enregistrées
+      </p>
+    </motion.div>
+  );
+};
 
 // =================== ÉTAPE 1 : NAISSANCE ===================
 
