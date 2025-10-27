@@ -20,18 +20,18 @@ export const PRODUCT_CATALOG: Record<string, Product> = {
   initie: {
     id: 'initie',
     name: 'Niveau Initié',
-    description: 'Découverte des mystères fondamentaux',
-    amountCents: 2700, // 27.00 EUR
+    description: 'Découvrez votre lecture spirituelle personnalisée',
+    amountCents: 0, // GRATUIT - MVP
     currency: 'eur',
     level: 'initie',
     features: [
-      'Accès aux enseignements de base',
-      'Méditations guidées',
-      'Support communautaire',
+      'Lecture spirituelle PDF personnalisée',
+      'Analyse complète de votre thème',
+      'Guidance intuitive',
     ],
     metadata: {
-      duration: '3 mois',
-      access: ['basic-content', 'community'],
+      duration: 'Illimité',
+      access: ['pdf'],
       bonus: ['welcome-guide'],
     },
   },
@@ -39,63 +39,62 @@ export const PRODUCT_CATALOG: Record<string, Product> = {
   mystique: {
     id: 'mystique',
     name: 'Niveau Mystique',
-    description: 'Approfondissement des connaissances ésotériques',
+    description: 'Approfondissez votre connaissance spirituelle',
     amountCents: 4700, // 47.00 EUR
     currency: 'eur',
     level: 'mystique',
     features: [
       'Tout le contenu Initié',
-      'Rituels avancés',
-      'Sessions personnalisées',
-      'Accès prioritaire aux événements',
+      'Lecture audio complète (voix sacrée)',
+      'Guidance approfondie',
+      'Support prioritaire',
     ],
     metadata: {
-      duration: '6 mois',
-      access: ['basic-content', 'advanced-content', 'community', 'events'],
-      bonus: ['mystical-tools', 'private-sessions'],
+      duration: 'Illimité',
+      access: ['pdf', 'audio'],
+      bonus: ['audio-meditation'],
     },
   },
 
   profond: {
     id: 'profond',
     name: 'Niveau Profond',
-    description: 'Maîtrise complète des arts mystiques',
+    description: 'Expérience complète avec votre Mandala sacré',
     amountCents: 6700, // 67.00 EUR
     currency: 'eur',
     level: 'profond',
     features: [
-      'Accès illimité à tout le contenu',
-      'Mentorat personnalisé',
-      'Certification Oracle Lumira',
-      'Accès aux archives secrètes',
-      'Groupe élite privé',
+      'Tout le contenu Mystique',
+      'Mandala personnalisé HD',
+      'Support visuel pour méditation',
+      'Guide d\'activation du Mandala',
     ],
     metadata: {
-      duration: '12 mois',
-      access: ['all-content', 'mentoring', 'certification', 'elite-group'],
-      bonus: ['master-certification', 'exclusive-content', 'personal-mentor'],
+      duration: 'Illimité',
+      access: ['pdf', 'audio', 'mandala'],
+      bonus: ['mandala-guide'],
     },
   },
 
   integrale: {
     id: 'integrale',
     name: 'Niveau Intégral',
-    description: 'Expérience complète multidimensionnelle',
-    amountCents: 9700, // 97.00 EUR
+    description: 'Transformation complète avec rituels personnalisés (Bientôt disponible)',
+    amountCents: 9700, // 97.00 EUR (à venir)
     currency: 'eur',
     level: 'integrale',
     features: [
-      "Mission d'âme",
-      'Ligne karmique',
-      'Cycles de vie',
-      'Audio complet',
-      'Mandala personnalisé',
-      'Suivi 30 jours',
+      'Tout le contenu Profond',
+      'Rituels personnalisés audio/vidéo',
+      'Protocoles d\'activation',
+      'Suivi personnalisé 30 jours',
+      'Accès aux cycles lunaires',
     ],
     metadata: {
-      duration: '12 mois',
-      access: ['all-content', 'mentoring', 'certification', 'elite-group'],
-      bonus: ['master-certification', 'exclusive-content', 'personal-mentor'],
+      duration: 'Illimité',
+      access: ['pdf', 'audio', 'mandala', 'rituals'],
+      bonus: ['ritual-kit', 'lunar-calendar', 'personal-support'],
+      comingSoon: true,
     },
   },
 };
