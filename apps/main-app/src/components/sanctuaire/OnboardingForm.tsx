@@ -310,9 +310,57 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // 1️⃣ Tenter useSanctuaire() d'abord
+        // PASSAGE 14 - P0 : INVERSER PRIORITÉ - PaymentIntent metadata d'abord, puis useSanctuaire()
+        
+        // 1️⃣ PRIORITÉ HAUTE : ProductOrder metadata (nom saisi pendant checkout)
+        if (paymentIntentId) {
+          console.log('🔍 [OnboardingForm] Chargement depuis ProductOrder:', paymentIntentId);
+          
+          try {
+            const response = await fetch(`${API_BASE}/orders/${paymentIntentId}`);
+            if (response.ok) {
+              const data = await response.json();
+              console.log('📦 [OnboardingForm] Réponse API reçue:', data);
+              
+              const order = data.order || data;
+              const metadata = order?.metadata || {};
+              
+              console.log('📋 [OnboardingForm] Metadata extraite:', metadata);
+              
+              const customerName = metadata.customerName || '';
+              const nameParts = customerName.split(' ');
+              
+              // ✅ Si metadata contient des données, les utiliser
+              if (metadata.customerEmail) {
+                setUserData({
+                  email: metadata.customerEmail || '',
+                  phone: metadata.customerPhone || '',
+                  firstName: nameParts[0] || '',
+                  lastName: nameParts.slice(1).join(' ') || ''
+                });
+                
+                console.log('✅ [OnboardingForm] Données chargées depuis PaymentIntent metadata:', {
+                  email: metadata.customerEmail,
+                  phone: metadata.customerPhone,
+                  name: customerName
+                });
+                
+                setIsLoadingUserData(false);
+                return; // ✅ SORTIR si données trouvées
+              }
+            }
+          } catch (err) {
+            console.warn('⚠️ [OnboardingForm] Erreur chargement ProductOrder, fallback vers useSanctuaire():', err);
+          }
+        }
+        
+        // 2️⃣ FALLBACK : useSanctuaire() (peut contenir "Client Oracle" par défaut)
         if (user?.email) {
-          console.log('✅ [OnboardingForm] Données depuis useSanctuaire()');
+          console.log('✅ [OnboardingForm] Données depuis useSanctuaire() (fallback):', {
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName
+          });
           setUserData({
             email: user.email,
             firstName: user.firstName || '',
@@ -323,41 +371,12 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
           return;
         }
         
-        // 2️⃣ Fallback : ProductOrder metadata
-        if (paymentIntentId) {
-          console.log('🔍 [OnboardingForm] Chargement depuis ProductOrder:', paymentIntentId);
-          
-          const response = await fetch(`${API_BASE}/orders/${paymentIntentId}`);
-          if (!response.ok) throw new Error('Order not found');
-          
-          const data = await response.json();
-          console.log('📦 [OnboardingForm] Réponse API reçue:', data);
-          
-          // Vérifier la structure de la réponse
-          const order = data.order || data;
-          const metadata = order?.metadata || {};
-          
-          console.log('📋 [OnboardingForm] Metadata extraite:', metadata);
-          
-          const customerName = metadata.customerName || '';
-          const nameParts = customerName.split(' ');
-          
-          setUserData({
-            email: metadata.customerEmail || '',
-            phone: metadata.customerPhone || '',
-            firstName: nameParts[0] || '',
-            lastName: nameParts.slice(1).join(' ') || ''
-          });
-          
-          console.log('✅ [OnboardingForm] Données chargées:', {
-            email: metadata.customerEmail,
-            phone: metadata.customerPhone,
-            name: customerName
-          });
-        }
+        // 3️⃣ DERNIER RECOURS : Données vides
+        console.warn('⚠️ [OnboardingForm] Aucune donnée trouvée');
+        setIsLoadingUserData(false);
+        
       } catch (err) {
         console.error('❌ [OnboardingForm] Erreur chargement données:', err);
-      } finally {
         setIsLoadingUserData(false);
       }
     };
