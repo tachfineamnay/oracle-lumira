@@ -839,9 +839,9 @@ router.get('/:id', async (req: any, res: any) => {
     const { id } = req.params;
     console.log('[GET-ORDER] Recherche commande avec ID:', id);
     
-    // Strategy 1: Try to find by PaymentIntent ID first (pi_xxx format)
+    // Strategy 1: Try to find by PaymentIntent ID first (pi_xxx or free_xxx format)
     let order;
-    if (id.startsWith('pi_')) {
+    if (id.startsWith('pi_') || id.startsWith('free_') || id.startsWith('pi_mock_')) {
       console.log('[GET-ORDER] Détection PaymentIntent ID, recherche par paymentIntentId...');
       order = await Order.findOne({ paymentIntentId: id })
         .populate('userId', 'firstName lastName email phone stripeCustomerId');
