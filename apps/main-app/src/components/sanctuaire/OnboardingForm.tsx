@@ -374,6 +374,21 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       const hasBirthInfo = !!(formData.birthDate && formData.birthTime && formData.birthPlace);
       const hasIntentionInfo = !!(formData.specificQuestion && formData.objective);
       
+      // PASSAGE 13 - P0 : Logs de debug pour diagnostic
+      console.log('🔍 [OnboardingForm] Ajustement stepper:', {
+        hasBasicInfo,
+        hasBirthInfo,
+        hasIntentionInfo,
+        userData,
+        formData: {
+          birthDate: formData.birthDate,
+          birthTime: formData.birthTime,
+          birthPlace: formData.birthPlace,
+          specificQuestion: formData.specificQuestion,
+          objective: formData.objective
+        }
+      });
+      
       // Déterminer l'étape de démarrage en fonction des données complétées
       let startStep: 0 | 1 | 2 | 3 = 0;
       
@@ -400,6 +415,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       setInitialStepSet(true);
     }
   }, [isLoadingUserData, userData, formData.birthDate, formData.birthTime, formData.birthPlace, formData.specificQuestion, formData.objective, initialStepSet]);
+  // PASSAGE 13 - P0 : userData déjà dans les dépendances (ligne 400), ajout logs debug
   
   // =================== VALIDATION PAR ÉTAPE ===================
   
