@@ -521,16 +521,19 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       await refresh(); // ✅ Recharger profile depuis l'API
       console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
-      // PASSAGE 15 - DEVOPS : Nettoyer localStorage APRÈS navigation (pas avant)
+      // PASSAGE 20 - DEVOPS : Naviguer IMMÉDIATEMENT après refresh (pas dans setTimeout)
+      // Pour éviter re-render du OnboardingForm qui reset le stepper à étape 0
       if (onComplete) {
-        onComplete();
-        // ✅ Nettoyer APRÈS navigation pour éviter re-render avec PI null
-        setTimeout(() => {
-          sessionStorage.removeItem('first_visit');
-          localStorage.removeItem('last_payment_intent_id');
-          console.log('🧹 [OnboardingForm] localStorage nettoyé après navigation');
-        }, 100);
+        console.log('🚀 [OnboardingForm] Navigation vers dashboard immédiate...');
+        onComplete();  // ✅ Navigation IMMEDIATE
       }
+      
+      // PASSAGE 20 - DEVOPS : Nettoyer localStorage APRÈS navigation
+      setTimeout(() => {
+        sessionStorage.removeItem('first_visit');
+        localStorage.removeItem('oraclelumira_last_payment_intent_id');
+        console.log('🧹 [OnboardingForm] localStorage nettoyé après navigation');
+      }, 100);
       
     } catch (err: any) {
       console.error('❌ [OnboardingForm] Erreur:', err);
@@ -666,17 +669,18 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       await refresh(); // ✅ Recharger profile depuis l'API
       console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
-      // PASSAGE 15 - DEVOPS : Nettoyer localStorage APRÈS navigation (pas avant)
-      // Ne PAS supprimer ici car refresh() trigger re-render qui recharge paymentIntentId
+      // PASSAGE 20 - DEVOPS : Naviguer IMMÉDIATEMENT après refresh (pas dans setTimeout)
       if (onComplete) {
-        onComplete();
-        // ✅ Nettoyer APRÈS navigation pour éviter re-render avec PI null
-        setTimeout(() => {
-          sessionStorage.removeItem('first_visit');
-          localStorage.removeItem('oraclelumira_last_payment_intent_id');
-          console.log('🧹 [OnboardingForm] localStorage nettoyé après navigation');
-        }, 100);
+        console.log('🚀 [OnboardingForm] Navigation vers dashboard immédiate...');
+        onComplete();  // ✅ Navigation IMMEDIATE
       }
+      
+      // PASSAGE 20 - DEVOPS : Nettoyer localStorage APRÈS navigation
+      setTimeout(() => {
+        sessionStorage.removeItem('first_visit');
+        localStorage.removeItem('oraclelumira_last_payment_intent_id');
+        console.log('🧹 [OnboardingForm] localStorage nettoyé après navigation');
+      }, 100);
     } catch (e: any) {
       console.error('❌ [OnboardingForm] Une erreur est survenue durant le processus de soumission final:', e);
       setError(e?.message || 'Erreur lors de la soumission finale');
