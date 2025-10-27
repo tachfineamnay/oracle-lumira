@@ -53,7 +53,7 @@ interface OnboardingFormProps {
 // =================== COMPOSANT PRINCIPAL ===================
 
 export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) => {
-  const { user, updateProfile } = useSanctuaire();
+  const { user, updateProfile, refresh } = useSanctuaire(); // ✅ PASSAGE 11 - Ajouter refresh
   
   // État utilisateur (pré-rempli)
   const [userData, setUserData] = useState<UserData>({
@@ -501,6 +501,11 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       
       console.log('✨ [OnboardingForm] profileCompleted marqué à true dans SanctuaireContext');
       
+      // PASSAGE 11 - P0 CRITIQUE : Forcer rafraîchissement pour afficher dashboard
+      console.log('🔄 [OnboardingForm] Rafraîchissement du profil...');
+      await refresh(); // ✅ Recharger profile depuis l'API
+      console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
+      
       sessionStorage.removeItem('first_visit');
       localStorage.removeItem('last_payment_intent_id');
       
@@ -634,6 +639,11 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
         profileCompleted: true,
         submittedAt: new Date(),
       });
+      
+      // PASSAGE 11 - P0 CRITIQUE : Forcer rafraîchissement pour afficher dashboard
+      console.log('🔄 [OnboardingForm] Rafraîchissement du profil...');
+      await refresh(); // ✅ Recharger profile depuis l'API
+      console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
       sessionStorage.removeItem('first_visit');
       // PASSAGE 6 - P0 : Nettoyer la CLÉ CORRECTE du localStorage
