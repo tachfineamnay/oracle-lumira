@@ -13,6 +13,7 @@ export interface Product {
     duration?: string;
     access?: string[];
     bonus?: string[];
+    comingSoon?: boolean;  // MVP: Niveau 4 bientot disponible
   };
 }
 
