@@ -101,10 +101,14 @@ export function useOrderStatus(
 
       // Déterminer si l'accès au Sanctuaire est accordé
       const isCompleted = response.data.status === 'completed';
+      const isPaid = response.data.status === 'paid'; // ✅ Produits gratuits ont status 'paid'
       const isApproved = response.data.expertValidation?.validationStatus === 'approved';
       
-      // L'accès est accordé si la commande est complétée (même sans validation experte pour l'instant)
-      const granted = isCompleted || isApproved;
+      // L'accès est accordé si :
+      // - La commande est complétée (delivered)
+      // - OU la commande est payée (notamment pour produits gratuits)
+      // - OU validée par un expert
+      const granted = isCompleted || isPaid || isApproved;
       
       setAccessGranted(granted);
 
