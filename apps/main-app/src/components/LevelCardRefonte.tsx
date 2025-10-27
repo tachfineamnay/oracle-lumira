@@ -34,6 +34,12 @@ const MotionLink = motion(Link);
 const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
   // Déterminer si c'est l'offre recommandée (Mystique = id 'mystique')
   const isRecommended = level.id === 'mystique';
+  
+  // ✅ Détecter si le produit est gratuit (prix = 0)
+  const isFree = level.price === 0;
+  
+  // ✅ Détecter si le produit est "bientôt disponible" (comingSoon flag ou prix = -1)
+  const isComingSoon = level.comingSoon || level.price === -1;
 
   // Mapping des icônes par niveau
   const getLevelIcons = (levelId: string) => {
@@ -226,40 +232,70 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
           />
         </div>
 
-        {/* Prix - REFONTE : Compact mais visible */}
+        {/* Prix - REFONTE : Compact mais visible + Gestion gratuit et bientôt */}
         <div className="mb-4 text-center relative">
           <motion.div 
             className="flex items-baseline justify-center gap-1"
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: isComingSoon ? 1 : 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            <span className={`font-bold relative ${
-              isRecommended 
-                ? 'text-5xl text-cosmic-gold' 
-                : 'text-4xl text-white'
-            }`}>
-              {level.price}€
-              {/* Shine effect pour offre recommandée */}
-              {isRecommended && (
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                  animate={{
-                    x: ['-100%', '200%'],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatDelay: 3,
-                  }}
-                  style={{ clipPath: 'inset(0)' }}
-                />
-              )}
-            </span>
+            {isFree ? (
+              // ✅ AFFICHAGE PRODUIT GRATUIT
+              <span className="text-4xl font-bold text-green-400">
+                Gratuit
+              </span>
+            ) : isComingSoon ? (
+              // ✅ AFFICHAGE BIENTÔT DISPONIBLE
+              <span className="text-3xl font-bold text-white/40">
+                Bientôt
+              </span>
+            ) : (
+              // AFFICHAGE PRIX NORMAL
+              <span className={`font-bold relative ${
+                isRecommended 
+                  ? 'text-5xl text-cosmic-gold' 
+                  : 'text-4xl text-white'
+              }`}>
+                {level.price}€
+                {/* Shine effect pour offre recommandée */}
+                {isRecommended && (
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                    animate={{
+                      x: ['-100%', '200%'],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 3,
+                    }}
+                    style={{ clipPath: 'inset(0)' }}
+                  />
+                )}
+              </span>
+            )}
           </motion.div>
-          <p className="text-white/50 text-[10px] mt-1 font-medium">Paiement unique</p>
+          
+          {!isComingSoon && (
+            <p className="text-white/50 text-[10px] mt-1 font-medium">
+              {isFree ? 'Accès immédiat' : 'Paiement unique'}
+            </p>
+          )}
+          
+          {/* Badge spécial pour gratuit */}
+          {isFree && (
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+              className="inline-block mt-2 px-3 py-0.5 bg-green-500/20 border border-green-500/50 rounded-full"
+            >
+              <span className="text-green-400 text-[10px] font-semibold">🎉 {level.badge || '100 premiers clients'}</span>
+            </motion.div>
+          )}
           
           {/* Économie badge pour offre premium - Plus compact */}
-          {isRecommended && (
+          {isRecommended && !isFree && (
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -298,56 +334,81 @@ const LevelCardRefonte: React.FC<LevelCardProps> = ({ level, index }) => {
           ))}
         </ul>
 
-        {/* CTA Button - Plus compact */}
-        <MotionLink
-          to={`/commande?product=${level.id}`}
-          className={`relative block w-full py-3 rounded-xl text-center font-semibold text-sm transition-all duration-300 overflow-hidden group/btn ${
-            isRecommended
-              ? 'bg-gradient-to-r from-cosmic-gold via-yellow-400 to-cosmic-gold bg-[length:200%_100%] text-cosmic-void shadow-[0_0_20px_rgba(255,215,0,0.4)]'
-              : 'bg-white/5 border border-white/20 text-cosmic-ethereal hover:bg-white/10 hover:border-cosmic-ethereal/50'
-          }`}
-          whileHover={{ 
-            scale: 1.05,
-            boxShadow: isRecommended 
-              ? '0 0 30px rgba(255,215,0,0.6)' 
-              : '0 0 20px rgba(139,123,216,0.3)'
-          }}
-          whileTap={{ scale: 0.98 }}
-          animate={isRecommended ? {
-            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-          } : {}}
-          transition={isRecommended ? {
-            backgroundPosition: {
-              duration: 3,
-              repeat: Infinity,
-              ease: "linear"
-            }
-          } : {}}
-        >
-          {/* Ripple effect on hover */}
+        {/* CTA Button - Plus compact + gestion désactivation */}
+        {isComingSoon ? (
+          // ✅ BOUTON DÉSACTIVÉ pour "Bientôt disponible"
           <motion.div
-            className="absolute inset-0 bg-white/20"
-            initial={{ scale: 0, opacity: 0.5 }}
+            className="relative block w-full py-3 rounded-xl text-center font-semibold text-sm transition-all duration-300 overflow-hidden bg-white/5 border border-white/10 text-white/40 cursor-not-allowed"
+            initial={{ opacity: 0.5 }}
+            whileHover={{ opacity: 0.7 }}
+          >
+            <span className="relative z-10 flex items-center justify-center gap-2 text-sm">
+              🔒 Bientôt disponible
+            </span>
+          </motion.div>
+        ) : (
+          // BOUTON ACTIF pour tous les autres produits
+          <MotionLink
+            to={`/commande?product=${level.id}`}
+            className={`relative block w-full py-3 rounded-xl text-center font-semibold text-sm transition-all duration-300 overflow-hidden group/btn ${
+              isFree
+                ? 'bg-gradient-to-r from-green-500 via-green-400 to-green-500 bg-[length:200%_100%] text-white shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+                : isRecommended
+                ? 'bg-gradient-to-r from-cosmic-gold via-yellow-400 to-cosmic-gold bg-[length:200%_100%] text-cosmic-void shadow-[0_0_20px_rgba(255,215,0,0.4)]'
+                : 'bg-white/5 border border-white/20 text-cosmic-ethereal hover:bg-white/10 hover:border-cosmic-ethereal/50'
+            }`}
             whileHover={{ 
-              scale: 2, 
-              opacity: 0,
-              transition: { duration: 0.6 }
+              scale: 1.05,
+              boxShadow: isFree
+                ? '0 0 30px rgba(34,197,94,0.6)'
+                : isRecommended 
+                ? '0 0 30px rgba(255,215,0,0.6)' 
+                : '0 0 20px rgba(139,123,216,0.3)'
             }}
-            style={{ borderRadius: '50%' }}
-          />
-          
-          <span className="relative z-10 flex items-center justify-center gap-2 text-sm">
-            {isRecommended ? (
-              <>
-                <Sparkles className="w-4 h-4" />
-                {getLevelCTA(level.id)}
-                <Sparkles className="w-4 h-4" />
-              </>
-            ) : (
-              getLevelCTA(level.id)
-            )}
-          </span>
-        </MotionLink>
+            whileTap={{ scale: 0.98 }}
+            animate={(isFree || isRecommended) ? {
+              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+            } : {}}
+            transition={(isFree || isRecommended) ? {
+              backgroundPosition: {
+                duration: 3,
+                repeat: Infinity,
+                ease: "linear"
+              }
+            } : {}}
+          >
+            {/* Ripple effect on hover */}
+            <motion.div
+              className="absolute inset-0 bg-white/20"
+              initial={{ scale: 0, opacity: 0.5 }}
+              whileHover={{ 
+                scale: 2, 
+                opacity: 0,
+                transition: { duration: 0.6 }
+              }}
+              style={{ borderRadius: '50%' }}
+            />
+            
+            <span className="relative z-10 flex items-center justify-center gap-2 text-sm">
+              {isFree ? (
+                // ✅ CTA pour produit gratuit
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Obtenir gratuitement
+                  <Sparkles className="w-4 h-4" />
+                </>
+              ) : isRecommended ? (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  {getLevelCTA(level.id)}
+                  <Sparkles className="w-4 h-4" />
+                </>
+              ) : (
+                getLevelCTA(level.id)
+              )}
+            </span>
+          </MotionLink>
+        )}
       </div>
 
       {/* Effet de lueur animé pour l'offre recommandée */}

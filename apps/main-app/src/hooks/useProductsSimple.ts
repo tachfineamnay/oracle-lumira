@@ -19,6 +19,7 @@ export interface ProductWithUpload {
   features: string[];
   order: number;
   uploadConfig: UploadConfig;
+  comingSoon?: boolean; // ✅ Ajout pour marquer niveau 4 comme "bientôt disponible"
 }
 
 // Configuration centralisée des uploads par niveau (IDs canoniques backend)
@@ -56,19 +57,21 @@ const LEVEL_UPLOAD_CONFIGS: Record<ProductWithUpload['id'], UploadConfig> = {
   },
 };
 
-// Données simulées des produits (IDs canoniques backend)
-const MOCK_PRODUCTS: ProductWithUpload[] = [
+// Données simulées des produits - FALLBACK SEULEMENT
+// NOTE: Ces données sont utilisées UNIQUEMENT si l'API est indisponible
+const MOCK_PRODUCTS_FALLBACK: ProductWithUpload[] = [
   {
     id: 'initie',
     title: 'Le Voile Initiatique',
     name: 'Niveau I : Le Voile Initiatique',
     description: 'Introduction aux langages symboliques, aux cycles vibratoires et aux fondements de l\'énergie cosmique.',
-    duration: '3 mois',
-    price: 27,
+    duration: 'Illimité',
+    price: 0, // ✅ GRATUIT
+    badge: '✨ 100 PREMIERS CLIENTS',
     features: [
-      'Lexique vibratoire et cosmique',
-      'Méditations d\'ancrage stellaire',
-      'Cercle communautaire d\'Initiés'
+      'Lecture spirituelle PDF personnalisée',
+      'Analyse complète de votre thème',
+      'Guidance intuitive'
     ],
     order: 1,
     uploadConfig: LEVEL_UPLOAD_CONFIGS.initie,
@@ -78,14 +81,14 @@ const MOCK_PRODUCTS: ProductWithUpload[] = [
     title: 'Le Temple Mystique',
     name: 'Niveau II : Le Temple Mystique',
     description: 'Activation des rituels personnels et exploration des cartes archétypales avancées.',
-    duration: '6 mois',
+    duration: 'Illimité',
     price: 47,
     badge: 'LE PLUS POPULAIRE',
     features: [
-      'Accès au contenu Initiatique',
-      'Rituels de transmutation',
-      'Sessions d\'alignement vibratoire',
-      'Portails événementiels prioritaires'
+      'Tout le contenu Initié',
+      'Lecture audio complète (voix sacrée)',
+      'Guidance approfondie',
+      'Support prioritaire'
     ],
     order: 2,
     uploadConfig: LEVEL_UPLOAD_CONFIGS.mystique,
@@ -95,14 +98,13 @@ const MOCK_PRODUCTS: ProductWithUpload[] = [
     title: 'L\'Ordre Profond',
     name: 'Niveau III : L\'Ordre Profond',
     description: 'Maîtrise des cycles karmiques et lecture des codes fractals de l\'âme.',
-    duration: '12 mois',
+    duration: 'Illimité',
     price: 67,
     features: [
-      'Accès illimité aux enseignements',
-      'Mentorat vibratoire personnalisé',
-      'Archives occultes numérologiques',
-      'Certification Oracle Lumira',
-      'Accès au Cercle Fermé'
+      'Tout le contenu Mystique',
+      'Mandala personnalisé HD',
+      'Support visuel pour méditation',
+      'Guide d\'activation du Mandala'
     ],
     order: 3,
     uploadConfig: LEVEL_UPLOAD_CONFIGS.profond,
@@ -112,18 +114,18 @@ const MOCK_PRODUCTS: ProductWithUpload[] = [
     title: 'L\'Intelligence Intégrale',
     name: 'Niveau IV : L\'Intelligence Intégrale',
     description: 'Cartographie complète de ta fréquence d\'âme, analyse karmique et modélisation multidimensionnelle.',
-    duration: '12 mois',
-    price: 97,
-    badge: 'EXPÉRIENCE ULTIME',
+    duration: 'Illimité',
+    price: -1, // ✅ Bientôt disponible (prix spécial pour désactiver)
+    badge: 'BIENTÔT DISPONIBLE',
     features: [
-      'Lecture des cycles de vie',
-      'Lignée et mémoire karmique',
-      'Synthèse audio vibratoire',
-      'Mandala HD à haute fréquence',
-      'Suivi vibratoire 30 jours'
+      'Tout le contenu Profond',
+      'Rituels personnalisés audio/vidéo',
+      'Protocoles d\'activation',
+      'Suivi personnalisé 30 jours'
     ],
     order: 4,
     uploadConfig: LEVEL_UPLOAD_CONFIGS.integrale,
+    comingSoon: true, // ✅ Marquer explicitement comme "bientôt disponible"
   }
 ];
 
@@ -133,20 +135,45 @@ export const useProducts = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Simuler un appel API
+    // Charger les produits depuis l'API backend
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // Simulation d'un délai réseau
-        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Ici on pourrait faire un vrai appel API
-        // const response = await fetch('/api/products');
-        // const data = await response.json();
+        // ✅ APPEL API RÉEL au catalogue backend
+        const apiBase = import.meta.env.VITE_API_URL || '/api';
+        const response = await fetch(`${apiBase}/products`);
         
-        setProducts(MOCK_PRODUCTS.sort((a, b) => a.order - b.order));
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const apiProducts = data.products || [];
+        
+        // Mapper les produits API vers le format ProductWithUpload
+        const mappedProducts: ProductWithUpload[] = apiProducts.map((p: any) => ({
+          id: p.id as ProductWithUpload['id'],
+          title: p.name,
+          name: p.name,
+          description: p.description,
+          duration: p.metadata?.duration || 'Illimité',
+          price: p.amountCents / 100, // Convertir centimes en euros
+          badge: p.limitedOffer || (p.id === 'mystique' ? 'LE PLUS POPULAIRE' : p.metadata?.comingSoon ? 'BIENTÔT DISPONIBLE' : undefined),
+          features: p.features || [],
+          order: p.id === 'initie' ? 1 : p.id === 'mystique' ? 2 : p.id === 'profond' ? 3 : 4,
+          uploadConfig: LEVEL_UPLOAD_CONFIGS[p.id as ProductWithUpload['id']] || LEVEL_UPLOAD_CONFIGS.initie,
+          comingSoon: p.metadata?.comingSoon || false, // ✅ Transférer comingSoon depuis l'API
+        }));
+        
+        console.log('[useProducts] ✅ Produits chargés depuis API:', mappedProducts);
+        setProducts(mappedProducts.sort((a, b) => a.order - b.order));
         setError(null);
       } catch (err) {
+        console.warn('[useProducts] ⚠️ Échec chargement API, fallback vers données locales:', err);
+        
+        // ✅ FALLBACK: Utiliser les données locales si l'API échoue
+        setProducts(MOCK_PRODUCTS_FALLBACK.sort((a, b) => a.order - b.order));
         setError(err instanceof Error ? err : new Error('Failed to fetch products'));
       } finally {
         setIsLoading(false);
