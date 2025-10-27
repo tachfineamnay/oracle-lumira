@@ -544,12 +544,16 @@ const Sanctuaire: React.FC = () => {
   }, [authenticateWithEmail, clearAuthError, cooldownActive]);
 
   // Détection first_visit pour afficher OnboardingForm
+  // PASSAGE 21 - DEVOPS : Masquer onboarding quand profileCompleted = true
   React.useEffect(() => {
     const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
     const hasIncompleteProfile = profile && !profile.profileCompleted;
     
     if (isAuthenticated && (isFirstVisit || hasIncompleteProfile)) {
       setShowOnboarding(true);
+    } else {
+      // PASSAGE 21 : MASQUER onboarding si profil complété
+      setShowOnboarding(false);
     }
   }, [isAuthenticated, profile]);
 
