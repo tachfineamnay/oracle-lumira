@@ -106,6 +106,133 @@ router.post(
         currency: product.currency,
       });
 
+      // PASSAGE 27: PRODUIT GRATUIT (0€) - Skip Stripe, créer commande directement
+      if (product.amountCents === 0) {
+        console.log(`[${requestId}] FREE PRODUCT detected (0€) - Creating order without Stripe`);
+        
+        const now = new Date();
+        const freeOrderId = `free_${startTime}_${Math.random().toString(36).substring(2, 10)}`;
+        
+        // Créer ProductOrder
+        const productOrder = new ProductOrder({
+          productId,
+          customerEmail,
+          amount: 0,
+          currency: product.currency,
+          status: 'completed',
+          paymentIntentId: freeOrderId,
+          createdAt: now,
+          updatedAt: now,
+          completedAt: now,
+          metadata: {
+            ...metadata,
+            productName: product.name,
+            level: product.level,
+            requestId,
+            freeProduct: true,
+            customerName: customerName || '',
+            customerPhone: customerPhone || '',
+            customerEmail: customerEmail || '',
+          },
+        });
+
+        await productOrder.save();
+        console.log(`[${requestId}] FREE - ProductOrder created:`, freeOrderId);
+
+        // Créer User et Order automatiquement
+        if (customerEmail && customerEmail.includes('@')) {
+          try {
+            const nameParts = (customerName || '').split(' ');
+            const firstName = nameParts[0] || customerEmail.split('@')[0] || 'Client';
+            const lastName = nameParts.slice(1).join(' ') || 'Lumira';
+            
+            let user = await User.findOne({ email: customerEmail.toLowerCase() });
+            if (!user) {
+              user = await User.create({
+                email: customerEmail.toLowerCase(),
+                firstName,
+                lastName,
+                phone: customerPhone || undefined,
+                profileCompleted: false,
+              });
+              console.log(`[${requestId}] FREE - User created:`, user.email);
+            } else {
+              console.log(`[${requestId}] FREE - User found:`, user.email);
+            }
+
+            // Créer Order pour Expert Desk
+            const date = new Date();
+            const year = date.getFullYear().toString().slice(-2);
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const timestamp = Date.now().toString().slice(-6);
+            const orderNumber = `LU${year}${month}${day}${timestamp}`;
+
+            const levelMap: Record<string, { num: 1|2|3|4; name: 'Simple'|'Intuitive'|'Alchimique'|'Intégrale' }> = {
+              initie: { num: 1, name: 'Simple' },
+              mystique: { num: 2, name: 'Intuitive' },
+              profond: { num: 3, name: 'Alchimique' },
+              integrale: { num: 4, name: 'Intégrale' },
+            };
+            const levelInfo = levelMap[productId] || { num: 1 as 1, name: 'Simple' as const };
+
+            await Order.create({
+              orderNumber,
+              userId: user._id,
+              userEmail: user.email,
+              userName: `${user.firstName} ${user.lastName}`,
+              level: levelInfo.num,
+              amount: 0,
+              currency: product.currency,
+              status: 'paid' as const,
+              paymentIntentId: freeOrderId,
+              paidAt: now,
+              formData: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: customerPhone || '',
+                specificQuestion: `Lecture gratuite ${levelInfo.name} - ${product.name}`,
+                preferences: {
+                  audioVoice: 'feminine' as const,
+                  deliveryFormat: 'email' as const
+                }
+              },
+              metadata: {
+                source: 'free_product',
+                productName: product.name,
+                level: product.level,
+                freeProduct: true
+              }
+            });
+            
+            console.log(`[${requestId}] FREE - Order created:`, orderNumber);
+          } catch (freeError) {
+            console.error(`[${requestId}] FREE - Error creating User/Order:`, freeError);
+            // Ne pas échouer la commande gratuite si la création du profil échoue
+          }
+        }
+
+        // Retourner réponse (pas de clientSecret nécessaire pour produit gratuit)
+        const response: CreatePaymentIntentResponse = {
+          clientSecret: '',  // Vide pour produit gratuit
+          orderId: freeOrderId,
+          amount: 0,
+          currency: product.currency,
+          productName: product.name,
+        };
+
+        console.log(`[${requestId}] FREE PRODUCT order completed successfully:`, {
+          orderId: freeOrderId,
+          email: customerEmail,
+          duration: `${Date.now() - startTime}ms`,
+        });
+
+        res.status(200).json(response);
+        return;
+      }
+      // FIN PASSAGE 27
+
       // Validate email if provided
       if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
         console.error(`[${requestId}] Invalid email format:`, { customerEmail });

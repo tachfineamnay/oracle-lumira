@@ -422,6 +422,16 @@ export const UnifiedCheckoutForm = ({
     }
   }, [isFormValid, clientSecret, isCreatingIntent, intentError]);
 
+  // PASSAGE 27: PRODUIT GRATUIT - Si clientSecret vide mais orderId présent, c'est gratuit !
+  useEffect(() => {
+    if (orderId && clientSecret === '' && !isCreatingIntent) {
+      console.log('🎁 [UnifiedCheckout] FREE PRODUCT detected - Auto-completing order:', orderId);
+      setTimeout(() => {
+        onSuccess(orderId, email.value);
+      }, 500);
+    }
+  }, [orderId, clientSecret, isCreatingIntent]);
+
   // Note: Customer info is NOW sent DURING PaymentIntent creation (not after)
 
   // Stripe Elements options
