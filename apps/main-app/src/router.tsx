@@ -21,7 +21,8 @@ import SphereSkeleton from './components/ui/SphereSkeleton';
 
 // Lazy imports pour les composants du Sanctuaire
 const LazySpiritualPath = React.lazy(() => import('./components/spheres/SpiritualPath'));
-const LazyMesLectures = React.lazy(() => import('./components/spheres/MesLectures')); // Composant MIS À JOUR avec DrawsWaiting
+const LazyDraws = React.lazy(() => import('./components/spheres/Draws')); // PASSAGE 25: MVP Draws avec upgrades
+const LazyMesLectures = React.lazy(() => import('./components/spheres/MesLectures')); // Ancien composant (legacy)
 const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
 const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
 const LazyProfile = React.lazy(() => import('./components/spheres/Profile')); // Composant MIS À JOUR avec données API
@@ -52,10 +53,10 @@ const AppRoutes: React.FC = () => (
                 <LazySpiritualPath />
               </React.Suspense>
             } />
-            {/* Route draws: utilise MesLectures (contient DrawsWaiting pour état vide) */}
+            {/* Route draws: PASSAGE 25 - MVP Draws avec grille assets + upgrades contextuels */}
             <Route path="draws" element={
               <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyMesLectures />
+                <LazyDraws />
               </React.Suspense>
             } />
             <Route path="synthesis" element={
