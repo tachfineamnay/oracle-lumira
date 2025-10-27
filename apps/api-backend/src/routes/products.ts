@@ -283,6 +283,7 @@ router.post(
       });
 
       // Persist pending order in MongoDB
+      // PASSAGE 19 - DEVOPS : Ajouter customerName/Phone aux metadata ProductOrder
       await ProductOrder.create({
         productId,
         customerEmail,
@@ -296,6 +297,9 @@ router.post(
           productName: product.name,
           level: product.level,
           requestId,
+          customerName: customerName || '',      // ✅ PASSAGE 19 : Copier depuis Stripe metadata
+          customerPhone: customerPhone || '',    // ✅ PASSAGE 19 : Copier depuis Stripe metadata
+          customerEmail: customerEmail || '',    // ✅ PASSAGE 19 : Copier depuis Stripe metadata
         },
       });
 
