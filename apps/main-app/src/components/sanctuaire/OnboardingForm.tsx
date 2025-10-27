@@ -541,10 +541,16 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       await refresh(); // ✅ Recharger profile depuis l'API
       console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
-      sessionStorage.removeItem('first_visit');
-      localStorage.removeItem('last_payment_intent_id');
-      
-      if (onComplete) onComplete();
+      // PASSAGE 15 - DEVOPS : Nettoyer localStorage APRÈS navigation (pas avant)
+      if (onComplete) {
+        onComplete();
+        // ✅ Nettoyer APRÈS navigation pour éviter re-render avec PI null
+        setTimeout(() => {
+          sessionStorage.removeItem('first_visit');
+          localStorage.removeItem('last_payment_intent_id');
+          console.log('🧹 [OnboardingForm] localStorage nettoyé après navigation');
+        }, 100);
+      }
       
     } catch (err: any) {
       console.error('❌ [OnboardingForm] Erreur:', err);
@@ -680,10 +686,17 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       await refresh(); // ✅ Recharger profile depuis l'API
       console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
-      sessionStorage.removeItem('first_visit');
-      // PASSAGE 6 - P0 : Nettoyer la CLÉ CORRECTE du localStorage
-      localStorage.removeItem('oraclelumira_last_payment_intent_id');
-      if (onComplete) onComplete();
+      // PASSAGE 15 - DEVOPS : Nettoyer localStorage APRÈS navigation (pas avant)
+      // Ne PAS supprimer ici car refresh() trigger re-render qui recharge paymentIntentId
+      if (onComplete) {
+        onComplete();
+        // ✅ Nettoyer APRÈS navigation pour éviter re-render avec PI null
+        setTimeout(() => {
+          sessionStorage.removeItem('first_visit');
+          localStorage.removeItem('oraclelumira_last_payment_intent_id');
+          console.log('🧹 [OnboardingForm] localStorage nettoyé après navigation');
+        }, 100);
+      }
     } catch (e: any) {
       console.error('❌ [OnboardingForm] Une erreur est survenue durant le processus de soumission final:', e);
       setError(e?.message || 'Erreur lors de la soumission finale');
