@@ -45,6 +45,8 @@ const Profile: React.FC = () => {
   const phone = user?.phone || '';  // PASSAGE 22 : phone est dans user, pas profile
   
   const [editData, setEditData] = useState({
+    firstName: user?.firstName || '',       // PASSAGE 24 : Ajouter firstName modifiable
+    lastName: user?.lastName || '',         // PASSAGE 24 : Ajouter lastName modifiable
     email: email,
     phone: phone,
     birthDate: profile?.birthDate || '',
@@ -59,6 +61,8 @@ const Profile: React.FC = () => {
     if (user) {
       setEditData(prev => ({
         ...prev,
+        firstName: user.firstName || prev.firstName,  // PASSAGE 24
+        lastName: user.lastName || prev.lastName,     // PASSAGE 24
         email: user.email || prev.email,
         phone: user.phone || prev.phone
       }));
@@ -76,16 +80,52 @@ const Profile: React.FC = () => {
 
   const currentLevelName = (levelMetadata && (levelMetadata as any).name) || (latestOrder ? getLevelNameSafely(latestOrder.level) : levelName);
 
-  const handleSave = () => {
-    updateProfile({
-      ...editData,
-      profileCompleted: true
-    });
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      // PASSAGE 24 : Mettre à jour firstName/lastName dans User (pas profile)
+      if (editData.firstName !== user?.firstName || editData.lastName !== user?.lastName || editData.phone !== user?.phone || editData.email !== user?.email) {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('sanctuaire_token') : null;
+        if (token) {
+          await fetch(`${import.meta.env.VITE_API_URL || '/api'}/users/me`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              firstName: editData.firstName,
+              lastName: editData.lastName,
+              phone: editData.phone,
+              email: editData.email
+            })
+          });
+        }
+      }
+      
+      // Mettre à jour profile (birthDate, birthPlace, etc.)
+      await updateProfile({
+        birthDate: editData.birthDate,
+        birthTime: editData.birthTime,
+        birthPlace: editData.birthPlace,
+        specificQuestion: editData.specificQuestion,
+        objective: editData.objective,
+        profileCompleted: true
+      });
+      
+      setIsEditing(false);
+      
+      // Recharger les données pour voir les changements
+      window.location.reload();
+    } catch (err) {
+      console.error('[Profile] Erreur sauvegarde:', err);
+      alert('Erreur lors de la sauvegarde');
+    }
   };
 
   const handleCancel = () => {
     setEditData({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
       email: user?.email || '',
       phone: user?.phone || '',
       birthDate: profile?.birthDate || '',
@@ -103,14 +143,14 @@ const Profile: React.FC = () => {
       label: 'Prénom',
       type: 'text',
       icon: <User className="w-4 h-4" />,
-      value: user?.firstName || 'Non renseigné'
+      value: isEditing ? editData.firstName : (user?.firstName || 'Non renseigné')  // PASSAGE 24 : Modifiable
     },
     {
       key: 'lastName',
       label: 'Nom',
       type: 'text',
       icon: <User className="w-4 h-4" />,
-      value: user?.lastName || 'Non renseigné'
+      value: isEditing ? editData.lastName : (user?.lastName || 'Non renseigné')  // PASSAGE 24 : Modifiable
     },
     {
       key: 'email',
@@ -141,13 +181,6 @@ const Profile: React.FC = () => {
       value: isEditing ? editData.birthTime : (profile?.birthTime || 'Non renseignée')
     },
     {
-      key: 'objective',
-      label: 'Objectif spirituel',
-      type: 'textarea',
-      icon: <Target className="w-4 h-4" />,
-      value: isEditing ? editData.objective : (profile?.objective || 'Non renseigné')
-    },
-    {
       key: 'birthPlace',
       label: 'Lieu de naissance',
       type: 'text',
@@ -160,6 +193,13 @@ const Profile: React.FC = () => {
       type: 'textarea',
       icon: <Target className="w-4 h-4" />,
       value: isEditing ? editData.specificQuestion : (profile?.specificQuestion || 'Non renseignée')
+    },
+    {
+      key: 'objective',
+      label: 'Objectif spirituel',
+      type: 'textarea',
+      icon: <Target className="w-4 h-4" />,
+      value: isEditing ? editData.objective : (profile?.objective || 'Non renseigné')
     }
   ];
 
