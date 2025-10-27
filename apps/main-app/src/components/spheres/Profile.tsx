@@ -34,37 +34,37 @@ interface EditableField {
 }
 
 const Profile: React.FC = () => {
-  const { userLevel, updateUserProfile } = useUserLevel();
-  const { user: sanctuaireUser, orders, isLoading: ordersLoading, levelMetadata } = useSanctuaire() as any;
+  // PASSAGE 22 - DEVOPS : Utiliser UNIQUEMENT useSanctuaire() pour toutes les donnees
+  const { user, profile, orders, isLoading: ordersLoading, levelMetadata, updateProfile } = useSanctuaire();
   const { accessRights, levelName } = useSanctuaryAccess();
   const [isEditing, setIsEditing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   
-  // PRIORITÉ : Utiliser les données de SanctuaireContext si disponibles
-  const email = sanctuaireUser?.email || userLevel.profile?.email || '';
-  const phone = sanctuaireUser?.phone || profile?.phone || '';
+  // Donnees utilisateur depuis SanctuaireContext
+  const email = user?.email || '';
+  const phone = user?.phone || '';  // PASSAGE 22 : phone est dans user, pas profile
   
   const [editData, setEditData] = useState({
     email: email,
     phone: phone,
-    birthDate: userLevel.profile?.birthDate || '',
-    birthTime: userLevel.profile?.birthTime || '',
-    objective: userLevel.profile?.objective || '',
-    additionalInfo: userLevel.profile?.additionalInfo || ''
+    birthDate: profile?.birthDate || '',
+    birthTime: profile?.birthTime || '',
+    birthPlace: profile?.birthPlace || '',
+    specificQuestion: profile?.specificQuestion || '',
+    objective: profile?.objective || ''
   });
 
-  // Synchroniser editData quand les données du Sanctuaire arrivent
+  // Synchroniser editData quand les donnees du Sanctuaire arrivent
   React.useEffect(() => {
-    if (sanctuaireUser) {
+    if (user) {
       setEditData(prev => ({
         ...prev,
-        email: sanctuaireUser.email || prev.email,
-        phone: sanctuaireUser.phone || prev.phone
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone
       }));
     }
-  }, [sanctuaireUser]);
+  }, [user]);
 
-  const profile = userLevel.profile;
   const hasCompletedProfile = profile?.profileCompleted;
   // Determine latest order (most recent by deliveredAt or createdAt)
   const latestOrder = React.useMemo(() => {
@@ -77,7 +77,7 @@ const Profile: React.FC = () => {
   const currentLevelName = (levelMetadata && (levelMetadata as any).name) || (latestOrder ? getLevelNameSafely(latestOrder.level) : levelName);
 
   const handleSave = () => {
-    updateUserProfile({
+    updateProfile({
       ...editData,
       profileCompleted: true
     });
@@ -86,12 +86,13 @@ const Profile: React.FC = () => {
 
   const handleCancel = () => {
     setEditData({
-      email: profile?.email || '',
-      phone: profile?.phone || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
       birthDate: profile?.birthDate || '',
       birthTime: profile?.birthTime || '',
-      objective: profile?.objective || '',
-      additionalInfo: profile?.additionalInfo || ''
+      birthPlace: profile?.birthPlace || '',
+      specificQuestion: profile?.specificQuestion || '',
+      objective: profile?.objective || ''
     });
     setIsEditing(false);
   };
@@ -102,14 +103,14 @@ const Profile: React.FC = () => {
       label: 'Prénom',
       type: 'text',
       icon: <User className="w-4 h-4" />,
-      value: sanctuaireUser?.firstName || 'Non renseigné'
+      value: user?.firstName || 'Non renseigné'
     },
     {
       key: 'lastName',
       label: 'Nom',
       type: 'text',
       icon: <User className="w-4 h-4" />,
-      value: sanctuaireUser?.lastName || 'Non renseigné'
+      value: user?.lastName || 'Non renseigné'
     },
     {
       key: 'email',
@@ -147,11 +148,18 @@ const Profile: React.FC = () => {
       value: isEditing ? editData.objective : (profile?.objective || 'Non renseigné')
     },
     {
-      key: 'additionalInfo',
-      label: 'Informations complémentaires',
+      key: 'birthPlace',
+      label: 'Lieu de naissance',
+      type: 'text',
+      icon: <Calendar className="w-4 h-4" />,
+      value: isEditing ? editData.birthPlace : (profile?.birthPlace || 'Non renseigné')
+    },
+    {
+      key: 'specificQuestion',
+      label: 'Question spécifique',
       type: 'textarea',
-      icon: <User className="w-4 h-4" />,
-      value: isEditing ? editData.additionalInfo : (profile?.additionalInfo || 'Non renseignées')
+      icon: <Target className="w-4 h-4" />,
+      value: isEditing ? editData.specificQuestion : (profile?.specificQuestion || 'Non renseignée')
     }
   ];
 
@@ -346,7 +354,7 @@ const Profile: React.FC = () => {
       </motion.div>
 
       {/* Section Photos Uploadées */}
-      {(profile?.facePhoto || profile?.palmPhoto) && (
+      {(profile?.facePhotoUrl || profile?.palmPhotoUrl) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -360,7 +368,7 @@ const Profile: React.FC = () => {
             
             <div className="grid md:grid-cols-2 gap-6">
               {/* Photo de visage */}
-              {profile?.facePhoto && (
+              {profile?.facePhotoUrl && (
                 <div>
                   <label className="block text-sm font-medium text-white/90 mb-3">
                     <Camera className="w-4 h-4 inline mr-2" />
@@ -371,7 +379,7 @@ const Profile: React.FC = () => {
                       <Camera className="w-8 h-8 text-amber-400" />
                     </div>
                     <p className="text-white/90 font-medium text-sm">
-                      {profile.facePhoto.name || 'Photo de visage'}
+                      Photo de visage
                     </p>
                     <p className="text-white/60 text-xs mt-1">
                       Uploadée avec succès
@@ -381,7 +389,7 @@ const Profile: React.FC = () => {
               )}
               
               {/* Photo de paume */}
-              {profile?.palmPhoto && (
+              {profile?.palmPhotoUrl && (
                 <div>
                   <label className="block text-sm font-medium text-white/90 mb-3">
                     <ImageIcon className="w-4 h-4 inline mr-2" />
@@ -392,7 +400,7 @@ const Profile: React.FC = () => {
                       <ImageIcon className="w-8 h-8 text-purple-400" />
                     </div>
                     <p className="text-white/90 font-medium text-sm">
-                      {profile.palmPhoto.name || 'Photo de paume'}
+                      Photo de paume
                     </p>
                     <p className="text-white/60 text-xs mt-1">
                       Uploadée avec succès
