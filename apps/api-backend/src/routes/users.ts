@@ -472,6 +472,8 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
     console.log('[ENTITLEMENTS] Requête pour userId:', userId, 'email:', userEmail);
 
     const normalizedEmail = String(userEmail || '').toLowerCase();
+    
+    // PASSAGE 12 - P0 : Chercher dans Order ET ProductOrder
     const scopedOrders = await Order.find({
       $or: [
         { userId },
@@ -483,8 +485,17 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
     });
 
     console.log('[ENTITLEMENTS] Orders trouvées:', scopedOrders.length);
+    
+    // PASSAGE 12 - P0 : Chercher aussi dans ProductOrder
+    const productOrders = await ProductOrder.find({
+      customerEmail: normalizedEmail,
+      status: { $in: ['paid', 'processing', 'completed'] },
+    });
+    
+    console.log('[ENTITLEMENTS] ProductOrders trouvées:', productOrders.length);
 
-    if (scopedOrders.length === 0) {
+    if (scopedOrders.length === 0 && productOrders.length === 0) {
+      console.log('[ENTITLEMENTS] Aucune commande trouvée dans Order NI ProductOrder');
       return res.json({
         capabilities: [],
         products: [],
@@ -497,10 +508,34 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
     const productIds = new Set<string>();
     const levels: number[] = [];
 
+    // Traiter les Orders
     for (const order of scopedOrders) {
       const level = resolveLevelFromOrder(order);
       levels.push(level);
 
+      const products = getGrantedProductsByLevel(level);
+      products.forEach((productId: string) => productIds.add(productId));
+    }
+    
+    // PASSAGE 12 - P0 : Traiter aussi les ProductOrders
+    for (const productOrder of productOrders) {
+      let level = 1;
+      
+      if (typeof productOrder.metadata?.level === 'number') {
+        level = productOrder.metadata.level;
+      } else if (typeof productOrder.metadata?.level === 'string') {
+        const levelMap: Record<string, number> = {
+          'initie': 1, 'mystique': 2, 'profond': 3, 'integrale': 4
+        };
+        level = levelMap[productOrder.metadata.level.toLowerCase()] || 1;
+      } else if (productOrder.productId) {
+        const levelMap: Record<string, number> = {
+          'initie': 1, 'mystique': 2, 'profond': 3, 'integrale': 4
+        };
+        level = levelMap[productOrder.productId.toLowerCase()] || 1;
+      }
+      
+      levels.push(level);
       const products = getGrantedProductsByLevel(level);
       products.forEach((productId: string) => productIds.add(productId));
     }
@@ -520,6 +555,7 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
       highestLevel,
       levelMetadata,
       orderCount: scopedOrders.length,
+      productOrderCount: productOrders.length, // ✅ Ajouter pour debug
     });
     
   } catch (error) {
