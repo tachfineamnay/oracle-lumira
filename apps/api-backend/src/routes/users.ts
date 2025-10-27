@@ -378,6 +378,91 @@ const authenticateSanctuaire = async (req: any, res: any, next: any) => {
 };
 
 // =================== ENDPOINT PROFILE - GESTION PROFIL UTILISATEUR ===================
+// GET /api/users/me - Récupère les informations principales de l'utilisateur (firstName, lastName, phone, email)
+router.get('/me', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const user = await User.findById(req.user._id).select('email firstName lastName phone');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    res.json({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone
+    });
+  } catch (error) {
+    console.error('[USER-ME] Erreur GET:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des informations utilisateur' });
+  }
+});
+
+// PATCH /api/users/me - Met à jour les informations principales de l'utilisateur (firstName, lastName, phone, email)
+router.patch('/me', authenticateSanctuaire, async (req: any, res: any) => {
+  try {
+    const updates = req.body;
+    
+    // Validation des champs autorisés pour User principal
+    const allowedFields = ['firstName', 'lastName', 'phone', 'email'];
+    
+    const userUpdates: any = {};
+    Object.keys(updates).forEach(key => {
+      if (allowedFields.includes(key)) {
+        userUpdates[key] = updates[key];
+      }
+    });
+    
+    // Validation email format si fourni
+    if (userUpdates.email) {
+      const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+      if (!emailRegex.test(userUpdates.email)) {
+        return res.status(400).json({ error: 'Format email invalide' });
+      }
+      userUpdates.email = userUpdates.email.toLowerCase();
+    }
+    
+    // Validation téléphone si fourni
+    if (userUpdates.phone) {
+      const phoneRegex = /^(?:\+?[1-9]\d{6,14}|0\d{8,10})$/;
+      if (!phoneRegex.test(userUpdates.phone)) {
+        return res.status(400).json({ error: 'Format téléphone invalide' });
+      }
+    }
+    
+    console.log('[USER-ME] PATCH avec updates:', userUpdates);
+    
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { ...userUpdates, updatedAt: new Date() } },
+      { new: true, runValidators: true }
+    ).select('email firstName lastName phone');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    console.log('[USER-ME] Utilisateur mis à jour pour userId:', req.user._id);
+    
+    res.json({
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone
+    });
+  } catch (error: any) {
+    console.error('[USER-ME] Erreur PATCH:', error);
+    
+    // Gérer l'erreur de duplication email
+    if (error.code === 11000 && error.keyPattern?.email) {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé par un autre compte' });
+    }
+    
+    res.status(500).json({ error: 'Erreur lors de la mise à jour des informations utilisateur' });
+  }
+});
+
 // GET /api/users/profile - Récupère le profil complet de l'utilisateur connecté
 router.get('/profile', authenticateSanctuaire, async (req: any, res: any) => {
   try {

@@ -35,7 +35,7 @@ interface EditableField {
 
 const Profile: React.FC = () => {
   // PASSAGE 22 - DEVOPS : Utiliser UNIQUEMENT useSanctuaire() pour toutes les donnees
-  const { user, profile, orders, isLoading: ordersLoading, levelMetadata, updateProfile } = useSanctuaire();
+  const { user, profile, orders, isLoading: ordersLoading, levelMetadata, updateProfile, updateUser, refresh } = useSanctuaire();
   const { accessRights, levelName } = useSanctuaryAccess();
   const [isEditing, setIsEditing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
@@ -82,27 +82,23 @@ const Profile: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      // PASSAGE 24 : Mettre à jour firstName/lastName dans User (pas profile)
-      if (editData.firstName !== user?.firstName || editData.lastName !== user?.lastName || editData.phone !== user?.phone || editData.email !== user?.email) {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('sanctuaire_token') : null;
-        if (token) {
-          await fetch(`${import.meta.env.VITE_API_URL || '/api'}/users/me`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              firstName: editData.firstName,
-              lastName: editData.lastName,
-              phone: editData.phone,
-              email: editData.email
-            })
-          });
-        }
+      // Mise à jour des informations principales de l'utilisateur (firstName, lastName, phone, email)
+      if (editData.firstName !== user?.firstName || 
+          editData.lastName !== user?.lastName || 
+          editData.phone !== user?.phone || 
+          editData.email !== user?.email) {
+        
+        console.log('[Profile] Mise à jour utilisateur principal...');
+        await updateUser({
+          firstName: editData.firstName,
+          lastName: editData.lastName,
+          phone: editData.phone,
+          email: editData.email
+        });
       }
       
-      // Mettre à jour profile (birthDate, birthPlace, etc.)
+      // Mise à jour du profil spirituel (birthDate, birthPlace, etc.)
+      console.log('[Profile] Mise à jour profil spirituel...');
       await updateProfile({
         birthDate: editData.birthDate,
         birthTime: editData.birthTime,
@@ -114,11 +110,14 @@ const Profile: React.FC = () => {
       
       setIsEditing(false);
       
-      // Recharger les données pour voir les changements
-      window.location.reload();
+      // Recharger toutes les données pour voir les changements
+      console.log('[Profile] Rechargement des données...');
+      await refresh();
+      
+      console.log('✅ [Profile] Profil sauvégardé avec succès !');
     } catch (err) {
       console.error('[Profile] Erreur sauvegarde:', err);
-      alert('Erreur lors de la sauvegarde');
+      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
     }
   };
 

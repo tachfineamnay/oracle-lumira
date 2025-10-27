@@ -92,6 +92,7 @@ interface SanctuaireContextValue {
   logout: () => void;
   refresh: () => Promise<void>;
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
+  updateUser: (userData: Partial<{ firstName: string; lastName: string; phone: string; email: string }>) => Promise<void>;
   getOrderContent: (orderId: string) => Promise<OrderContent>;
   downloadFile: (url: string, filename: string) => Promise<void>;
   clearAuthError: () => void;
@@ -404,6 +405,42 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   }, []);
 
+  const updateUser = useCallback(async (userData: Partial<{ firstName: string; lastName: string; phone: string; email: string }>) => {
+    try {
+      const token = sanctuaireService.getStoredToken();
+      if (!token) {
+        throw new Error('Non authentifié');
+      }
+
+      console.log('[SanctuaireProvider] Mise à jour utilisateur:', userData);
+      
+      const response = await axios.patch<{ firstName: string; lastName: string; phone: string; email: string }>(
+        `${API_BASE}/users/me`,
+        userData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log('[SanctuaireProvider] Utilisateur mis à jour avec succès');
+      
+      // Mettre à jour le user local
+      if (user) {
+        setUser({
+          ...user,
+          firstName: response.data.firstName,
+          lastName: response.data.lastName,
+          phone: response.data.phone,
+          email: response.data.email
+        });
+      }
+      
+    } catch (err: any) {
+      console.error('[SanctuaireProvider] Erreur updateUser:', err.response?.data || err.message);
+      throw err;
+    }
+  }, [user]);
+
   const getOrderContent = useCallback(async (orderId: string): Promise<OrderContent> => {
     try {
       setError(null);
@@ -463,6 +500,7 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     logout,
     refresh,
     updateProfile,
+    updateUser,
     getOrderContent,
     downloadFile: sanctuaireService.downloadFile.bind(sanctuaireService),
     clearAuthError,
