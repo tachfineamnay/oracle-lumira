@@ -113,8 +113,12 @@ router.post(
         const now = new Date();
         const freeOrderId = `free_${startTime}_${Math.random().toString(36).substring(2, 10)}`;
         
+        console.log(`[${requestId}] FREE - Generated orderId:`, freeOrderId);
+        console.log(`[${requestId}] FREE - Customer data:`, { customerEmail, customerName, customerPhone });
+        
         // Créer ProductOrder (ne pas échouer si MongoDB indisponible)
         try {
+          console.log(`[${requestId}] FREE - Attempting to save ProductOrder to MongoDB...`);
           const productOrder = new ProductOrder({
             productId,
             customerEmail,
@@ -141,6 +145,10 @@ router.post(
           console.log(`[${requestId}] FREE - ProductOrder created:`, freeOrderId);
         } catch (dbError) {
           console.error(`[${requestId}] FREE - Failed to save ProductOrder (MongoDB issue):`, dbError);
+          console.error(`[${requestId}] FREE - MongoDB error details:`, {
+            message: dbError instanceof Error ? dbError.message : String(dbError),
+            stack: dbError instanceof Error ? dbError.stack : undefined
+          });
           // Ne pas bloquer le flow - continuer quand même
         }
 

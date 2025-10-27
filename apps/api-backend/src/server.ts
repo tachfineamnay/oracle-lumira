@@ -272,6 +272,14 @@ if (!MONGODB_URI) {
     .catch(err => {
       console.error('? [API] server.ts - MongoDB connection error:', err.message);
       logger.error('MongoDB connection error:', { error: err.message, stack: err.stack });
-      process.exit(1);
+      
+      // START IN DEGRADED MODE - Server fonctionne mais sans sauvegarde MongoDB
+      console.warn('?? [API] Starting server in DEGRADED MODE (MongoDB unavailable)');
+      logger.warn('Starting server in DEGRADED MODE - MongoDB operations will fail gracefully');
+      
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`? [API] Server is running on port ${PORT} (DEGRADED MODE - No MongoDB)`);
+        logger.info(`Server is running on port ${PORT} (DEGRADED MODE - No MongoDB)`);
+      });
     });
 }

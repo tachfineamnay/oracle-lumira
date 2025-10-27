@@ -337,6 +337,9 @@ export const UnifiedCheckoutForm = ({
   limitedOffer,  // PASSAGE 26
   onSuccess,
 }: UnifiedCheckoutFormProps) => {
+  // Détection produit gratuit
+  const isFreeProduct = amountCents === 0;
+  
   // PaymentIntent state
   const [clientSecret, setClientSecret] = useState<string>('');
   const [orderId, setOrderId] = useState<string>('');
@@ -379,6 +382,42 @@ export const UnifiedCheckoutForm = ({
       return;
     }
 
+    // ✨ PRODUIT GRATUIT : Bypass complet Stripe, validation formulaire directe
+    if (isFreeProduct) {
+      console.log('🎁 [UnifiedCheckout] Free product - bypassing Stripe');
+      setIsCreatingIntent(true);
+      
+      try {
+        // Appeler backend pour créer la commande gratuite
+        const result = await ProductOrderService.createPaymentIntent(
+          productId,
+          email.value,
+          `${firstName} ${lastName}`.trim(),
+          phone.value.replace(/\D/g, '')
+        );
+        
+        console.log('✅ [UnifiedCheckout] Free order created:', result.orderId);
+        setOrderId(result.orderId);
+        setClientSecret(''); // Vide pour produit gratuit
+        
+        // Finaliser immédiatement sans Stripe
+        setTimeout(() => {
+          onSuccess(result.orderId, email.value);
+        }, 500);
+      } catch (error) {
+        console.error('❌ [UnifiedCheckout] Failed to create free order:', error);
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : "Impossible de finaliser votre commande gratuite.";
+        setIntentError(message);
+      } finally {
+        setIsCreatingIntent(false);
+      }
+      return;
+    }
+
+    // PRODUIT PAYANT : Logique normale Stripe
     setIsCreatingIntent(true);
     setIntentError(null);
     setClientSecret('');
@@ -414,23 +453,15 @@ export const UnifiedCheckoutForm = ({
     }
   };
 
-  // Auto-créer PaymentIntent dès que le formulaire est valide
+  // Auto-créer PaymentIntent dès que le formulaire est valide (produits payants ET gratuits)
   useEffect(() => {
-    if (isFormValid && !clientSecret && !isCreatingIntent && !intentError) {
+    if (isFormValid && !orderId && !isCreatingIntent && !intentError) {
       console.log('✨ [UnifiedCheckout] Form valid, auto-creating PaymentIntent...');
       handleCreatePaymentIntent();
     }
-  }, [isFormValid, clientSecret, isCreatingIntent, intentError]);
+  }, [isFormValid, orderId, isCreatingIntent, intentError]);
 
-  // PASSAGE 27: PRODUIT GRATUIT - Si clientSecret vide mais orderId présent, c'est gratuit !
-  useEffect(() => {
-    if (orderId && clientSecret === '' && !isCreatingIntent) {
-      console.log('🎁 [UnifiedCheckout] FREE PRODUCT detected - Auto-completing order:', orderId);
-      setTimeout(() => {
-        onSuccess(orderId, email.value);
-      }, 500);
-    }
-  }, [orderId, clientSecret, isCreatingIntent]);
+  // Ce useEffect n'est plus nécessaire car la logique gratuite est dans handleCreatePaymentIntent
 
   // Note: Customer info is NOW sent DURING PaymentIntent creation (not after)
 
@@ -534,8 +565,8 @@ export const UnifiedCheckoutForm = ({
         limitedOffer={limitedOffer}  // PASSAGE 26
       />
 
-      {/* Express Payment Section (Priority) */}
-      {clientSecret && (
+      {/* Express Payment Section (Priority) - Uniquement pour produits payants */}
+      {!isFreeProduct && clientSecret && (
         <Elements stripe={stripePromise} options={elementsOptions}>
           <ExpressPaymentSection
             clientSecret={clientSecret}
@@ -546,17 +577,19 @@ export const UnifiedCheckoutForm = ({
         </Elements>
       )}
 
-      {/* Divider */}
-      <div className="relative my-8">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-mystical-gold/30" />
+      {/* Divider - Uniquement pour produits payants */}
+      {!isFreeProduct && (
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-mystical-gold/30" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-[#0A0514] text-gray-400 tracking-wide">
+              ou payer par carte bancaire
+            </span>
+          </div>
         </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-[#0A0514] text-gray-400 tracking-wide">
-            ou payer par carte bancaire
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Unified Form Card */}
       <motion.div
@@ -582,8 +615,25 @@ export const UnifiedCheckoutForm = ({
         <div className="relative z-10 space-y-5">
           <h3 className="text-xl font-bold text-white/95 mb-6 tracking-wide flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-mystical-gold" />
-            Informations de paiement
+            {isFreeProduct ? 'Vos informations' : 'Informations de paiement'}
           </h3>
+
+          {/* Message produit gratuit */}
+          {isFreeProduct && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-green-500/10 border border-green-500/40 rounded-xl p-4 mb-6 flex items-start gap-3"
+            >
+              <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-green-300 text-sm font-medium">Produit gratuit</p>
+                <p className="text-green-200/80 text-xs mt-1">
+                  Aucune carte bancaire requise. Remplissez simplement vos informations pour accéder à votre lecture.
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           {/* Email Field (First - Less intimidating) */}
           <FloatingInput
@@ -647,8 +697,8 @@ export const UnifiedCheckoutForm = ({
             />
           </div>
 
-          {/* Stripe Payment Element */}
-          {clientSecret && (
+          {/* Stripe Payment Element - Uniquement pour produits payants */}
+          {!isFreeProduct && clientSecret && (
             <Elements stripe={stripePromise} options={elementsOptions}>
               <CheckoutFormInner
                 clientSecret={clientSecret}
@@ -661,6 +711,45 @@ export const UnifiedCheckoutForm = ({
                 onSuccess={onSuccess}
               />
             </Elements>
+          )}
+
+          {/* Bouton de validation pour produit gratuit */}
+          {isFreeProduct && (
+            <div className="space-y-4 mt-6">
+              <motion.button
+                type="button"
+                onClick={handleCreatePaymentIntent}
+                disabled={!isFormValid || isCreatingIntent}
+                whileHover={{ scale: isFormValid && !isCreatingIntent ? 1.02 : 1 }}
+                whileTap={{ scale: isFormValid && !isCreatingIntent ? 0.98 : 1 }}
+                className={cn(
+                  'w-full py-4 rounded-xl font-bold text-lg',
+                  'bg-gradient-to-r from-green-600 to-green-500',
+                  'text-white shadow-lg',
+                  'transition-all duration-300',
+                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  'relative overflow-hidden'
+                )}
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {isCreatingIntent ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Validation en cours...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      Valider ma commande gratuite
+                    </>
+                  )}
+                </span>
+              </motion.button>
+
+              <p className="text-center text-xs text-gray-400">
+                En validant, vous accédez immédiatement à votre lecture spirituelle gratuite.
+              </p>
+            </div>
           )}
         </div>
       </motion.div>
