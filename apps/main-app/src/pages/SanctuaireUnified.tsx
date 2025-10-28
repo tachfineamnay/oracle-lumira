@@ -46,12 +46,13 @@ const SanctuaireUnified: React.FC = () => {
     isAuthenticated,
     user,
     orders,
-    loading,
+    isLoading,
     error,
     logout,
     getOrderContent,
     downloadFile,
-    authenticateWithEmail
+    authenticateWithEmail,
+    profile
   } = useSanctuaire();
 
   // Lazy-load de la Synthèse (réutilisation du composant legacy)
@@ -63,24 +64,24 @@ const SanctuaireUnified: React.FC = () => {
     const token = searchParams.get('token');
     const sessionEmail = sessionStorage.getItem('sanctuaire_email');
 
-    if (email && !isAuthenticated && !loading) {
+    if (email && !isAuthenticated && !isLoading) {
       sessionStorage.setItem('sanctuaire_email', email);
       if (token?.startsWith('fv_')) {
         sessionStorage.setItem('first_visit', 'true');
       } else {
         authenticateWithEmail(email).catch(console.error);
       }
-    } else if (sessionEmail && !isAuthenticated && !loading) {
+    } else if (sessionEmail && !isAuthenticated && !isLoading) {
       const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
       if (!isFirstVisit) {
         authenticateWithEmail(sessionEmail).catch(console.error);
       }
     }
-  }, [searchParams, isAuthenticated, loading, authenticateWithEmail]);
+  }, [searchParams, isAuthenticated, isLoading, authenticateWithEmail]);
 
   // Redirection login si non authentifié et pas de session
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       const sessionEmail = sessionStorage.getItem('sanctuaire_email');
       const hasEmailInUrl = searchParams.get('email');
       const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
@@ -92,23 +93,23 @@ const SanctuaireUnified: React.FC = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [isAuthenticated, loading, navigate, searchParams]);
+  }, [isAuthenticated, isLoading, navigate, searchParams]);
 
   // Détection si nouveau client (première visite ou profil incomplet)
   const hasFirstVisitToken = sessionStorage.getItem('first_visit') === 'true';
 
   const isNewClient = useMemo(() => {
-    const hasIncompleteProfile = userLevel?.profile && !userLevel.profile.profileCompleted;
-    const hasNoProfile = !userLevel?.profile || Object.keys(userLevel.profile).length === 0;
+    const hasIncompleteProfile = !!profile && !profile.profileCompleted;
+    const hasNoProfile = !profile || Object.keys(profile).length === 0;
     return hasFirstVisitToken || hasIncompleteProfile || hasNoProfile;
-  }, [hasFirstVisitToken, userLevel?.profile]);
+  }, [hasFirstVisitToken, profile]);
 
   // Nettoyer le flag première visite après profil complété
   useEffect(() => {
-    if (isAuthenticated && userLevel?.profile?.profileCompleted) {
+    if (isAuthenticated && profile?.profileCompleted) {
       sessionStorage.removeItem('first_visit');
     }
-  }, [isAuthenticated, userLevel?.profile?.profileCompleted]);
+  }, [isAuthenticated, profile?.profileCompleted]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('sanctuaire_email');
@@ -123,7 +124,7 @@ const SanctuaireUnified: React.FC = () => {
       isAuthenticated,
       hasFirstVisitToken,
       isNewClient,
-      userLevelProfileCompleted: userLevel?.profile?.profileCompleted,
+      profileCompleted: profile?.profileCompleted,
       sessionEmail: sessionStorage.getItem('sanctuaire_email'),
       urlEmail: searchParams.get('email'),
       urlToken: searchParams.get('token')
@@ -171,7 +172,7 @@ const SanctuaireUnified: React.FC = () => {
   };
 
   // Loading
-  if (loading) {
+  if (isLoading) {
     return (
       <PageLayout variant="dark">
         <div className="flex items-center justify-center min-h-screen">

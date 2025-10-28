@@ -27,6 +27,7 @@ interface FormData {
   phone: string;
   birthDate: string;
   birthTime: string;
+  birthPlace: string;
   objective: string;
   additionalInfo: string;
   facePhoto?: File | null;
@@ -36,13 +37,14 @@ interface FormData {
 type FormState = 'active' | 'submitted' | 'completed';
 
 export const SanctuaireWelcomeForm: React.FC = () => {
-  const { updateProfile } = useSanctuaire();
+  const { updateProfile, highestLevel } = useSanctuaire();
   const [formState, setFormState] = useState<FormState>('active');
   const [formData, setFormData] = useState<FormData>({
     email: '',
     phone: '',
     birthDate: '',
     birthTime: '',
+    birthPlace: '',
     objective: '',
     additionalInfo: '',
     facePhoto: null,
@@ -77,19 +79,22 @@ export const SanctuaireWelcomeForm: React.FC = () => {
           // Utiliser FormData pour envoyer les fichiers
           const formDataToSend = new FormData();
           
-          // Ajouter les informations du formulaire
-          // Inclure aussi le niveau depuis l'URL (decouplage Stripe côté Desk)
+          // Résoudre le niveau : URL > highestLevel > défaut
           let levelFromUrl: string | undefined;
           try {
             levelFromUrl = new URLSearchParams(window.location.search).get('level') || undefined;
           } catch {}
+          const resolvedLevel = levelFromUrl || highestLevel || undefined;
+          
+          console.log('[SANCTUAIRE] Niveau résolu:', resolvedLevel, '(URL:', levelFromUrl, '| Context:', highestLevel, ')');
 
           formDataToSend.append('formData', JSON.stringify({
             email: (formData as any).email || undefined,
             phone: (formData as any).phone || undefined,
             dateOfBirth: formData.birthDate || undefined,
             specificQuestion: formData.objective || undefined,
-            level: levelFromUrl,
+            birthPlace: formData.birthPlace || undefined,
+            level: resolvedLevel,
           }));
           
           formDataToSend.append('clientInputs', JSON.stringify({
@@ -139,6 +144,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
       await updateProfile({
         birthDate: formData.birthDate,
         birthTime: formData.birthTime,
+        birthPlace: formData.birthPlace,
         specificQuestion: formData.objective,
         objective: formData.additionalInfo,
         profileCompleted: true,
@@ -161,7 +167,7 @@ export const SanctuaireWelcomeForm: React.FC = () => {
       console.log('[SANCTUAIRE] Setting isSubmitting to false');
       setIsSubmitting(false);
     }
-  }, [formData, updateProfile]);
+  }, [formData, updateProfile, highestLevel]);
 
   const handleEdit = () => {
     setFormState('active');
@@ -176,7 +182,16 @@ export const SanctuaireWelcomeForm: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: file }));
   };
 
-  const isFormValid = formData.email && formData.phone && formData.birthDate && formData.objective && formData.facePhoto && formData.palmPhoto;
+  // Déterminer si niveau Profond (nécessite birthPlace)
+  const isProfond = highestLevel === 'profond' || highestLevel === 'alchimique' || highestLevel === '3';
+  
+  const isFormValid = formData.email && 
+    formData.phone && 
+    formData.birthDate && 
+    formData.objective && 
+    formData.facePhoto && 
+    formData.palmPhoto &&
+    (!isProfond || formData.birthPlace); // Profond exige birthPlace
   const isReadOnly = formState === 'submitted';
 
   return (
@@ -398,6 +413,35 @@ export const SanctuaireWelcomeForm: React.FC = () => {
                   }`}
                 />
               </div>
+            </div>
+            
+            {/* Lieu de naissance - REQUIS POUR NIVEAU PROFOND */}
+            <div>
+              <label className="block text-sm font-medium text-white/90 mb-2">
+                <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Lieu de naissance {isProfond && '*'}
+              </label>
+              <input
+                type="text"
+                required={isProfond}
+                disabled={isReadOnly}
+                value={formData.birthPlace}
+                onChange={(e) => handleInputChange('birthPlace', e.target.value)}
+                placeholder="Ville, Pays"
+                className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                  isReadOnly 
+                    ? 'bg-white/5 border-white/10 text-white/70 cursor-not-allowed'
+                    : 'bg-white/5 border-amber-400/30 text-white placeholder-white/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
+                }`}
+              />
+              {isProfond && (
+                <p className="text-xs text-purple-400/80 mt-1">
+                  ✨ Requis pour le niveau Profond - Permet une analyse astrologique complète
+                </p>
+              )}
             </div>
 
             {/* Objectif spirituel */}

@@ -39,100 +39,24 @@ const AppRoutes: React.FC = () => (
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     
-    {/* ROUTE PRINCIPALE SANCTUAIRE - Enveloppée dans SanctuaireProvider */}
-    {/* ✅ UTILISE LES COMPOSANTS MIS À JOUR (Profile + MesLectures avec DrawsWaiting) */}
+    {/* ROUTE PRINCIPALE SANCTUAIRE - HARMONISÉE AVEC ONBOARDING UNIFIÉ */}
+    {/* ✅ UTILISE SanctuaireUnified avec formulaire enrichi pour tous niveaux (Initié/Mystique/Profond/Intégrale) */}
     <Route
       path="/sanctuaire/*"
       element={
         <SanctuaireProvider>
-          <Routes>
-            <Route index element={<Sanctuaire />} />
-            <Route path="dashboard" element={<Sanctuaire />} />
-            <Route path="path" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazySpiritualPath />
-              </React.Suspense>
-            } />
-            {/* Route draws: PASSAGE 25 - MVP Draws avec grille assets + upgrades contextuels */}
-            <Route path="draws" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyDraws />
-              </React.Suspense>
-            } />
-            <Route path="synthesis" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazySynthesis />
-              </React.Suspense>
-            } />
-            <Route path="chat" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyConversations />
-              </React.Suspense>
-            } />
-            {/* Route profile: utilise Profile (injection données API email/phone) */}
-            <Route path="profile" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyProfile />
-              </React.Suspense>
-            } />
-          </Routes>
+          <SanctuaireUnified />
         </SanctuaireProvider>
       }
     />
-    {/* Garder la nouvelle version pour tests et référence */}
-    <Route path="/sanctuaire-unified" element={
-      <SanctuaireProvider>
-        <SanctuaireUnified />
-      </SanctuaireProvider>
-    } />
     <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
     
-    {/* ROUTES LEGACY pour compatibilité */}
-    <Route path="/commande-legacy" element={<CommandeTemple />} />
-    <Route path="/confirmation-legacy" element={<ConfirmationTemple />} />
-    <Route path="/sanctuaire-legacy" element={<Sanctuaire />}>
-      {/* nested children rendered inside Sanctuaire's <Outlet /> */}
-      <Route
-        path="path"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazySpiritualPath />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="draws"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazyRawDraws />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="synthesis"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazySynthesis />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="chat"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazyConversations />
-          </React.Suspense>
-        }
-      />
-      <Route
-        path="profile"
-        element={
-          <React.Suspense fallback={<SphereSkeleton />}> 
-            <LazyProfile />
-          </React.Suspense>
-        }
-      />
-    </Route>
+    {/* ROUTES LEGACY pour compatibilité et tests */}
+    <Route path="/sanctuaire-legacy" element={
+      <SanctuaireProvider>
+        <Sanctuaire />
+      </SanctuaireProvider>
+    } />
 
     <Route path="/mentions-legales" element={<MentionsLegales />} />
     <Route path="/login" element={<LoginSanctuaire />} />
