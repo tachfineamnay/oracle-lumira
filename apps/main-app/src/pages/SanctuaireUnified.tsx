@@ -40,6 +40,15 @@ const SanctuaireUnified: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedView, setSelectedView] = useState<'readings' | 'profile' | 'synthesis'>('readings');
+  
+  // Initialiser la vue depuis l'URL pour deep-linking
+  useEffect(() => {
+    const viewParam = (searchParams.get('view') || '').toLowerCase();
+    if (viewParam === 'readings' || viewParam === 'profile' || viewParam === 'synthesis') {
+      setSelectedView(viewParam as 'readings' | 'profile' | 'synthesis');
+    }
+  }, [searchParams]);
+  
   // UserLevel migration: using SanctuaireContext
 
   const {
@@ -324,6 +333,7 @@ const SanctuaireUnified: React.FC = () => {
                   <button
                     onClick={() => {
                       setSelectedView('readings');
+                      navigate('/sanctuaire?view=readings', { replace: true });
                       setSidebarOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
@@ -341,6 +351,7 @@ const SanctuaireUnified: React.FC = () => {
                   <button
                     onClick={() => {
                       setSelectedView('profile');
+                      navigate('/sanctuaire?view=profile', { replace: true });
                       setSidebarOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
@@ -358,6 +369,7 @@ const SanctuaireUnified: React.FC = () => {
                   <button
                     onClick={() => {
                       setSelectedView('synthesis');
+                      navigate('/sanctuaire?view=synthesis', { replace: true });
                       setSidebarOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
