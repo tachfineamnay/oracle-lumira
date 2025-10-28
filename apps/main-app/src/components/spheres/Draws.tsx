@@ -150,6 +150,16 @@ const DrawsContent: React.FC = () => {
     mandalaSvg?: string; 
     title?: string 
   }>({ open: false });
+  
+  // PHASE 2 - P2 : Récupération dynamique des formats disponibles depuis le backend
+  const [orderContent, setOrderContent] = useState<{
+    availableFormats?: {
+      hasPdf: boolean;
+      hasAudio: boolean;
+      hasMandala: boolean;
+      hasRitual: boolean;
+    };
+  }>({});
 
   // Mapper les orders vers le format Lecture
   useEffect(() => {
@@ -183,6 +193,28 @@ const DrawsContent: React.FC = () => {
       }
     }
   }, [orders]);
+  
+  // PHASE 2 - P2 : Charger les formats disponibles de la lecture sélectionnée
+  useEffect(() => {
+    const loadOrderContent = async () => {
+      if (!selectedLecture || !selectedLecture.deliveredAt) {
+        // Si la lecture n'est pas encore livrée, on ne récupère pas le contenu
+        setOrderContent({});
+        return;
+      }
+      
+      try {
+        const content = await sanctuaireService.getOrderContent(selectedLecture.id);
+        setOrderContent({ availableFormats: content.availableFormats });
+      } catch (err) {
+        console.error('[Draws] Erreur chargement contenu:', err);
+        // Fallback sur les données locales de l'order
+        setOrderContent({});
+      }
+    };
+    
+    loadOrderContent();
+  }, [selectedLecture]);
 
   // =================== SKELETON LOADING ===================
 
@@ -265,6 +297,7 @@ const DrawsContent: React.FC = () => {
           {selectedLecture && (
             <LectureAssets
               lecture={selectedLecture}
+              availableFormats={orderContent.availableFormats}
               onOpenPdf={async (pdfUrl: string, title: string) => {
                 try {
                   const signed = await sanctuaireService.getPresignedUrl(pdfUrl);
@@ -353,14 +386,30 @@ interface LectureAssetsProps {
   onOpenMandala: (mandalaSvg: string, title: string) => void;
 }
 
-const LectureAssets: React.FC<LectureAssetsProps> = ({
+interface LectureAssetsPropsEnhanced extends LectureAssetsProps {
+  availableFormats?: {
+    hasPdf: boolean;
+    hasAudio: boolean;
+    hasMandala: boolean;
+    hasRitual: boolean;
+  };
+}
+
+const LectureAssets: React.FC<LectureAssetsPropsEnhanced> = ({
   lecture,
   onOpenPdf,
   onPlayAudio,
-  onOpenMandala
+  onOpenMandala,
+  availableFormats
 }) => {
   const levelConfig = LEVEL_CONFIG[lecture.level as keyof typeof LEVEL_CONFIG] || LEVEL_CONFIG[1];
   const availableAssets = levelConfig.assets;
+
+  // PHASE 2 - P2 : Logique hybride - utiliser availableFormats du backend si disponible, sinon fallback sur levelConfig
+  const isPdfAvailable = availableFormats?.hasPdf ?? (availableAssets.includes('pdf') && !!lecture.pdfUrl);
+  const isAudioAvailable = availableFormats?.hasAudio ?? (availableAssets.includes('audio') && !!lecture.audioUrl);
+  const isMandalaAvailable = availableFormats?.hasMandala ?? (availableAssets.includes('mandala') && !!lecture.mandalaSvg);
+  const isRitualAvailable = availableFormats?.hasRitual ?? false;
 
   // Construire la liste des assets
   const assets: Asset[] = [
@@ -368,7 +417,7 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
       id: 'pdf',
       name: 'Lecture PDF',
       icon: <FileText className="w-5 h-5" />,
-      available: availableAssets.includes('pdf'),
+      available: isPdfAvailable,
       url: lecture.pdfUrl,
       type: 'pdf',
       lockedMessage: 'Disponible dès le niveau Initié',
@@ -378,7 +427,7 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
       id: 'audio',
       name: 'Lecture Audio',
       icon: <Headphones className="w-5 h-5" />,
-      available: availableAssets.includes('audio'),
+      available: isAudioAvailable,
       url: lecture.audioUrl,
       type: 'audio',
       lockedMessage: 'Débloqué au niveau Mystique',
@@ -388,7 +437,7 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
       id: 'mandala',
       name: 'Mandala HD',
       icon: <ImageIcon className="w-5 h-5" />,
-      available: availableAssets.includes('mandala'),
+      available: isMandalaAvailable,
       url: lecture.mandalaSvg,
       type: 'mandala',
       lockedMessage: 'Débloqué au niveau Profond',
@@ -398,7 +447,7 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
       id: 'ritual',
       name: 'Rituels personnalisés',
       icon: <Sparkles className="w-5 h-5" />,
-      available: availableAssets.includes('ritual'),
+      available: isRitualAvailable,
       url: undefined,
       type: 'ritual',
       lockedMessage: 'Bientôt disponible (Niveau Intégral)',
