@@ -213,13 +213,35 @@ router.post('/auth/sanctuaire-v2', async (req: any, res: any) => {
         });
       }
 
-      const formData = (latestOrder as any).formData || {};
-      const firstName =
-        formData.firstName ||
-        lowerEmail.split('@')[0] ||
-        'Client';
-      const lastName = formData.lastName || 'Lumira';
-      const phone = formData.phone;
+      const formData = (latestOrder as any)?.formData || {};
+      let firstName = formData.firstName;
+      let lastName = formData.lastName;
+      let phone = formData.phone;
+
+      // ENRICHISSEMENT : Si manquant, récupérer depuis ProductOrder.metadata
+      if (!firstName || !lastName || !phone) {
+        const latestProductOrder = await ProductOrder.findOne({
+          customerEmail: lowerEmail,
+          status: { $in: ['paid', 'processing', 'completed'] },
+        }).sort({ createdAt: -1 }).lean();
+
+        const customerName = (latestProductOrder as any)?.metadata?.customerName || '';
+        const customerPhone = (latestProductOrder as any)?.metadata?.customerPhone || '';
+
+        if (!firstName && customerName) {
+          firstName = customerName.trim().split(' ')[0];
+        }
+        if (!lastName && customerName) {
+          const parts = customerName.trim().split(' ');
+          lastName = parts.slice(1).join(' ') || 'Lumira';
+        }
+        if (!phone && customerPhone) {
+          phone = customerPhone;
+        }
+      }
+
+      firstName = firstName || lowerEmail.split('@')[0] || 'Client';
+      lastName = lastName || 'Lumira';
 
       user = await User.create({ email: lowerEmail, firstName, lastName, phone });
     }

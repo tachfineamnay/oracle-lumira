@@ -36,10 +36,12 @@ interface EditableField {
 
 const Profile: React.FC = () => {
   // PASSAGE 22 - DEVOPS : Utiliser UNIQUEMENT useSanctuaire() pour toutes les donnees
-  const { user, profile, orders, isLoading: ordersLoading, levelMetadata, updateProfile, updateUser, refresh, hasProduct } = useSanctuaire();
+  const { user, profile, orders, isLoading: ordersLoading, levelMetadata, updateProfile, updateUser, refresh, hasProduct, hasCapability } = useSanctuaire();
   const { accessRights, levelName } = useSanctuaryAccess();
   const [isEditing, setIsEditing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [uploadingFace, setUploadingFace] = useState(false);
+  const [uploadingPalm, setUploadingPalm] = useState(false);
   
   // Donnees utilisateur depuis SanctuaireContext
   const email = user?.email || '';
@@ -135,6 +137,51 @@ const Profile: React.FC = () => {
       objective: profile?.objective || ''
     });
     setIsEditing(false);
+  };
+
+  const handleReplacePhoto = async (type: 'face_photo' | 'palm_photo') => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const contentType = file.type || 'image/jpeg';
+
+        type === 'face_photo' ? setUploadingFace(true) : setUploadingPalm(true);
+
+        const presignRes = await fetch('/api/uploads/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, contentType, originalName: file.name })
+        });
+        if (!presignRes.ok) throw new Error('Échec de la présignature upload');
+        const { uploadUrl, publicUrl } = await presignRes.json();
+
+        const putRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': contentType },
+          body: file
+        });
+        if (!putRes.ok) throw new Error('Échec de l\'upload S3');
+
+        if (type === 'face_photo') {
+          await updateProfile({ facePhotoUrl: publicUrl });
+          setUploadingFace(false);
+        } else {
+          await updateProfile({ palmPhotoUrl: publicUrl });
+          setUploadingPalm(false);
+        }
+        await refresh();
+      };
+      input.click();
+    } catch (err) {
+      console.error('[Profile] Remplacement photo:', err);
+      alert('Impossible de remplacer la photo. Réessayez.');
+      setUploadingFace(false);
+      setUploadingPalm(false);
+    }
   };
 
   const editableFields: EditableField[] = [
@@ -417,10 +464,10 @@ const Profile: React.FC = () => {
             <div className="text-center py-8">
               <p className="text-white/60">Aucune commande récente</p>
               <button
-                onClick={() => (window.location.href = '/commande')}
-                className="mt-4 px-6 py-2 rounded-lg bg-amber-400/20 text-amber-400 border border-amber-400/30 hover:bg-amber-400/30 transition"
+                onClick={() => (window.location.href = '/sanctuaire/dashboard')}
+                className="mt-4 px-6 py-2 rounded-lg bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 transition"
               >
-                Commander une lecture
+                Retour à l'accueil
               </button>
             </div>
           )}
@@ -627,7 +674,7 @@ const Profile: React.FC = () => {
                     />
                   )
                 ) : (
-                  <div className="w-full px-4 py-3 rounded-xl border bg-white/5 border-white/10 text-white/90">
+                  <div className="w-full px-4 py-3 rounded-xl border bg-white/5 border-white/10 text-white/90 whitespace-pre-wrap">
                     {field.type === 'date' && field.value !== 'Non renseignée' && field.value
                       ? new Date(field.value).toLocaleDateString('fr-FR')
                       : field.value}
@@ -660,16 +707,18 @@ const Profile: React.FC = () => {
                     <Camera className="w-4 h-4 inline mr-2" />
                     Photo de visage
                   </label>
-                  <div className="relative bg-white/5 border border-amber-400/20 rounded-xl p-4 text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-amber-400/20 flex items-center justify-center">
-                      <Camera className="w-8 h-8 text-amber-400" />
+                  <div className="relative bg-white/5 border border-amber-400/20 rounded-xl p-4">
+                    <img src={profile?.facePhotoUrl || ''} alt="Photo de visage" className="w-full h-48 object-cover rounded-lg mb-3" />
+                    <div className="flex items-center justify-between">
+                      <p className="text-white/80 text-xs">Aperçu</p>
+                      <button
+                        onClick={() => handleReplacePhoto('face_photo')}
+                        disabled={uploadingFace}
+                        className="px-3 py-2 rounded-lg bg-amber-400/20 text-amber-400 border border-amber-400/30 hover:bg-amber-400/30 transition text-xs"
+                      >
+                        {uploadingFace ? 'Envoi...' : 'Remplacer'}
+                      </button>
                     </div>
-                    <p className="text-white/90 font-medium text-sm">
-                      Photo de visage
-                    </p>
-                    <p className="text-white/60 text-xs mt-1">
-                      Uploadée avec succès
-                    </p>
                   </div>
                 </div>
               )}
@@ -681,16 +730,18 @@ const Profile: React.FC = () => {
                     <ImageIcon className="w-4 h-4 inline mr-2" />
                     Photo de paume
                   </label>
-                  <div className="relative bg-white/5 border border-purple-400/20 rounded-xl p-4 text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-purple-400/20 flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-purple-400" />
+                  <div className="relative bg-white/5 border border-purple-400/20 rounded-xl p-4">
+                    <img src={profile?.palmPhotoUrl || ''} alt="Photo de paume" className="w-full h-48 object-cover rounded-lg mb-3" />
+                    <div className="flex items-center justify-between">
+                      <p className="text-white/80 text-xs">Aperçu</p>
+                      <button
+                        onClick={() => handleReplacePhoto('palm_photo')}
+                        disabled={uploadingPalm}
+                        className="px-3 py-2 rounded-lg bg-purple-400/20 text-purple-400 border border-purple-400/30 hover:bg-purple-400/30 transition text-xs"
+                      >
+                        {uploadingPalm ? 'Envoi...' : 'Remplacer'}
+                      </button>
                     </div>
-                    <p className="text-white/90 font-medium text-sm">
-                      Photo de paume
-                    </p>
-                    <p className="text-white/60 text-xs mt-1">
-                      Uploadée avec succès
-                    </p>
                   </div>
                 </div>
               )}
@@ -711,7 +762,7 @@ const Profile: React.FC = () => {
             Actions Rapides
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-4 gap-4">
             <button 
               onClick={() => window.location.href = '/sanctuaire/draws'}
               className="flex items-center gap-3 p-4 bg-blue-400/10 border border-blue-400/20 rounded-xl text-blue-400 hover:bg-blue-400/20 transition-all"
@@ -724,15 +775,28 @@ const Profile: React.FC = () => {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/commande'}
+              onClick={() => window.location.href = '/sanctuaire/synthesis'}
               className="flex items-center gap-3 p-4 bg-amber-400/10 border border-amber-400/20 rounded-xl text-amber-400 hover:bg-amber-400/20 transition-all"
             >
-              <CreditCard className="w-5 h-5" />
+              <Target className="w-5 h-5" />
               <div className="text-left">
-                <div className="font-medium">Nouvelle Lecture</div>
-                <div className="text-xs text-white/60">Commander maintenant</div>
+                <div className="font-medium">Synthèse</div>
+                <div className="text-xs text-white/60">Accéder à votre synthèse</div>
               </div>
             </button>
+            
+            {(hasProduct('mystique') || hasCapability('sanctuaire.sphere.rituals')) && (
+              <button 
+                onClick={() => window.location.href = '/sanctuaire/rituals'}
+                className="flex items-center gap-3 p-4 bg-purple-400/10 border border-purple-400/20 rounded-xl text-purple-400 hover:bg-purple-400/20 transition-all"
+              >
+                <Target className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">Rituels</div>
+                  <div className="text-xs text-white/60">Pratiques personnalisées</div>
+                </div>
+              </button>
+            )}
             
             <button 
               onClick={() => window.location.href = '/sanctuaire/dashboard'}
