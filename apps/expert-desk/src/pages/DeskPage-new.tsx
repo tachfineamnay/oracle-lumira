@@ -41,8 +41,8 @@ const DeskPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  // P1: Debounce pour éviter rafales d'appels API
-  const [refreshTimeout, setRefreshTimeout] = useState<NodeJS.Timeout | null>(null);
+  // P1: Debounce pour éviter rafales d'appels API (utilisation de number au lieu de NodeJS.Timeout pour compatibilité build)
+  const [refreshTimeout, setRefreshTimeout] = useState<number | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -179,7 +179,7 @@ const DeskPage: React.FC = () => {
       clearTimeout(refreshTimeout);
     }
     
-    const timeout = setTimeout(async () => {
+    const timeout = window.setTimeout(async () => {
       setRefreshing(true);
       await fetchOrders();
       await fetchValidationOrders();
