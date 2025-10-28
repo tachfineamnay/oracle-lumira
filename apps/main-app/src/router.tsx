@@ -13,6 +13,19 @@ import MentionsLegales from './pages/MentionsLegales';
 import ExpertDeskPage from './expert/ExpertDesk';
 import { SanctuaireProvider } from './contexts/SanctuaireContext';
 
+// Sanctuaire avec OnboardingForm (stepper 4 étapes) - SYSTÈME FONCTIONNEL
+import Sanctuaire from './pages/Sanctuaire';
+import SphereSkeleton from './components/ui/SphereSkeleton';
+
+// Lazy imports pour les composants du Sanctuaire
+const LazySpiritualPath = React.lazy(() => import('./components/spheres/SpiritualPath'));
+const LazyDraws = React.lazy(() => import('./components/spheres/Draws'));
+const LazyMesLectures = React.lazy(() => import('./components/spheres/MesLectures'));
+const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
+const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
+const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
+const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
+
 const AppRoutes: React.FC = () => (
   <Routes>
     <Route path="/" element={<LandingTempleRefonte />} />
@@ -22,17 +35,52 @@ const AppRoutes: React.FC = () => (
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
     <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     
-    {/* ROUTE PRINCIPALE SANCTUAIRE - HARMONISÉE AVEC ONBOARDING UNIFIÉ */}
-    {/* ✅ UTILISE SanctuaireUnified avec formulaire enrichi pour tous niveaux (Initié/Mystique/Profond/Intégrale) */}
+    {/* ROUTE PRINCIPALE SANCTUAIRE - RESTAURATION SYSTÈME FONCTIONNEL */}
+    {/* ✅ UTILISE Sanctuaire.tsx avec OnboardingForm (stepper 4 étapes validé pendant 3 jours) */}
     <Route
       path="/sanctuaire/*"
       element={
         <SanctuaireProvider>
-          <SanctuaireUnified />
+          <Routes>
+            <Route index element={<Sanctuaire />} />
+            <Route path="dashboard" element={<Sanctuaire />} />
+            <Route path="path" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazySpiritualPath />
+              </React.Suspense>
+            } />
+            <Route path="draws" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazyDraws />
+              </React.Suspense>
+            } />
+            <Route path="synthesis" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazySynthesis />
+              </React.Suspense>
+            } />
+            <Route path="chat" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazyConversations />
+              </React.Suspense>
+            } />
+            <Route path="profile" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazyProfile />
+              </React.Suspense>
+            } />
+          </Routes>
         </SanctuaireProvider>
       }
     />
     <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
+    
+    {/* Route unifiée alternative pour tests */}
+    <Route path="/sanctuaire-unified" element={
+      <SanctuaireProvider>
+        <SanctuaireUnified />
+      </SanctuaireProvider>
+    } />
     
     <Route path="/mentions-legales" element={<MentionsLegales />} />
     <Route path="/login" element={<LoginSanctuaire />} />
