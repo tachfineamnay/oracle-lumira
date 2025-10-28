@@ -119,8 +119,18 @@ const ContextualHint: React.FC = () => {
 
   // Si on est sur la page principale /sanctuaire, afficher le contenu approprié
   if (path === '/sanctuaire' || path === '/sanctuaire/dashboard') {
-    // Si le profil n'est pas complété, afficher le formulaire
-    if (!profile?.profileCompleted) {
+    // NOUVEAU: Vérifier si le profil contient les données essentielles
+    // Au lieu de se fier uniquement à profileCompleted (qui peut être undefined/false même après paiement)
+    const hasEssentialData = profile && (
+      profile.birthDate ||
+      profile.specificQuestion ||
+      profile.facePhotoUrl ||
+      profile.palmPhotoUrl
+    );
+    
+    // Si le profil manque de données essentielles, afficher le formulaire
+    // Cela garantit que TOUS les niveaux (Initié/Mystique/Profond/Intégrale) voient le formulaire
+    if (!hasEssentialData) {
       return (
         <motion.div
           initial={{ opacity: 0, y: 30 }}
