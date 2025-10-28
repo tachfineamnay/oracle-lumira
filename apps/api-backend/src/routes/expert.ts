@@ -545,12 +545,12 @@ router.post('/n8n-callback', async (req: any, res: any) => {
 
     // Parse JSON payload after verifying signature
     let payload: any;
-    /* try {
+    try {
       payload = JSON.parse(rawBody.toString('utf8'));
     } catch (e) {
+      console.error('❌ Invalid JSON payload:', e);
       return res.status(400).json({ error: 'Invalid JSON payload' });
     }
-    */
 
     const { orderId, success, generatedContent, files, error, isRevision } = payload;
     
@@ -936,6 +936,13 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
       }),
       Order.countDocuments({
         'expertReview.expertId': req.expert._id.toString()
+      }),
+      // P1: Ajout métriques assigned et rejected
+      Order.countDocuments({
+        'expertReview.expertId': { $exists: true, $ne: null }
+      }),
+      Order.countDocuments({
+        'expertValidation.validationStatus': 'rejected'
       })
     ]);
 
@@ -946,7 +953,9 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
       awaitingValidation: stats[3],
       completed: stats[4],
       treatedToday: stats[5],
-      totalTreated: stats[6]
+      totalTreated: stats[6],
+      assigned: stats[7],
+      rejected: stats[8]
     });
 
   } catch (error) {

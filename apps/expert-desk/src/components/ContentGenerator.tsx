@@ -54,6 +54,11 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
       return data.signedUrl as string;
     } catch (e) {
       console.warn('Failed to presign URL, falling back to raw:', e);
+      // P1: Feedback utilisateur si presign échoue
+      toast('Aperçu non sécurisé (fallback S3)', { 
+        duration: 2000,
+        icon: '⚠️'
+      });
       return urlOrPath;
     }
   };

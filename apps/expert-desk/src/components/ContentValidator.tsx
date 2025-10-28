@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { api, endpoints } from '../utils/api';
 import { getLevelNameSafely } from '../utils/orderUtils';
+import toast from 'react-hot-toast';
 
 interface ContentValidatorProps {
   order: Order | null;
@@ -109,7 +110,22 @@ const ContentValidator: React.FC<ContentValidatorProps> = ({
   };
 
   const handleReject = async () => {
+    // P1: Validation stricte - impossible de rejeter sans contenu généré
     if (!order || isProcessing || !rejectionReason.trim()) return;
+    
+    // Vérifier qu'il y a du contenu à rejeter
+    const hasContent = order.generatedContent && (
+      order.generatedContent.reading ||
+      order.generatedContent.pdfUrl ||
+      order.generatedContent.audioUrl ||
+      order.generatedContent.mandalaSvg
+    );
+    
+    if (!hasContent) {
+      toast.error('Impossible de rejeter : aucun contenu généré à réviser');
+      return;
+    }
+    
     setIsValidating(true);
     try {
       await onReject(order._id, validationNotes || 'Contenu rejeté - Nécessite régénération', rejectionReason);

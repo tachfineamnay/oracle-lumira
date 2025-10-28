@@ -41,6 +41,8 @@ const DeskPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  // P1: Debounce pour éviter rafales d'appels API
+  const [refreshTimeout, setRefreshTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -172,13 +174,29 @@ const DeskPage: React.FC = () => {
   };
 
   const refreshOrders = async () => {
-    setRefreshing(true);
-    await fetchOrders();
-    await fetchValidationOrders();
-    await fetchStats();
-    setRefreshing(false);
-    toast.success('Données actualisées');
+    // P1: Debounce de 200ms pour éviter rafales
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+    }
+    
+    const timeout = setTimeout(async () => {
+      setRefreshing(true);
+      await fetchOrders();
+      await fetchValidationOrders();
+      await fetchStats();
+      setRefreshing(false);
+      toast.success('Données actualisées');
+    }, 200);
+    
+    setRefreshTimeout(timeout);
   };
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+    };
+  }, [refreshTimeout]);
 
   const handleOrderUpdate = () => {
     refreshOrders();
