@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -35,7 +36,7 @@ interface EditableField {
 
 const Profile: React.FC = () => {
   // PASSAGE 22 - DEVOPS : Utiliser UNIQUEMENT useSanctuaire() pour toutes les donnees
-  const { user, profile, orders, isLoading: ordersLoading, levelMetadata, updateProfile, updateUser, refresh } = useSanctuaire();
+  const { user, profile, orders, isLoading: ordersLoading, levelMetadata, updateProfile, updateUser, refresh, hasProduct } = useSanctuaire();
   const { accessRights, levelName } = useSanctuaryAccess();
   const [isEditing, setIsEditing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
@@ -230,66 +231,302 @@ const Profile: React.FC = () => {
     );
   }
 
+  // Déterminer les états de paiement pour affichage conditionnel
+  const isOrderPending = latestOrder && ['pending', 'failed'].includes(latestOrder.status);
+  const isOrderPaid = latestOrder && ['paid', 'processing', 'awaiting_validation', 'completed'].includes(latestOrder.status);
+  const isOrderFree = latestOrder && latestOrder.amount === 0;
+  const canUpdatePayment = isOrderPending && !isOrderFree;
+
+  // Timeline steps basés sur le status
+  const getTimelineSteps = () => {
+    if (!latestOrder) return [];
+    
+    const steps = [
+      { 
+        label: 'Paiement', 
+        status: isOrderPaid ? 'completed' : (isOrderPending ? 'pending' : 'current'),
+        date: latestOrder.createdAt
+      },
+      { 
+        label: 'Lecture en préparation', 
+        status: latestOrder.deliveredAt ? 'completed' : (isOrderPaid ? 'current' : 'pending'),
+        date: null
+      },
+      { 
+        label: 'Lecture prête', 
+        status: latestOrder.deliveredAt ? 'completed' : 'pending',
+        date: latestOrder.deliveredAt
+      }
+    ];
+    
+    return steps;
+  };
+
+  const timelineSteps = getTimelineSteps();
+
   return (
     <div className="p-6 space-y-6">
-      {/* Acces & Statut de commande */}
+      {/* Statut de votre lecture - REFONTE OPTION C */}
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
         <GlassCard className="p-6 bg-gradient-to-br from-amber-400/10 to-amber-500/5 border-amber-400/20">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="text-sm text-white/60">Votre Niveau</div>
-              <div className="text-xl font-playfair italic text-amber-400">{currentLevelName || 'Gratuit'}</div>
+              <h2 className="text-xl font-playfair italic text-amber-400">Statut de votre lecture</h2>
+              {latestOrder && (
+                <p className="text-sm text-white/60 mt-1">
+                  Commande #{latestOrder.orderNumber || latestOrder.id?.slice(0, 8)} • {getLevelNameSafely(latestOrder.level)}
+                </p>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <div className="text-sm text-white/60">Tirages / jour</div>
-                <div className="text-white font-medium">{accessRights.oracle.dailyDraws === -1 ? 'Illimites' : accessRights.oracle.dailyDraws}</div>
+            
+            {latestOrder && (
+              <div className="flex items-center gap-2">
+                {latestOrder.deliveredAt ? (
+                  <span className="px-3 py-1 bg-green-400/20 border border-green-400/30 rounded-full text-green-400 text-xs font-medium">
+                    ✓ Lecture prête
+                  </span>
+                ) : isOrderPaid ? (
+                  <span className="px-3 py-1 bg-amber-400/20 border border-amber-400/30 rounded-full text-amber-400 text-xs font-medium">
+                    ⏳ En préparation
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 bg-red-400/20 border border-red-400/30 rounded-full text-red-400 text-xs font-medium">
+                    ⚠️ Paiement requis
+                  </span>
+                )}
               </div>
-              <div>
-                <div className="text-sm text-white/60">Temps de reponse</div>
-                <div className="text-white font-medium">{accessRights.oracle.responseTime}</div>
-              </div>
-            </div>
+            )}
           </div>
-          <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
-            {latestOrder ? (
-              <div className="flex flex-col gap-3">
-                <div>
-                  <div className="text-white font-medium">Commande #{latestOrder.orderNumber || (latestOrder.id && latestOrder.id.slice(0,8))}</div>
-                  <div className="text-xs text-white/60 mt-1">Passée le {new Date(latestOrder.createdAt).toLocaleDateString('fr-FR')} · {getLevelNameSafely(latestOrder.level)}</div>
-                  <div className="text-sm mt-2">
-                    {latestOrder.deliveredAt ? (
-                      <span className="text-green-400 flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4" />
-                        Lecture prête
-                      </span>
-                    ) : (
-                      <div className="space-y-1">
-                        <span className="text-amber-400 flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          Lecture en cours de préparation
-                        </span>
-                        <p className="text-xs text-white/60">
-                          Vous serez notifié par email dès qu'elle sera prête
-                        </p>
+
+          {latestOrder ? (
+            <div className="space-y-6">
+              {/* Timeline de progression */}
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  {timelineSteps.map((step, idx) => (
+                    <div key={idx} className="flex flex-col items-center flex-1">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                        step.status === 'completed' 
+                          ? 'bg-green-400/20 border-green-400 text-green-400' 
+                          : step.status === 'current'
+                          ? 'bg-amber-400/20 border-amber-400 text-amber-400 animate-pulse'
+                          : 'bg-white/5 border-white/20 text-white/40'
+                      }`}>
+                        {step.status === 'completed' ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : step.status === 'current' ? (
+                          <Clock className="w-5 h-5" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-current" />
+                        )}
                       </div>
-                    )}
-                  </div>
+                      <div className="mt-2 text-center">
+                        <p className={`text-xs font-medium ${
+                          step.status === 'completed' ? 'text-green-400' :
+                          step.status === 'current' ? 'text-amber-400' : 'text-white/40'
+                        }`}>
+                          {step.label}
+                        </p>
+                        {step.date && (
+                          <p className="text-[10px] text-white/40 mt-0.5">
+                            {new Date(step.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                          </p>
+                        )}
+                      </div>
+                      {idx < timelineSteps.length - 1 && (
+                        <div className={`absolute top-5 h-0.5 transition-all ${
+                          step.status === 'completed' ? 'bg-green-400/50' : 'bg-white/10'
+                        }`} style={{
+                          left: `${(idx + 1) * (100 / timelineSteps.length)}%`,
+                          right: `${100 - ((idx + 2) * (100 / timelineSteps.length))}%`
+                        }} />
+                      )}
+                    </div>
+                  ))}
                 </div>
-                {latestOrder.deliveredAt && (
-                  <div className="flex justify-end">
+              </div>
+
+              {/* Message contextuel */}
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                {latestOrder.deliveredAt ? (
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-white font-medium">Votre lecture est prête !</p>
+                      <p className="text-white/60 text-sm mt-1">
+                        Découvrez votre contenu personnalisé dans l'espace "Mes Lectures".
+                      </p>
+                    </div>
                     <button 
                       onClick={() => (window.location.href = '/sanctuaire/draws')} 
-                      className="px-4 py-2 rounded-lg bg-green-400/20 text-green-400 border border-green-400/30 hover:bg-green-400/30 transition"
+                      className="px-4 py-2 rounded-lg bg-green-400/20 text-green-400 border border-green-400/30 hover:bg-green-400/30 transition flex-shrink-0"
                     >
-                      Accéder à mes lectures
+                      Voir ma lecture
                     </button>
+                  </div>
+                ) : isOrderPaid ? (
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-white font-medium">Lecture en cours de préparation</p>
+                      <p className="text-white/60 text-sm mt-1">
+                        Vous serez notifié par email dès qu'elle sera prête. Délai estimé : 24-48h.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-white font-medium">Paiement en attente</p>
+                      <p className="text-white/60 text-sm mt-1">
+                        Veuillez finaliser le paiement pour que nous puissions préparer votre lecture.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="text-white/80">Aucune commande récente</div>
-            )}
+
+              {/* Gestion du moyen de paiement - CONDITIONNEL */}
+              {canUpdatePayment && (
+                <div className="p-4 rounded-xl bg-red-400/5 border border-red-400/20">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      <CreditCard className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-white font-medium">Problème de paiement</p>
+                        <p className="text-white/60 text-sm mt-1">
+                          Le paiement n'a pas pu être finalisé. Vous pouvez mettre à jour votre moyen de paiement.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        // TODO: Implémenter modal Stripe pour update PaymentMethod
+                        alert('Fonctionnalité à venir : Mise à jour du moyen de paiement');
+                      }}
+                      className="px-4 py-2 rounded-lg bg-red-400/20 text-red-400 border border-red-400/30 hover:bg-red-400/30 transition flex-shrink-0 text-sm font-medium"
+                    >
+                      Modifier la carte
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-white/60">Aucune commande récente</p>
+              <button
+                onClick={() => (window.location.href = '/commande')}
+                className="mt-4 px-6 py-2 rounded-lg bg-amber-400/20 text-amber-400 border border-amber-400/30 hover:bg-amber-400/30 transition"
+              >
+                Commander une lecture
+              </button>
+            </div>
+          )}
+        </GlassCard>
+      </motion.div>
+
+      {/* Aperçu de l'accès par niveau */}
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <GlassCard className="p-6">
+          <h2 className="text-lg font-playfair italic text-white mb-4 flex items-center gap-2">
+            <Target className="w-5 h-5 text-amber-400" />
+            Aperçu de l'accès par niveau
+          </h2>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Niveau Initié */}
+            <div className={`p-4 rounded-xl border transition-all ${
+              currentLevelName === 'Simple' || hasProduct('initie')
+                ? 'bg-green-400/10 border-green-400/30'
+                : 'bg-white/5 border-white/10'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-white">Initié</h3>
+                {(currentLevelName === 'Simple' || hasProduct('initie')) && (
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                )}
+              </div>
+              <ul className="text-xs text-white/70 space-y-1.5">
+                <li>✓ Lecture PDF personnalisée</li>
+                <li>✓ Accès gratuit (100 premiers)</li>
+              </ul>
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <span className={`text-xs font-medium ${
+                  currentLevelName === 'Simple' || hasProduct('initie') ? 'text-green-400' : 'text-white/40'
+                }`}>
+                  {currentLevelName === 'Simple' || hasProduct('initie') ? 'Disponible' : 'Gratuit'}
+                </span>
+              </div>
+            </div>
+
+            {/* Niveau Mystique */}
+            <div className={`p-4 rounded-xl border transition-all ${
+              currentLevelName === 'Intuitive' || hasProduct('mystique')
+                ? 'bg-purple-400/10 border-purple-400/30'
+                : 'bg-white/5 border-white/10'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-white">Mystique</h3>
+                {(currentLevelName === 'Intuitive' || hasProduct('mystique')) && (
+                  <CheckCircle className="w-4 h-4 text-purple-400" />
+                )}
+              </div>
+              <ul className="text-xs text-white/70 space-y-1.5">
+                <li>✓ Lecture PDF + Audio</li>
+                <li>✓ Voix personnalisée</li>
+              </ul>
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <span className={`text-xs font-medium ${
+                  currentLevelName === 'Intuitive' || hasProduct('mystique') ? 'text-purple-400' : 'text-white/40'
+                }`}>
+                  {currentLevelName === 'Intuitive' || hasProduct('mystique') ? 'Disponible' : '47€'}
+                </span>
+              </div>
+            </div>
+
+            {/* Niveau Profond */}
+            <div className={`p-4 rounded-xl border transition-all ${
+              currentLevelName === 'Alchimique' || hasProduct('profond')
+                ? 'bg-blue-400/10 border-blue-400/30'
+                : 'bg-white/5 border-white/10'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-white">Profond</h3>
+                {(currentLevelName === 'Alchimique' || hasProduct('profond')) && (
+                  <CheckCircle className="w-4 h-4 text-blue-400" />
+                )}
+              </div>
+              <ul className="text-xs text-white/70 space-y-1.5">
+                <li>✓ PDF + Audio + Mandala</li>
+                <li>✓ Art sacré personnalisé</li>
+              </ul>
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <span className={`text-xs font-medium ${
+                  currentLevelName === 'Alchimique' || hasProduct('profond') ? 'text-blue-400' : 'text-white/40'
+                }`}>
+                  {currentLevelName === 'Alchimique' || hasProduct('profond') ? 'Disponible' : '67€'}
+                </span>
+              </div>
+            </div>
+
+            {/* Niveau Intégral */}
+            <div className="p-4 rounded-xl border bg-white/5 border-white/10 opacity-60">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-white">Intégral</h3>
+                <span className="text-xs px-2 py-0.5 bg-amber-400/20 text-amber-400 rounded">Bientôt</span>
+              </div>
+              <ul className="text-xs text-white/70 space-y-1.5">
+                <li>✓ Tout + Rituel personnalisé</li>
+                <li>✓ Suivi 30 jours</li>
+              </ul>
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <span className="text-xs font-medium text-white/40">
+                  🔒 Bientôt disponible
+                </span>
+              </div>
+            </div>
           </div>
         </GlassCard>
       </motion.div>
