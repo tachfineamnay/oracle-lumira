@@ -25,6 +25,8 @@ const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'))
 const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
 const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
 const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
+const LazyRituals = React.lazy(() => import('./components/spheres/Rituals'));
+const LazyMandala = React.lazy(() => import('./components/spheres/Mandala'));
 
 const AppRoutes: React.FC = () => (
   <Routes>
@@ -67,6 +69,16 @@ const AppRoutes: React.FC = () => (
             <Route path="profile" element={
               <React.Suspense fallback={<SphereSkeleton />}>
                 <LazyProfile />
+              </React.Suspense>
+            } />
+            <Route path="rituals" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazyRituals />
+              </React.Suspense>
+            } />
+            <Route path="mandala" element={
+              <React.Suspense fallback={<SphereSkeleton />}>
+                <LazyMandala />
               </React.Suspense>
             } />
           </Routes>

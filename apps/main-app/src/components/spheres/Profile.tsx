@@ -61,6 +61,7 @@ const Profile: React.FC = () => {
 
   // Synchroniser editData quand les donnees du Sanctuaire arrivent
   React.useEffect(() => {
+    console.log('[Profile] BUILD VERSION: 80051b6 - Refonte UX/UI active');
     if (user) {
       setEditData(prev => ({
         ...prev,
