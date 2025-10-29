@@ -84,6 +84,24 @@ const Profile: React.FC = () => {
     objective: profile?.objective || ''
   });
 
+  // Fonction pour obtenir une URL signée si l'URL publique échoue
+  const getSignedUrl = async (originalUrl: string): Promise<string | null> => {
+    try {
+      console.log('[Profile] Tentative de récupération URL signée pour:', originalUrl);
+      const res = await fetch(`/api/uploads/presign-get?url=${encodeURIComponent(originalUrl)}`);
+      if (!res.ok) {
+        console.error('[Profile] Échec récupération URL signée:', res.status);
+        return null;
+      }
+      const data = await res.json();
+      console.log('[Profile] URL signée obtenue avec succès');
+      return data?.url || null;
+    } catch (error) {
+      console.error('[Profile] Erreur lors de la récupération URL signée:', error);
+      return null;
+    }
+  };
+
   // Navigation items
   const navigationItems: NavigationItem[] = [
     { id: 'photos', label: 'Photos', icon: <Camera className="w-4 h-4" />, color: 'amber' },
@@ -465,8 +483,14 @@ const Profile: React.FC = () => {
                           alt="Visage"
                           className="w-full h-48 object-cover rounded-lg cursor-pointer"
                           onClick={() => setLightboxImage(profile.facePhotoUrl!)}
-                          onError={(e) => {
+                          onError={async (e) => {
                             console.error('[Profile] Erreur chargement image visage:', profile.facePhotoUrl);
+                            const signed = await getSignedUrl(profile.facePhotoUrl!);
+                            if (signed) {
+                              console.log('[Profile] Utilisation URL signée pour image visage');
+                              e.currentTarget.src = signed;
+                              return;
+                            }
                             e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
                           }}
                         />
@@ -499,8 +523,14 @@ const Profile: React.FC = () => {
                           alt="Paume"
                           className="w-full h-48 object-cover rounded-lg cursor-pointer"
                           onClick={() => setLightboxImage(profile.palmPhotoUrl!)}
-                          onError={(e) => {
+                          onError={async (e) => {
                             console.error('[Profile] Erreur chargement image paume:', profile.palmPhotoUrl);
+                            const signed = await getSignedUrl(profile.palmPhotoUrl!);
+                            if (signed) {
+                              console.log('[Profile] Utilisation URL signée pour image paume');
+                              e.currentTarget.src = signed;
+                              return;
+                            }
                             e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
                           }}
                         />

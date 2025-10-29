@@ -51,5 +51,40 @@ router.post('/presign', async (req: any, res: any) => {
   }
 });
 
+// GET /api/uploads/presign-get?key=<key> OR ?url=<fullUrl>
+// Retourne une URL signée temporaire pour lecture d'un objet privé
+router.get('/presign-get', async (req: any, res: any) => {
+  try {
+    const raw = String(req.query.key || req.query.url || '');
+    if (!raw) {
+      return res.status(400).json({ error: 'key or url query param is required' });
+    }
+
+    let key = raw;
+    if (/^https?:\/\//i.test(raw)) {
+      try {
+        const u = new URL(raw);
+        key = u.pathname.replace(/^\//, '');
+        // Enlever le nom du bucket si présent au début du pathname
+        const bucketName = process.env.AWS_S3_BUCKET_NAME || 'oracle-lumira-uploads-tachfine-1983';
+        if (key.startsWith(bucketName + '/')) {
+          key = key.substring(bucketName.length + 1);
+        }
+      } catch (e) {
+        console.warn('[UPLOADS] Invalid URL provided, using raw as key:', raw);
+      }
+    }
+
+    console.log('[UPLOADS] Generating signed GET URL for key:', key);
+    const s3 = getS3Service();
+    const signedUrl = await s3.getPresignedGetUrl(key, 900);
+    console.log('[UPLOADS] Signed GET URL generated successfully');
+    return res.json({ key, url: signedUrl, expiresIn: 900 });
+  } catch (error: any) {
+    console.error('[UPLOADS] presign-get error:', error);
+    return res.status(500).json({ error: 'Failed to create presigned GET URL', details: error?.message });
+  }
+});
+
 export default router;
 
