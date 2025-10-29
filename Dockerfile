@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Build-time arguments for Vite environment variables
 ARG VITE_STRIPE_PUBLISHABLE_KEY
+ARG VITE_API_URL
 ARG VITE_API_BASE_URL
 ARG VITE_APP_DOMAIN
 # CACHE BUSTING: Force rebuild on every deploy by passing commit SHA
@@ -14,6 +15,9 @@ ARG BUILD_TIMESTAMP=unknown
 
 # Set environment variables for Vite build
 ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
+# Primary variable used by frontend code
+ENV VITE_API_URL=$VITE_API_URL
+# Backward compatibility fallback
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_APP_DOMAIN=$VITE_APP_DOMAIN
 ENV VITE_BUILD_VERSION=$BUILD_VERSION
