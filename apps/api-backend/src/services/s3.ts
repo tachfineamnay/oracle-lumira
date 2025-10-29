@@ -102,13 +102,22 @@ export class S3Service {
    */
   public getPublicUrl(key: string): string {
     const endpoint = process.env.S3_ENDPOINT;
+    const bucketName = this.bucketName;
+    
+    console.log('[S3Service] Génération URL publique pour:', { key, endpoint, bucketName });
+    
     if (endpoint) {
       // MinIO ou endpoint personnalisé
-      return `${endpoint.replace(/\/$/, '')}/${this.bucketName}/${key}`;
+      const cleanEndpoint = endpoint.replace(/\/$/, '');
+      const publicUrl = `${cleanEndpoint}/${bucketName}/${key}`;
+      console.log('[S3Service] URL publique (MinIO):', publicUrl);
+      return publicUrl;
     } else {
       // AWS S3 standard
       const region = process.env.AWS_REGION || 'us-east-1';
-      return `https://${this.bucketName}.s3.${region}.amazonaws.com/${key}`;
+      const publicUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+      console.log('[S3Service] URL publique (AWS S3):', publicUrl);
+      return publicUrl;
     }
   }
 

@@ -105,6 +105,14 @@ const Profile: React.FC = () => {
         specificQuestion: profile?.specificQuestion || '',
         objective: profile?.objective || ''
       });
+      
+      // Log des URLs des photos pour diagnostic
+      if (profile?.facePhotoUrl || profile?.palmPhotoUrl) {
+        console.log('[Profile] Photos détectées:', {
+          facePhotoUrl: profile?.facePhotoUrl,
+          palmPhotoUrl: profile?.palmPhotoUrl
+        });
+      }
     }
   }, [user, profile]);
 
@@ -217,6 +225,8 @@ const Profile: React.FC = () => {
       type === 'face_photo' ? setUploadingFace(true) : setUploadingPalm(true);
 
       try {
+        console.log('[Profile] Démarrage upload photo:', { type, contentType, fileName: file.name });
+        
         // 1. Demander une URL présignée
         const presignRes = await fetch('/api/uploads/presign', {
           method: 'POST',
@@ -224,8 +234,14 @@ const Profile: React.FC = () => {
           body: JSON.stringify({ type, contentType, originalName: file.name })
         });
 
-        if (!presignRes.ok) throw new Error('Échec de la présignature');
+        if (!presignRes.ok) {
+          const errorData = await presignRes.json();
+          console.error('[Profile] Erreur présignature:', errorData);
+          throw new Error('Échec de la présignature');
+        }
+        
         const { uploadUrl, publicUrl } = await presignRes.json();
+        console.log('[Profile] URL présignée reçue:', { uploadUrl: uploadUrl.substring(0, 100), publicUrl });
 
         // 2. Upload vers S3
         const putRes = await fetch(uploadUrl, {
@@ -234,7 +250,12 @@ const Profile: React.FC = () => {
           body: file
         });
 
-        if (!putRes.ok) throw new Error('Échec de l\'upload S3');
+        if (!putRes.ok) {
+          console.error('[Profile] Erreur upload S3:', putRes.status, putRes.statusText);
+          throw new Error('Échec de l\'upload S3');
+        }
+        
+        console.log('[Profile] Upload S3 réussi, mise à jour du profil avec URL:', publicUrl);
 
         // 3. Mettre à jour le profil
         if (type === 'face_photo') {
@@ -244,6 +265,7 @@ const Profile: React.FC = () => {
         }
 
         await refresh();
+        console.log('[Profile] Photo remplacée avec succès');
       } catch (error) {
         console.error('[Profile] Erreur upload photo:', error);
         alert('Impossible de remplacer la photo. Réessayez.');
@@ -443,6 +465,10 @@ const Profile: React.FC = () => {
                           alt="Visage"
                           className="w-full h-48 object-cover rounded-lg cursor-pointer"
                           onClick={() => setLightboxImage(profile.facePhotoUrl!)}
+                          onError={(e) => {
+                            console.error('[Profile] Erreur chargement image visage:', profile.facePhotoUrl);
+                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+                          }}
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 rounded-lg transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <Eye className="w-8 h-8 text-white" />
@@ -473,6 +499,10 @@ const Profile: React.FC = () => {
                           alt="Paume"
                           className="w-full h-48 object-cover rounded-lg cursor-pointer"
                           onClick={() => setLightboxImage(profile.palmPhotoUrl!)}
+                          onError={(e) => {
+                            console.error('[Profile] Erreur chargement image paume:', profile.palmPhotoUrl);
+                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+                          }}
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 rounded-lg transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <Eye className="w-8 h-8 text-white" />

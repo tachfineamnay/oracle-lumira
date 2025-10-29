@@ -183,6 +183,11 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
       );
 
       console.log('[SanctuaireProvider] Profil chargé:', response.data.profile);
+      console.log('[SanctuaireProvider] URLs des photos:', {
+        facePhotoUrl: response.data.profile?.facePhotoUrl,
+        palmPhotoUrl: response.data.profile?.palmPhotoUrl
+      });
+      
       setProfile(response.data.profile || null);
     } catch (err: any) {
       console.error('[SanctuaireProvider] Erreur profile:', err.response?.data || err.message);

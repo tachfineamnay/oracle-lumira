@@ -42,6 +42,8 @@ router.post('/presign', async (req: any, res: any) => {
     const uploadUrl = await s3.getPresignedPutUrl(key, contentType, 900);
     const publicUrl = s3.getPublicUrl(key);
 
+    console.log('[UPLOADS] Presign success:', { key, publicUrl, type });
+
     return res.json({ key, uploadUrl, publicUrl, contentType, expiresIn: 900 });
   } catch (error: any) {
     console.error('[UPLOADS] presign error:', error);
