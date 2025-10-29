@@ -1,0 +1,56 @@
+FIX(DEVOPS-CRITIQUE): Ajouter VITE_API_URL dans Dockerfiles pour compatibilite frontend
+
+OBJECTIF
+========
+Corriger le probleme critique qui empechait la nouvelle version du Profile de communiquer avec le backend en production.
+Le code frontend utilise VITE_API_URL (via getApiBaseUrl()) mais les Dockerfiles ne passaient que VITE_API_BASE_URL,
+causant l'affichage de l'ancienne version du profil sur Coolify.
+
+MODIFICATIONS
+=============
+
+1. Dockerfile (racine)
+   - Ligne 9 : Ajout ARG VITE_API_URL
+   - Lignes 16-18 : Exposition ENV VITE_API_URL en priorite + VITE_API_BASE_URL en fallback
+   - Commentaire explicite sur la variable primaire vs backward compatibility
+
+2. apps/main-app/Dockerfile  
+   - Lignes 18-21 : Ajout ARG VITE_API_URL + VITE_API_BASE_URL + VITE_STRIPE_PUBLISHABLE_KEY + VITE_APP_DOMAIN
+   - Lignes 23-28 : Exposition ENV VITE_API_URL en priorite + fallback VITE_API_BASE_URL
+
+LOGIQUE
+=======
+
+Le code frontend dans apps/main-app/src/lib/apiBase.ts utilise :
+  const candidate = env.VITE_API_URL || env.VITE_API_BASE_URL;
+
+Mais les Dockerfiles ne passaient que VITE_API_BASE_URL, donc VITE_API_URL etait toujours undefined,
+forçant le fallback vers /api ou le domaine oraclelumira.com, ce qui ne fonctionnait pas avec Coolify.
+
+Solution : Passer VITE_API_URL en priorite dans le build Docker, tout en gardant VITE_API_BASE_URL 
+pour la retrocompatibilite.
+
+IMPACT
+======
+
+- Backend : Aucun changement
+- Frontend : Doit recevoir VITE_API_URL configure sur Coolify
+- Coolify : Requis configurer la variable VITE_API_URL dans l'interface
+- Retrocompatibilite : VITE_API_BASE_URL reste supporte si VITE_API_URL absent
+
+PROCHAINES ETAPES
+=================
+
+1. Configurer sur Coolify :
+   VITE_API_URL=https://oraclelumira.com/api
+   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51Ms0j7HY5XvhVZuDjKcQKRP6PVzPmtN3nmZcPJK4NEK9c5do3kmDq1L180Dwx1rd3EwqdZ2rQCf3eRuqPI6MNhwY00K5JGq3RL
+   VITE_APP_DOMAIN=https://oraclelumira.com
+
+2. Cocher Disable Build Cache sur Coolify
+
+3. Redeploy
+
+4. Valider :
+   - curl https://oraclelumira.com/health.json
+   - Console navigateur : [Profile] BUILD VERSION: 80051b6
+   - Test du profil avec miniatures images + nom/prenom corrects

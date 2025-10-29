@@ -1,340 +1,243 @@
-# 🔍 DIAGNOSTIC COMPLET - PROFIL CLIENT NON MODIFIABLE
+# 🔍 DIAGNOSTIC COMPLET - PROFIL SANCTUAIRE NON MIS À JOUR
 
-## Date: 27 Octobre 2025 - 23:00
+## 📊 ÉTAT ACTUEL (Confirmé par logs)
 
-## ❌ PROBLÈME RAPPORTÉ
+### ✅ Ce qui fonctionne
+- Frontend déployé avec BUILD VERSION 80051b6 (refonte active)
+- SanctuaireProvider charge correctement les données (Token, Profil, Orders, Entitlements)
+- Backend API répond correctement (healthz, presign S3)
+- Authentification sanctuaire fonctionne
 
-L'utilisateur rapporte que les modifications du profil client n'apparaissent **toujours pas** dans l'interface, malgré les corrections apportées.
+### ❌ Ce qui ne fonctionne PAS
+- Les miniatures des photos uploadées ne s'affichent pas
+- Les nom/prénom affichés sont incorrects ("Client" / "Oracle" au lieu des vraies valeurs)
+- Les modifications du profil ne sont pas visibles après sauvegarde
 
 ---
 
-## 🔎 AUDIT EN PROFONDEUR
+## 🎯 HYPOTHÈSES À VÉRIFIER
 
-### 1. VÉRIFICATION CODE SOURCE ✅
+### Hypothèse 1: Les PATCH API ne sont jamais appelés
+**Symptôme**: Aucune trace de PATCH /api/users/profile ou /api/users/me dans les logs backend
 
-#### Backend (`apps/api-backend/src/routes/users.ts`)
+**Tests à effectuer**:
+1. Ouvrir DevTools → Network
+2. Cliquer "Modifier" sur le profil
+3. Changer Prénom/Nom
+4. Cliquer "Sauvegarder"
+5. Vérifier si les requêtes apparaissent:
+   - `PATCH /api/users/me` (attendu: 200)
+   - `PATCH /api/users/profile` (attendu: 200)
 
-**Endpoints créés et vérifiés** :
+**Si les requêtes n'apparaissent PAS**:
+→ Problème frontend: les event handlers ne sont pas déclenchés
+→ Solution: Vérifier les console errors JavaScript
+
+**Si les requêtes apparaissent avec erreur 401/403**:
+→ Problème: Token manquant ou expiré
+→ Solution: Réauthentifier (logout/login)
+
+**Si les requêtes apparaissent avec 200**:
+→ Backend OK, mais frontend ne refresh pas
+→ Solution: Vérifier que refresh() est bien appelé
+
+---
+
+### Hypothèse 2: Le token est expiré ou invalide
+**Tests à effectuer**:
+```bash
+# Récupérer le token depuis DevTools → Application → Local Storage
+# Clé: sanctuaire_token
+
+# Tester GET profil
+curl "https://oraclelumira.com/api/users/profile" \
+  -H "Authorization: Bearer VOTRE_TOKEN_ICI"
+
+# Tester GET utilisateur
+curl "https://oraclelumira.com/api/users/me" \
+  -H "Authorization: Bearer VOTRE_TOKEN_ICI"
+```
+
+**Réponses attendues**:
+- Si 401: Token expiré → Réauthentifier
+- Si 200 avec données correctes: Backend OK → Problème frontend
+- Si 200 avec données incorrectes: Problème de données en BDD
+
+---
+
+### Hypothèse 3: Les données sont en BDD mais pas récupérées
+**Tests à effectuer**:
+```bash
+# 1. Lire le profil actuel
+curl "https://oraclelumira.com/api/users/profile" \
+  -H "Authorization: Bearer VOTRE_TOKEN"
+
+# 2. Mettre à jour le prénom/nom
+curl -X PATCH "https://oraclelumira.com/api/users/me" \
+  -H "Authorization: Bearer VOTRE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Jean","lastName":"Dupont"}'
+
+# 3. Relire pour confirmer
+curl "https://oraclelumira.com/api/users/me" \
+  -H "Authorization: Bearer VOTRE_TOKEN"
+
+# 4. Mettre à jour une photo
+curl -X PATCH "https://oraclelumira.com/api/users/profile" \
+  -H "Authorization: Bearer VOTRE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"facePhotoUrl":"https://oracle-lumira-uploads-tachfine-1983.s3.eu-west-3.amazonaws.com/uploads/2025/10/test.jpg"}'
+
+# 5. Relire le profil
+curl "https://oraclelumira.com/api/users/profile" \
+  -H "Authorization: Bearer VOTRE_TOKEN"
+```
+
+**Si les PATCH retournent 200 et les GET montrent les nouvelles valeurs**:
+→ Backend 100% fonctionnel
+→ Problème: Frontend ne refresh pas après save OU affiche de mauvaises données
+
+**Si les PATCH échouent**:
+→ Voir le message d'erreur pour débugger
+
+---
+
+### Hypothèse 4: Le frontend affiche les mauvaises données sources
+**Code à vérifier dans Profile.tsx**:
 
 ```typescript
-// ✅ GET /api/users/me - Récupère firstName, lastName, phone, email
-router.get('/me', authenticateSanctuaire, async (req, res) => {
-  const user = await User.findById(req.user._id).select('email firstName lastName phone');
-  res.json({ email, firstName, lastName, phone });
-});
+// Ligne ~52-60 : Données utilisateur
+const email = user?.email || '';
+const phone = user?.phone || '';
 
-// ✅ PATCH /api/users/me - Met à jour firstName, lastName, phone, email
-router.patch('/me', authenticateSanctuaire, async (req, res) => {
-  const updates = req.body;
-  const allowedFields = ['firstName', 'lastName', 'phone', 'email'];
-  // ... validation + update MongoDB
-});
-
-// ✅ GET /api/users/profile - Récupère tout le profil
-router.get('/profile', authenticateSanctuaire, async (req, res) => {
-  res.json({ email, firstName, lastName, phone, profile });
-});
-
-// ✅ PATCH /api/users/profile - Met à jour sous-document profile
-router.patch('/profile', authenticateSanctuaire, async (req, res) => {
-  // ... update avec $set notation pointillée
-});
+// Ligne ~194-206 : Champs éditables
+{
+  key: 'firstName',
+  label: 'Prénom',
+  type: 'text',
+  icon: <User className="w-4 h-4" />,
+  value: isEditing ? editData.firstName : (user?.firstName || 'Non renseigné')
+},
 ```
 
-**Status**: ✅ **CODE CORRECT**
+**Vérification**:
+1. Ouvrir la console navigateur
+2. Taper: `localStorage.getItem('sanctuaire_token')`
+3. Décoder le JWT (jwt.io) pour voir l'email/userId
+4. Vérifier que l'email correspond bien à votre compte
+5. Dans React DevTools → Components → SanctuaireProvider:
+   - Vérifier `user.firstName`, `user.lastName`, `user.email`
+   - Vérifier `profile.facePhotoUrl`, `profile.palmPhotoUrl`
+
+**Si user.firstName/lastName sont vides**:
+→ Problème: GET /api/users/me ne renvoie pas les bonnes données
+→ Vérifier directement avec curl
+
+**Si profile.facePhotoUrl/palmPhotoUrl sont vides**:
+→ Problème: Les photos n'ont jamais été enregistrées en BDD
+→ Tester le PATCH avec curl pour les ajouter
 
 ---
 
-#### Frontend (`apps/main-app/src/contexts/SanctuaireContext.tsx`)
+## 🛠️ PLAN DE CORRECTION SELON LE DIAGNOSTIC
 
-```typescript
-// ✅ Fonction updateUser créée
-const updateUser = useCallback(async (userData) => {
-  const response = await axios.patch(`${API_BASE}/users/me`, userData, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  
-  // ✅ Mise à jour du state local immédiate
-  setUser({
-    ...user,
-    firstName: response.data.firstName,
-    lastName: response.data.lastName,
-    phone: response.data.phone,
-    email: response.data.email
-  });
-}, [user]);
+### Scénario A: Les PATCH ne partent jamais
+**Cause**: Event handlers bloqués ou erreur JavaScript
+**Solution**:
+1. Vérifier les erreurs console JavaScript
+2. Ajouter des console.log dans handleSave() et handleReplacePhoto()
+3. Si exception silencieuse: ajouter try/catch avec alert
 
-// ✅ Fonction updateProfile existante
-const updateProfile = useCallback(async (profileData) => {
-  await axios.patch(`${API_BASE}/users/profile`, profileData, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  setProfile(response.data.profile);
-}, []);
+### Scénario B: Les PATCH échouent (401/403)
+**Cause**: Token expiré ou manquant
+**Solution**:
+1. Déconnecter/reconnecter depuis /sanctuaire/login
+2. Vérifier que le token est bien dans localStorage
+3. Vérifier que Authorization header est bien envoyé
 
-// ✅ Fonction refresh pour recharger toutes les données
-const refresh = useCallback(async () => {
-  if (isAuthenticated) {
-    await loadAllData();
-  }
-}, [isAuthenticated, loadAllData]);
-```
+### Scénario C: Les PATCH réussissent mais UI ne refresh pas
+**Cause**: refresh() non appelé ou state non synchronisé
+**Solution**:
+1. Vérifier que handleSave() appelle bien refresh() (ligne ~131)
+2. Vérifier que SanctuaireProvider.refresh() recharge bien user/profile
+3. Forcer un hard refresh navigateur (Ctrl+Shift+R)
 
-**Status**: ✅ **CODE CORRECT**
+### Scénario D: Les données sont en BDD mais mal affichées
+**Cause**: Mapping incorrect user/profile dans le composant
+**Solution**:
+1. Vérifier que Profile.tsx lit bien user.firstName (pas profile.firstName)
+2. Vérifier que les photos lisent bien profile.facePhotoUrl
+3. Vérifier le useEffect ligne 63 qui synchronise editData
 
 ---
 
-#### Composant Profile (`apps/main-app/src/components/spheres/Profile.tsx`)
+## 📋 CHECKLIST DE VALIDATION
 
-```typescript
-// ✅ Utilise updateUser, updateProfile, refresh du contexte
-const { updateUser, updateProfile, refresh } = useSanctuaire();
+### Backend
+- [ ] GET /api/users/me retourne firstName/lastName corrects
+- [ ] GET /api/users/profile retourne facePhotoUrl/palmPhotoUrl
+- [ ] PATCH /api/users/me met à jour firstName/lastName
+- [ ] PATCH /api/users/profile met à jour facePhotoUrl/palmPhotoUrl
+- [ ] Les logs backend montrent les PATCH avec status 200
 
-// ✅ Handler de sauvegarde correct
-const handleSave = async () => {
-  // 1. Update user (firstName, lastName, phone, email)
-  if (editData.firstName !== user?.firstName || ...) {
-    await updateUser({
-      firstName: editData.firstName,
-      lastName: editData.lastName,
-      phone: editData.phone,
-      email: editData.email
-    });
-  }
-  
-  // 2. Update profile (birthDate, birthTime, etc.)
-  await updateProfile({
-    birthDate: editData.birthDate,
-    birthTime: editData.birthTime,
-    birthPlace: editData.birthPlace,
-    specificQuestion: editData.specificQuestion,
-    objective: editData.objective,
-    profileCompleted: true
-  });
-  
-  // 3. Refresh pour voir les changements
-  await refresh();
-  
-  setIsEditing(false);
-};
-```
+### Frontend
+- [ ] console.log '[Profile] BUILD VERSION: 80051b6' présent
+- [ ] SanctuaireProvider charge user avec firstName/lastName
+- [ ] SanctuaireProvider charge profile avec facePhotoUrl/palmPhotoUrl
+- [ ] Bouton "Sauvegarder" déclenche PATCH visible dans Network
+- [ ] Bouton "Remplacer" déclenche presign puis PATCH puis refresh
+- [ ] Après save, refresh() est appelé et les nouvelles données apparaissent
 
-**Status**: ✅ **CODE CORRECT**
+### Affichage
+- [ ] Section "Informations Personnelles" affiche les bonnes valeurs
+- [ ] Section "Photos Uploadées" apparaît si facePhotoUrl/palmPhotoUrl existent
+- [ ] Les miniatures s'affichent avec les bonnes URLs S3
+- [ ] Après modification + save, les valeurs changent sans reload page
 
 ---
 
-### 2. VÉRIFICATION BACKEND PRODUCTION ✅
+## 🚀 COMMANDES DE TEST RAPIDE
 
 ```bash
-# Test endpoint /api/users/me
-curl -X OPTIONS "https://api.oraclelumira.com/api/users/me"
-# Résultat: HTTP 204 No Content
-# ✅ L'endpoint existe en production
-```
+# Variables
+TOKEN="COLLER_VOTRE_TOKEN_ICI"
+API="https://oraclelumira.com/api"
 
-```bash
-# Test avec token invalide
-curl -X GET "https://api.oraclelumira.com/api/users/me" \
-  -H "Authorization: Bearer invalid_token"
-# Résultat: HTTP 401 Unauthorized
-# ✅ L'endpoint fonctionne et vérifie l'authentification
-```
+# 1. Lire profil actuel
+curl "$API/users/profile" -H "Authorization: Bearer $TOKEN"
 
-**Status**: ✅ **BACKEND PRODUCTION À JOUR**
+# 2. Lire utilisateur actuel
+curl "$API/users/me" -H "Authorization: Bearer $TOKEN"
 
----
+# 3. Mettre à jour nom/prénom
+curl -X PATCH "$API/users/me" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Test","lastName":"Utilisateur"}'
 
-### 3. VÉRIFICATION FRONTEND PRODUCTION ❌
+# 4. Mettre à jour photo visage
+curl -X PATCH "$API/users/profile" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"facePhotoUrl":"https://oracle-lumira-uploads-tachfine-1983.s3.eu-west-3.amazonaws.com/uploads/2025/10/test-face.jpg"}'
 
-```bash
-# Hash JavaScript actuel en production
-curl -s "https://oraclelumira.com" | grep "index-"
-# Résultat: index-Cv0hG7w9.js
-```
-
-```bash
-# Hash JavaScript du dernier build local
-ls apps/main-app/dist/assets/index-*.js
-# Résultat: index-Dn4-NqZl.js
-```
-
-```bash
-# Dernier commit git
-git log --oneline -3
-# 4829c68 fix: Afficher prix gratuit et désactiver Intégrale
-# b0508fa chore: Force frontend redeploy
-# bbd083d Fix profile update - Add /api/users/me endpoint ⬅️ CE COMMIT
-```
-
-**🚨 PROBLÈME IDENTIFIÉ** :
-
-Le hash JavaScript est **DIFFÉRENT** entre la production et le build local.
-
-**Conclusion** : LE FRONTEND DE PRODUCTION N'A **PAS ÉTÉ REDÉPLOYÉ** AVEC LE COMMIT `bbd083d` !
-
----
-
-## 🔧 CAUSE RACINE
-
-**Le code est 100% correct**, mais Coolify n'a **PAS redéployé le frontend** après le push du commit `bbd083d`.
-
-### Pourquoi ?
-
-Plusieurs raisons possibles :
-
-1. **Cache CDN/Proxy** : Le proxy Coolify ou Nginx sert encore l'ancien JavaScript en cache
-2. **Build statique non rafraîchi** : Le dossier `dist/` n'a pas été reconstruit
-3. **Déploiement manuel requis** : Coolify nécessite peut-être un trigger manuel pour le frontend
-4. **Configuration Coolify** : Le frontend et le backend sont peut-être 2 applications séparées
-
----
-
-## ✅ SOLUTION
-
-### Option 1: Forcer le redéploiement avec un commit vide
-
-```bash
-git commit --allow-empty -m "chore: Force complete frontend rebuild"
-git push origin main
-```
-
-### Option 2: Modifier un fichier frontend pour déclencher le build
-
-Modifier `apps/main-app/src/main.tsx` (ajouter un commentaire) :
-
-```bash
-# Ajouter un commentaire dans main.tsx
-git add apps/main-app/src/main.tsx
-git commit -m "chore: Trigger frontend rebuild"
-git push origin main
-```
-
-### Option 3: Connexion manuelle à Coolify
-
-1. Se connecter au tableau de bord Coolify
-2. Trouver l'application frontend (probablement "oracle-lumira-frontend" ou similaire)
-3. Cliquer sur "Redeploy" ou "Force Redeploy"
-4. Attendre 2-5 minutes
-5. Vérifier que le nouveau hash JavaScript apparaît : `curl -s "https://oraclelumira.com" | grep "index-"`
-
----
-
-## 📊 TIMELINE DES ÉVÉNEMENTS
-
-| Date/Heure | Événement | Status |
-|------------|-----------|--------|
-| 27/10 21:17 | Commit `bbd083d` - Ajout endpoint /api/users/me | ✅ Pushé |
-| 27/10 21:18 | Backend redéployé automatiquement | ✅ OK |
-| 27/10 21:18 | Frontend **NON** redéployé | ❌ **PROBLÈME** |
-| 27/10 21:45 | Commit vide `b0508fa` pour forcer redeploy | ✅ Pushé |
-| 27/10 22:00 | Frontend toujours pas redéployé | ❌ **PROBLÈME PERSISTE** |
-| 27/10 22:30 | Commit `4829c68` - Fix prix gratuit | ✅ Pushé |
-| 27/10 23:00 | **Audit complet** - Diagnostic en cours | 🔍 **EN COURS** |
-
----
-
-## 🎯 ACTIONS REQUISES
-
-### Immédiat (pour l'utilisateur)
-
-**Option A** : Si vous avez accès à Coolify :
-1. Connectez-vous à Coolify
-2. Trouvez l'application frontend
-3. Cliquez sur "Redeploy" ou "Force Rebuild"
-4. Attendez 3-5 minutes
-5. Testez : https://oraclelumira.com/sanctuaire/profile
-
-**Option B** : Si pas d'accès Coolify :
-1. Je vais créer un commit de force rebuild
-2. Attendez mon signal
-3. Patientez 5 minutes après le push
-4. Testez : https://oraclelumira.com/sanctuaire/profile
-
-### À moyen terme
-
-1. **Vérifier la configuration Coolify** :
-   - S'assurer que le frontend est configuré pour auto-deploy sur git push
-   - Vérifier les logs de déploiement
-   - Activer les notifications de déploiement
-
-2. **Améliorer le workflow CI/CD** :
-   - Ajouter un hash de version visible dans l'interface
-   - Ajouter un endpoint `/api/version` qui retourne le commit SHA
-   - Créer un script de vérification post-déploiement
-
----
-
-## 🧪 TESTS DE VALIDATION (Post-déploiement)
-
-Une fois le frontend redéployé :
-
-### Test 1: Vérifier le nouveau hash
-```bash
-curl -s "https://oraclelumira.com" | grep "index-"
-# Devrait afficher: index-Dn4-NqZl.js (ou un nouveau hash)
-```
-
-### Test 2: Console navigateur
-1. Ouvrir https://oraclelumira.com/sanctuaire/profile (F12)
-2. Vider le cache (Ctrl+Shift+Del)
-3. Recharger (Ctrl+F5)
-4. Vérifier la console : logs `[Profile]`, `[SanctuaireProvider]`
-
-### Test 3: Modification du profil
-1. Cliquer sur "Modifier"
-2. Changer le prénom : "Test" → "TestModifié"
-3. Cliquer sur "Sauvegarder"
-4. Vérifier les logs console :
-   ```
-   [Profile] Mise à jour utilisateur principal...
-   [SanctuaireProvider] Mise à jour utilisateur: { firstName: "TestModifié" }
-   [SanctuaireProvider] Utilisateur mis à jour avec succès
-   [Profile] Rechargement des données...
-   [SanctuaireProvider] Refresh manuel déclenché
-   ✅ [Profile] Profil sauvégardé avec succès !
-   ```
-5. **Vérifier** : Le prénom doit s'afficher "TestModifié" immédiatement
-6. **Recharger la page** (F5) : Le prénom doit rester "TestModifié"
-
-### Test 4: Vérification MongoDB
-```bash
-# Se connecter à MongoDB
-# Vérifier que le document User a bien été mis à jour
-db.users.findOne({ email: "email@utilisateur.com" })
-# Vérifier: firstName = "TestModifié"
+# 5. Relire pour confirmer
+curl "$API/users/profile" -H "Authorization: Bearer $TOKEN"
+curl "$API/users/me" -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
 
-## 📝 CONCLUSION
+## 📞 PROCHAINES ÉTAPES
 
-### Le code est PARFAIT ✅
-- Backend : Endpoints corrects, validation OK, MongoDB OK
-- Frontend : Context OK, handlers OK, refresh OK
-- Architecture : Séparation propre user/profile, state management propre
-
-### Le problème est INFRASTRUCTURE ❌
-- Le frontend de production utilise **l'ANCIEN code JavaScript**
-- Coolify n'a pas redéployé le frontend automatiquement
-- Solution : **Forcer le redéploiement** manuellement ou avec un nouveau commit
+1. **Exécuter les 5 commandes curl ci-dessus** avec votre token
+2. **Me partager les résultats** (copier-coller la sortie)
+3. **Ouvrir DevTools → Network** et cliquer "Sauvegarder" sur le profil
+4. **Me partager** ce que vous voyez dans l'onglet Network (requêtes PATCH)
+5. **Selon les résultats**, je fournirai la correction ciblée exacte
 
 ---
 
-## 🚀 PROCHAINE ÉTAPE
-
-**JE VAIS MAINTENANT** :
-1. Créer un commit de force rebuild
-2. Le pusher sur GitHub
-3. Attendre que Coolify détecte et déploie
-4. Vérifier le nouveau hash JavaScript
-5. Valider avec vous que tout fonctionne
-
-**VOUS DEVEZ** :
-- Attendre mon signal "✅ Frontend redéployé"
-- Vider le cache de votre navigateur
-- Tester la modification du profil
-- Me confirmer que ça fonctionne
-
----
-
-**Status final**: 🔄 **SOLUTION EN COURS DE DÉPLOIEMENT**
+**Date**: 2025-10-29  
+**Version du diagnostic**: 1.0  
+**Commit actuel**: 497dc49

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -85,6 +84,10 @@ const Profile: React.FC = () => {
   const currentLevelName = (levelMetadata && (levelMetadata as any).name) || (latestOrder ? getLevelNameSafely(latestOrder.level) : levelName);
 
   const handleSave = async () => {
+    console.log('🔵 [DEBUG-SAVE] handleSave DÉMARRÉ');
+    console.log('🔵 [DEBUG-SAVE] editData:', editData);
+    console.log('🔵 [DEBUG-SAVE] user actuel:', user);
+    
     try {
       // Mise à jour des informations principales de l'utilisateur (firstName, lastName, phone, email)
       if (editData.firstName !== user?.firstName || 
@@ -92,17 +95,27 @@ const Profile: React.FC = () => {
           editData.phone !== user?.phone || 
           editData.email !== user?.email) {
         
-        console.log('[Profile] Mise à jour utilisateur principal...');
+        console.log('🔵 [DEBUG-SAVE] APPEL updateUser avec:', {
+          firstName: editData.firstName,
+          lastName: editData.lastName,
+          phone: editData.phone,
+          email: editData.email
+        });
+        
         await updateUser({
           firstName: editData.firstName,
           lastName: editData.lastName,
           phone: editData.phone,
           email: editData.email
         });
+        
+        console.log('✅ [DEBUG-SAVE] updateUser TERMINÉ');
+      } else {
+        console.log('⚠️ [DEBUG-SAVE] Aucune modification user, skip updateUser');
       }
       
       // Mise à jour du profil spirituel (birthDate, birthPlace, etc.)
-      console.log('[Profile] Mise à jour profil spirituel...');
+      console.log('🔵 [DEBUG-SAVE] APPEL updateProfile...');
       await updateProfile({
         birthDate: editData.birthDate,
         birthTime: editData.birthTime,
@@ -111,17 +124,21 @@ const Profile: React.FC = () => {
         objective: editData.objective,
         profileCompleted: true
       });
+      console.log('✅ [DEBUG-SAVE] updateProfile TERMINÉ');
       
       setIsEditing(false);
       
       // Recharger toutes les données pour voir les changements
-      console.log('[Profile] Rechargement des données...');
+      console.log('🔵 [DEBUG-SAVE] APPEL refresh()...');
       await refresh();
+      console.log('✅ [DEBUG-SAVE] refresh() TERMINÉ');
       
-      console.log('✅ [Profile] Profil sauvégardé avec succès !');
+      console.log('✅ [Profile] Profil sauvegardé avec succès !');
+      alert('✅ Profil sauvegardé avec succès !');
     } catch (err) {
-      console.error('[Profile] Erreur sauvegarde:', err);
-      alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
+      console.error('❌ [DEBUG-SAVE] ERREUR dans handleSave:', err);
+      console.error('❌ [DEBUG-SAVE] Stack:', (err as Error)?.stack);
+      alert(`❌ Erreur lors de la sauvegarde: ${(err as Error)?.message || 'Erreur inconnue'}`);
     }
   };
 
@@ -141,45 +158,78 @@ const Profile: React.FC = () => {
   };
 
   const handleReplacePhoto = async (type: 'face_photo' | 'palm_photo') => {
+    console.log('🟢 [DEBUG-PHOTO] handleReplacePhoto DÉMARRÉ pour type:', type);
+    
     try {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
       input.onchange = async () => {
+        console.log('🟢 [DEBUG-PHOTO] Fichier sélectionné');
         const file = input.files?.[0];
-        if (!file) return;
+        if (!file) {
+          console.log('⚠️ [DEBUG-PHOTO] Aucun fichier sélectionné, abandon');
+          return;
+        }
+        
+        console.log('🟢 [DEBUG-PHOTO] Fichier:', file.name, 'Type:', file.type, 'Taille:', file.size);
         const contentType = file.type || 'image/jpeg';
 
         type === 'face_photo' ? setUploadingFace(true) : setUploadingPalm(true);
 
+        console.log('🟢 [DEBUG-PHOTO] Demande présignature à /api/uploads/presign...');
         const presignRes = await fetch('/api/uploads/presign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type, contentType, originalName: file.name })
         });
-        if (!presignRes.ok) throw new Error('Échec de la présignature upload');
+        
+        if (!presignRes.ok) {
+          const errorText = await presignRes.text();
+          console.error('❌ [DEBUG-PHOTO] Présignature échouée:', presignRes.status, errorText);
+          throw new Error(`Échec de la présignature upload: ${presignRes.status}`);
+        }
+        
         const { uploadUrl, publicUrl } = await presignRes.json();
+        console.log('✅ [DEBUG-PHOTO] Présignature réussie, publicUrl:', publicUrl);
 
+        console.log('🟢 [DEBUG-PHOTO] Upload vers S3...');
         const putRes = await fetch(uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': contentType },
           body: file
         });
-        if (!putRes.ok) throw new Error('Échec de l\'upload S3');
+        
+        if (!putRes.ok) {
+          console.error('❌ [DEBUG-PHOTO] Upload S3 échoué:', putRes.status);
+          throw new Error(`Échec de l'upload S3: ${putRes.status}`);
+        }
+        console.log('✅ [DEBUG-PHOTO] Upload S3 réussi');
 
+        const photoField = type === 'face_photo' ? 'facePhotoUrl' : 'palmPhotoUrl';
+        console.log(`🟢 [DEBUG-PHOTO] Mise à jour profil: ${photoField} = ${publicUrl}`);
+        
         if (type === 'face_photo') {
           await updateProfile({ facePhotoUrl: publicUrl });
+          console.log('✅ [DEBUG-PHOTO] updateProfile(facePhotoUrl) TERMINÉ');
           setUploadingFace(false);
         } else {
           await updateProfile({ palmPhotoUrl: publicUrl });
+          console.log('✅ [DEBUG-PHOTO] updateProfile(palmPhotoUrl) TERMINÉ');
           setUploadingPalm(false);
         }
+        
+        console.log('🟢 [DEBUG-PHOTO] Appel refresh()...');
         await refresh();
+        console.log('✅ [DEBUG-PHOTO] refresh() TERMINÉ');
+        
+        alert(`✅ Photo ${type === 'face_photo' ? 'de visage' : 'de paume'} mise à jour avec succès !`);
       };
       input.click();
     } catch (err) {
-      console.error('[Profile] Remplacement photo:', err);
-      alert('Impossible de remplacer la photo. Réessayez.');
+      console.error('❌ [DEBUG-PHOTO] ERREUR dans handleReplacePhoto:', err);
+      console.error('❌ [DEBUG-PHOTO] Stack:', (err as Error)?.stack);
+      alert(`❌ Impossible de remplacer la photo: ${(err as Error)?.message || 'Erreur inconnue'}`);
       setUploadingFace(false);
       setUploadingPalm(false);
     }

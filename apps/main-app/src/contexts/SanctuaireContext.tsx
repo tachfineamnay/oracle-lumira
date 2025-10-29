@@ -383,10 +383,14 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     try {
       const token = sanctuaireService.getStoredToken();
       if (!token) {
+        console.error('❌ [SanctuaireProvider-updateProfile] ERREUR: Non authentifié - Aucun token trouvé');
         throw new Error('Non authentifié');
       }
 
-      console.log('[SanctuaireProvider] Mise à jour profil:', profileData);
+      console.log('🔵 [SanctuaireProvider-updateProfile] DÉMARRAGE');
+      console.log('🔵 [SanctuaireProvider-updateProfile] Données à envoyer:', profileData);
+      console.log('🔵 [SanctuaireProvider-updateProfile] URL:', `${API_BASE}/users/profile`);
+      console.log('🔵 [SanctuaireProvider-updateProfile] Token présent:', token.substring(0, 20) + '...');
       
       const response = await axios.patch<{ profile: UserProfile }>(
         `${API_BASE}/users/profile`,
@@ -396,11 +400,14 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
         }
       );
 
-      console.log('[SanctuaireProvider] Profil mis à jour avec succès');
+      console.log('✅ [SanctuaireProvider-updateProfile] Profil mis à jour avec succès');
+      console.log('✅ [SanctuaireProvider-updateProfile] Réponse:', response.data);
       setProfile(response.data.profile);
       
     } catch (err: any) {
-      console.error('[SanctuaireProvider] Erreur updateProfile:', err.response?.data || err.message);
+      console.error('❌ [SanctuaireProvider-updateProfile] ERREUR:', err.response?.data || err.message);
+      console.error('❌ [SanctuaireProvider-updateProfile] Status:', err.response?.status);
+      console.error('❌ [SanctuaireProvider-updateProfile] Stack:', err.stack);
       throw err;
     }
   }, []);
@@ -409,10 +416,14 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     try {
       const token = sanctuaireService.getStoredToken();
       if (!token) {
+        console.error('❌ [SanctuaireProvider-updateUser] ERREUR: Non authentifié - Aucun token trouvé');
         throw new Error('Non authentifié');
       }
 
-      console.log('[SanctuaireProvider] Mise à jour utilisateur:', userData);
+      console.log('🟢 [SanctuaireProvider-updateUser] DÉMARRAGE');
+      console.log('🟢 [SanctuaireProvider-updateUser] Données à envoyer:', userData);
+      console.log('🟢 [SanctuaireProvider-updateUser] URL:', `${API_BASE}/users/me`);
+      console.log('🟢 [SanctuaireProvider-updateUser] Token présent:', token.substring(0, 20) + '...');
       
       const response = await axios.patch<{ firstName: string; lastName: string; phone: string; email: string }>(
         `${API_BASE}/users/me`,
@@ -422,21 +433,26 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
         }
       );
 
-      console.log('[SanctuaireProvider] Utilisateur mis à jour avec succès');
+      console.log('✅ [SanctuaireProvider-updateUser] Utilisateur mis à jour avec succès');
+      console.log('✅ [SanctuaireProvider-updateUser] Réponse:', response.data);
       
       // Mettre à jour le user local
       if (user) {
-        setUser({
+        const updatedUser = {
           ...user,
           firstName: response.data.firstName,
           lastName: response.data.lastName,
           phone: response.data.phone,
           email: response.data.email
-        });
+        };
+        console.log('🟢 [SanctuaireProvider-updateUser] Mise à jour du state local user:', updatedUser);
+        setUser(updatedUser);
       }
       
     } catch (err: any) {
-      console.error('[SanctuaireProvider] Erreur updateUser:', err.response?.data || err.message);
+      console.error('❌ [SanctuaireProvider-updateUser] ERREUR:', err.response?.data || err.message);
+      console.error('❌ [SanctuaireProvider-updateUser] Status:', err.response?.status);
+      console.error('❌ [SanctuaireProvider-updateUser] Stack:', err.stack);
       throw err;
     }
   }, [user]);
