@@ -788,43 +788,44 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
           });
         }
 
-        // Assurer que profile existe
-        if (!user.profile) {
-          user.profile = {} as any;
-        }
+        // Initialiser profile si nécessaire
+        const profileData: any = user.profile || {};
 
         // Mettre à jour les URLs des photos
         if (facePhotoFile) {
-          user.profile.facePhotoUrl = facePhotoFile.url;
+          profileData.facePhotoUrl = facePhotoFile.url;
           structuredLogger.info('[CLIENT-SUBMIT] Photo visage sauvegardée', { url: facePhotoFile.url }, req);
         }
         if (palmPhotoFile) {
-          user.profile.palmPhotoUrl = palmPhotoFile.url;
+          profileData.palmPhotoUrl = palmPhotoFile.url;
           structuredLogger.info('[CLIENT-SUBMIT] Photo paume sauvegardée', { url: palmPhotoFile.url }, req);
         }
 
         // Synchroniser aussi les données du formulaire vers le profil
         if (formData.dateOfBirth) {
-          user.profile.birthDate = formData.dateOfBirth;
+          profileData.birthDate = formData.dateOfBirth;
         }
         if (formData.birthTime || (clientInputs as any)?.birthTime) {
-          user.profile.birthTime = formData.birthTime || (clientInputs as any).birthTime;
+          profileData.birthTime = formData.birthTime || (clientInputs as any).birthTime;
         }
         if (formData.birthPlace || (clientInputs as any)?.birthPlace) {
-          user.profile.birthPlace = formData.birthPlace || (clientInputs as any).birthPlace;
+          profileData.birthPlace = formData.birthPlace || (clientInputs as any).birthPlace;
         }
         if (formData.specificQuestion || formData.objective) {
-          user.profile.specificQuestion = formData.specificQuestion || formData.objective;
+          profileData.specificQuestion = formData.specificQuestion || formData.objective;
         }
         if ((clientInputs as any)?.lifeQuestion || formData.objective) {
-          user.profile.objective = (clientInputs as any)?.lifeQuestion || formData.objective;
+          profileData.objective = (clientInputs as any)?.lifeQuestion || formData.objective;
         }
 
+        // Réassigner le profil mis à jour
+        user.profile = profileData;
         await user.save();
+        
         structuredLogger.info('[CLIENT-SUBMIT] Profil utilisateur synchronisé avec succès', {
           userId: user._id,
-          hasFacePhoto: !!user.profile.facePhotoUrl,
-          hasPalmPhoto: !!user.profile.palmPhotoUrl
+          hasFacePhoto: !!profileData.facePhotoUrl,
+          hasPalmPhoto: !!profileData.palmPhotoUrl
         }, req);
       }
     } catch (profileError) {
