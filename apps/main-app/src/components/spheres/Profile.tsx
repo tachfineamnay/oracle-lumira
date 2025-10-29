@@ -484,14 +484,22 @@ const Profile: React.FC = () => {
                           className="w-full h-48 object-cover rounded-lg cursor-pointer"
                           onClick={() => setLightboxImage(profile.facePhotoUrl!)}
                           onError={async (e) => {
+                            const target = e.currentTarget;
+                            if (!target) return;
+                            
                             console.error('[Profile] Erreur chargement image visage:', profile.facePhotoUrl);
                             const signed = await getSignedUrl(profile.facePhotoUrl!);
-                            if (signed) {
+                            
+                            // Vérifier que l'élément existe toujours dans le DOM
+                            if (signed && target.isConnected) {
                               console.log('[Profile] Utilisation URL signée pour image visage');
-                              e.currentTarget.src = signed;
+                              target.src = signed;
                               return;
                             }
-                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+                            
+                            if (target.isConnected) {
+                              target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+                            }
                           }}
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 rounded-lg transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -524,14 +532,22 @@ const Profile: React.FC = () => {
                           className="w-full h-48 object-cover rounded-lg cursor-pointer"
                           onClick={() => setLightboxImage(profile.palmPhotoUrl!)}
                           onError={async (e) => {
+                            const target = e.currentTarget;
+                            if (!target) return;
+                            
                             console.error('[Profile] Erreur chargement image paume:', profile.palmPhotoUrl);
                             const signed = await getSignedUrl(profile.palmPhotoUrl!);
-                            if (signed) {
+                            
+                            // Vérifier que l'élément existe toujours dans le DOM
+                            if (signed && target.isConnected) {
                               console.log('[Profile] Utilisation URL signée pour image paume');
-                              e.currentTarget.src = signed;
+                              target.src = signed;
                               return;
                             }
-                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+                            
+                            if (target.isConnected) {
+                              target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+                            }
                           }}
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 rounded-lg transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
