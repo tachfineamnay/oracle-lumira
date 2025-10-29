@@ -63,6 +63,44 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
     }
   };
 
+  // Fonction pour gérer le fallback des miniatures en cas d'erreur de chargement
+  const handleThumbnailError = async (e: React.SyntheticEvent<HTMLImageElement>, fileUrl: string) => {
+    const target = e.currentTarget;
+    if (!target) return;
+
+    console.error('[ContentGenerator] Erreur chargement miniature:', fileUrl);
+    
+    // Vérifier si on a déjà une URL signée en cache
+    if (imageUrls[fileUrl]) {
+      console.log('[ContentGenerator] URL signée déjà utilisée, passage au placeholder');
+      if (target.isConnected) {
+        target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"%3E%3Crect fill="%23374151" width="56" height="56"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="10" dy="3.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3E%3Ctspan x="50%25" dy="-0.5em"%3EImage%3C/tspan%3E%3Ctspan x="50%25" dy="1.2em"%3Enon%3C/tspan%3E%3Ctspan x="50%25" dy="1.2em"%3Edispo%3C/tspan%3E%3C/text%3E%3C/svg%3E';
+      }
+      return;
+    }
+
+    // Tenter de récupérer une URL signée
+    try {
+      const signed = await resolveSignedUrl(fileUrl);
+      
+      // Vérifier que l'élément existe toujours dans le DOM
+      if (signed && target.isConnected) {
+        console.log('[ContentGenerator] Utilisation URL signée pour miniature');
+        target.src = signed;
+        // Mettre à jour le cache
+        setImageUrls(prev => ({ ...prev, [fileUrl]: signed }));
+        return;
+      }
+    } catch (error) {
+      console.error('[ContentGenerator] Échec récupération URL signée:', error);
+    }
+    
+    // En dernier recours, afficher le placeholder
+    if (target.isConnected) {
+      target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"%3E%3Crect fill="%23374151" width="56" height="56"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="10" dy="3.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3E%3Ctspan x="50%25" dy="-0.5em"%3EImage%3C/tspan%3E%3Ctspan x="50%25" dy="1.2em"%3Enon%3C/tspan%3E%3Ctspan x="50%25" dy="1.2em"%3Edispo%3C/tspan%3E%3C/text%3E%3C/svg%3E';
+    }
+  };
+
   // Load signed URLs for thumbnails when order changes
   React.useEffect(() => {
     let mounted = true;
@@ -89,6 +127,40 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const openPreview = async (fileUrl: string, name: string) => {
     const signed = imageUrls[fileUrl] || await resolveSignedUrl(fileUrl);
     setPreview({ url: signed, name });
+  };
+
+  // Gérer l'erreur de chargement de l'image dans la modale de prévisualisation
+  const handlePreviewError = async (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.currentTarget;
+    if (!target || !preview) return;
+
+    console.error('[ContentGenerator] Erreur chargement image prévisualisation:', preview.url);
+    
+    // Si l'URL actuelle est déjà une URL signée, afficher le placeholder
+    if (preview.url.includes('X-Amz-Signature') || preview.url.includes('Signature=')) {
+      console.log('[ContentGenerator] URL signée a échoué, affichage placeholder');
+      if (target.isConnected) {
+        target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"%3E%3Crect fill="%23374151" width="800" height="600"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="24" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+      }
+      return;
+    }
+
+    // Sinon, tenter de récupérer une nouvelle URL signée
+    try {
+      const signed = await resolveSignedUrl(preview.url);
+      if (signed && target.isConnected) {
+        console.log('[ContentGenerator] Utilisation URL signée pour prévisualisation');
+        target.src = signed;
+        return;
+      }
+    } catch (error) {
+      console.error('[ContentGenerator] Échec récupération URL signée préview:', error);
+    }
+
+    // Placeholder en dernier recours
+    if (target.isConnected) {
+      target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"%3E%3Crect fill="%23374151" width="800" height="600"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="24" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+    }
   };
 
   const triggerDownload = async (fileUrl: string) => {
@@ -319,7 +391,12 @@ PERSONNALISATION:
                   <div key={index} className="flex items-center gap-3 text-xs bg-white/10 border border-white/20 p-2 rounded">
                     {isImage ? (
                       <button type="button" onClick={() => openPreview(fileUrl!, displayName)} className="focus:outline-none" title="Aperçu">
-                        <img src={imageUrls[fileUrl] || ''} alt={displayName} className="w-14 h-14 object-cover rounded border border-white/20" />
+                        <img 
+                          src={imageUrls[fileUrl] || fileUrl} 
+                          alt={displayName} 
+                          className="w-14 h-14 object-cover rounded border border-white/20"
+                          onError={(e) => handleThumbnailError(e, fileUrl!)}
+                        />
                       </button>
                     ) : (
                       <FileText className="w-4 h-4 text-amber-400" />
@@ -356,7 +433,12 @@ PERSONNALISATION:
             </button>
             <div className="bg-[#121826] rounded-lg border border-white/10 p-3">
               <div className="text-white/80 text-sm mb-2 truncate" title={preview.name}>{preview.name}</div>
-              <img src={preview.url} alt={preview.name} className="max-h-[75vh] w-full object-contain rounded" />
+              <img 
+                src={preview.url} 
+                alt={preview.name} 
+                className="max-h-[75vh] w-full object-contain rounded"
+                onError={handlePreviewError}
+              />
             </div>
           </div>
         </div>
