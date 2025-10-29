@@ -761,6 +761,78 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       });
     }
 
+    // =================== SYNCHRONISER LES PHOTOS VERS LE PROFIL UTILISATEUR ===================
+    // CRITIQUE : Les photos uploadées doivent être visibles dans Profile.tsx
+    try {
+      const facePhotoFile = uploadedFiles.find((f: any) => f.type === 'face_photo');
+      const palmPhotoFile = uploadedFiles.find((f: any) => f.type === 'palm_photo');
+      
+      if ((facePhotoFile || palmPhotoFile) && emailFinal) {
+        structuredLogger.info('[CLIENT-SUBMIT] Synchronisation des photos vers le profil utilisateur', {
+          email: emailFinal,
+          hasFacePhoto: !!facePhotoFile,
+          hasPalmPhoto: !!palmPhotoFile
+        }, req);
+
+        // Trouver ou créer l'utilisateur
+        let user = await User.findOne({ email: emailFinal.toLowerCase() });
+        
+        if (!user) {
+          structuredLogger.info('[CLIENT-SUBMIT] Utilisateur non trouvé, création...', { email: emailFinal }, req);
+          user = new User({
+            email: emailFinal.toLowerCase(),
+            firstName: firstNameFinal,
+            lastName: lastNameFinal,
+            phone: phoneFinal,
+            profile: {}
+          });
+        }
+
+        // Assurer que profile existe
+        if (!user.profile) {
+          user.profile = {} as any;
+        }
+
+        // Mettre à jour les URLs des photos
+        if (facePhotoFile) {
+          user.profile.facePhotoUrl = facePhotoFile.url;
+          structuredLogger.info('[CLIENT-SUBMIT] Photo visage sauvegardée', { url: facePhotoFile.url }, req);
+        }
+        if (palmPhotoFile) {
+          user.profile.palmPhotoUrl = palmPhotoFile.url;
+          structuredLogger.info('[CLIENT-SUBMIT] Photo paume sauvegardée', { url: palmPhotoFile.url }, req);
+        }
+
+        // Synchroniser aussi les données du formulaire vers le profil
+        if (formData.dateOfBirth) {
+          user.profile.birthDate = formData.dateOfBirth;
+        }
+        if (formData.birthTime || (clientInputs as any)?.birthTime) {
+          user.profile.birthTime = formData.birthTime || (clientInputs as any).birthTime;
+        }
+        if (formData.birthPlace || (clientInputs as any)?.birthPlace) {
+          user.profile.birthPlace = formData.birthPlace || (clientInputs as any).birthPlace;
+        }
+        if (formData.specificQuestion || formData.objective) {
+          user.profile.specificQuestion = formData.specificQuestion || formData.objective;
+        }
+        if ((clientInputs as any)?.lifeQuestion || formData.objective) {
+          user.profile.objective = (clientInputs as any)?.lifeQuestion || formData.objective;
+        }
+
+        await user.save();
+        structuredLogger.info('[CLIENT-SUBMIT] Profil utilisateur synchronisé avec succès', {
+          userId: user._id,
+          hasFacePhoto: !!user.profile.facePhotoUrl,
+          hasPalmPhoto: !!user.profile.palmPhotoUrl
+        }, req);
+      }
+    } catch (profileError) {
+      // Non-bloquant : on log l'erreur mais on continue
+      structuredLogger.error('[CLIENT-SUBMIT] Erreur lors de la synchronisation du profil', profileError, req);
+    }
+    // =================== FIN SYNCHRONISATION PROFIL ===================
+
     res.json({ success: true, order, normalizedFormData: order.formData });
   } catch (catchError) {
     structuredLogger.error('[CLIENT-SUBMIT] CRITICAL GLOBAL ERROR - Unexpected error', catchError, req);
