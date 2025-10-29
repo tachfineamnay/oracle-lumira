@@ -8,19 +8,25 @@ WORKDIR /app
 ARG VITE_STRIPE_PUBLISHABLE_KEY
 ARG VITE_API_BASE_URL
 ARG VITE_APP_DOMAIN
+# CACHE BUSTING: Force rebuild on every deploy by passing commit SHA
+ARG BUILD_VERSION=unknown
+ARG BUILD_TIMESTAMP=unknown
 
 # Set environment variables for Vite build
 ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_APP_DOMAIN=$VITE_APP_DOMAIN
+ENV VITE_BUILD_VERSION=$BUILD_VERSION
+ENV VITE_BUILD_TIMESTAMP=$BUILD_TIMESTAMP
 
 # Install dependencies and build
 COPY apps/main-app/package*.json ./apps/main-app/
 RUN cd apps/main-app && npm install
 COPY apps/main-app ./apps/main-app/
-# Clean Vite cache before building to ensure fresh compilation
-RUN cd apps/main-app && rm -rf dist .vite node_modules/.vite
-RUN cd apps/main-app && npm run build
+# CACHE INVALIDATION: Clean ALL Vite caches + inject build version to bust Docker layer cache
+RUN cd apps/main-app && rm -rf dist .vite node_modules/.vite node_modules/.cache
+RUN echo "Building version: $BUILD_VERSION at $BUILD_TIMESTAMP" && \
+    cd apps/main-app && npm run build
 
 # Stage 2: Nginx static server
 FROM nginx:1.27-alpine
@@ -31,8 +37,10 @@ RUN apk add --no-cache curl
 # Copy built assets
 COPY --from=frontend-builder /app/apps/main-app/dist /usr/share/nginx/html
 
-# Health file for Coolify
-RUN echo '{"status":"healthy","service":"oracle-lumira-frontend","timestamp":"'$(date -Iseconds)'","port":80}' > /usr/share/nginx/html/health.json
+# Health file for Coolify with BUILD_VERSION for traceability
+ARG BUILD_VERSION=unknown
+ARG BUILD_TIMESTAMP=unknown
+RUN echo '{"status":"healthy","service":"oracle-lumira-frontend","version":"'$BUILD_VERSION'","buildTimestamp":"'$BUILD_TIMESTAMP'","deployTimestamp":"'$(date -Iseconds)'","port":80}' > /usr/share/nginx/html/health.json
 
 # Minimal nginx config for SPA
 COPY nginx-frontend.conf /etc/nginx/nginx.conf

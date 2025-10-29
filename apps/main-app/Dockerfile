@@ -12,8 +12,16 @@ RUN npm ci --include=dev --workspace apps/main-app
 
 # Copy source and build with a clean Vite cache each time
 COPY apps/main-app ./apps/main-app/
+
+# CACHE BUSTING: ARG to invalidate Docker layer cache on every build
+ARG BUILD_VERSION=unknown
+ARG BUILD_TIMESTAMP=unknown
+ENV VITE_BUILD_VERSION=$BUILD_VERSION
+ENV VITE_BUILD_TIMESTAMP=$BUILD_TIMESTAMP
+
 RUN cd apps/main-app \
- && rm -rf dist .vite node_modules/.vite \
+ && echo "Building version: $BUILD_VERSION at $BUILD_TIMESTAMP" \
+ && rm -rf dist .vite node_modules/.vite node_modules/.cache \
  && npm run build
 
 # Runtime stage with Nginx (SPA optimized)
@@ -24,8 +32,10 @@ RUN apk add --no-cache curl
 # Copy built assets
 COPY --from=builder /app/apps/main-app/dist /usr/share/nginx/html
 
-# Health endpoint with timestamp
-RUN echo '{"status":"healthy","service":"main-app","timestamp":"'$(date -Iseconds)'"}' > /usr/share/nginx/html/health.json
+# Health endpoint with BUILD_VERSION and timestamp for traceability
+ARG BUILD_VERSION=unknown
+ARG BUILD_TIMESTAMP=unknown
+RUN echo '{"status":"healthy","service":"main-app","version":"'$BUILD_VERSION'","buildTimestamp":"'$BUILD_TIMESTAMP'","deployTimestamp":"'$(date -Iseconds)'"}' > /usr/share/nginx/html/health.json
 
 # Nginx configuration optimized for SPA & cache-busting
 RUN echo 'server { \
@@ -56,8 +66,9 @@ RUN echo 'server { \
     \
     # Serve SPA and prevent caching of HTML to avoid stale index.html \
     location / { \
-        add_header Cache-Control "no-cache, no-store, must-revalidate"; \
-        expires -1; \
+        add_header Cache-Control "no-cache, no-store, must-revalidate, max-age=0"; \
+        add_header Pragma "no-cache"; \
+        add_header Expires "0"; \
         try_files $uri $uri/ /index.html; \
     } \
 }' > /etc/nginx/conf.d/default.conf
