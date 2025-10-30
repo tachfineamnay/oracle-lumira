@@ -50,8 +50,11 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
     try {
       const u = urlOrPath?.startsWith('http') ? urlOrPath : buildFileUrl(urlOrPath);
       if (!u) return '';
-      const { data } = await api.get(endpoints.expert.presignFile, { params: { url: u } });
-      return data.signedUrl as string;
+      
+      // Utiliser l'endpoint /api/uploads/presign-get au lieu de /expert/files/presign
+      // Car cet endpoint existe déjà et fonctionne sans authentification expert
+      const { data } = await api.get('/uploads/presign-get', { params: { url: u } });
+      return data.url as string;
     } catch (e) {
       console.warn('Failed to presign URL, falling back to raw:', e);
       // P1: Feedback utilisateur si presign échoue
