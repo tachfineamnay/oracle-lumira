@@ -675,7 +675,10 @@ router.get('/entitlements', authenticateSanctuaire, async (req: any, res: any) =
 router.get('/orders/completed', authenticateSanctuaire, async (req: any, res: any) => {
   try {
     const userId = req.user._id;
+    const userEmail = req.user.email?.toLowerCase() || '';
     
+    // PASSAGE 13 - P0 CRITIQUE : Chercher dans Order ET ProductOrder
+    // Les ProductOrder n'ont PAS de expertValidation car ce sont des produits directs
     const orders = await Order.find({ 
       userId: userId,
       status: 'completed',
@@ -686,12 +689,24 @@ router.get('/orders/completed', authenticateSanctuaire, async (req: any, res: an
     .sort({ deliveredAt: -1, updatedAt: -1 })
     .limit(20);
 
+    console.log('[ORDERS/COMPLETED] Orders trouvées:', orders.length);
+
+    // PASSAGE 13 - P0 : Chercher aussi dans ProductOrder (completées = paid/processing/completed)
+    const productOrders = await ProductOrder.find({
+      customerEmail: userEmail,
+      status: { $in: ['paid', 'processing', 'completed'] }
+    })
+    .sort({ createdAt: -1 })
+    .limit(20);
+
+    console.log('[ORDERS/COMPLETED] ProductOrders trouvées:', productOrders.length);
+
     // Formater les données pour le sanctuaire
     const formattedOrders = orders.map(order => ({
       id: order._id,
       orderNumber: order.orderNumber,
-        level: order.level,
-        levelName: getLevelNameSafely(order.level),
+      level: order.level,
+      levelName: getLevelNameSafely(order.level),
       amount: order.amount,
       status: order.status,
       createdAt: order.createdAt,
@@ -705,16 +720,49 @@ router.get('/orders/completed', authenticateSanctuaire, async (req: any, res: an
       }
     }));
     
+    // PASSAGE 13 - P0 : Formater aussi les ProductOrders en format compatible
+    const formattedProductOrders = productOrders.map(po => {
+      const levelMap: Record<string, number> = { 'initie': 1, 'mystique': 2, 'profond': 3, 'integrale': 4 };
+      let level = 1;
+      if (typeof po.metadata?.level === 'number') level = po.metadata.level;
+      else if (typeof po.metadata?.level === 'string') level = levelMap[po.metadata.level.toLowerCase()] || 1;
+      else if (po.productId) level = levelMap[po.productId.toLowerCase()] || 1;
+      
+      return {
+        id: po._id,
+        orderNumber: po.paymentIntentId,
+        level: level,
+        levelName: getLevelNameSafely(level),
+        amount: po.amount || 0,
+        status: po.status,
+        createdAt: po.createdAt,
+        deliveredAt: po.createdAt, // ProductOrder n'a pas deliveredAt, utiliser createdAt
+        // ProductOrder n'a pas de contenu généré, donc null
+        generatedContent: null,
+        expertValidation: null,
+        formData: {
+          firstName: po.metadata?.customerName?.split(' ')[0] || '',
+          lastName: po.metadata?.customerName?.split(' ').slice(1).join(' ') || '',
+          specificQuestion: null
+        },
+        isProductOrder: true // Flag pour identifier les ProductOrders
+      };
+    });
+    
+    // Combiner et trier par date
+    const allOrders = [...formattedOrders, ...formattedProductOrders]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
     res.json({
-      orders: formattedOrders,
-      total: formattedOrders.length,
+      orders: allOrders,
+      total: allOrders.length,
       user: {
         id: req.user._id,
         email: req.user.email,
         firstName: req.user.firstName,
         lastName: req.user.lastName,
         phone: req.user.phone || undefined,
-        level: formattedOrders.length
+        level: allOrders.length
       }
     });
     
