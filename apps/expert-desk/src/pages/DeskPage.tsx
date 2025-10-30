@@ -11,14 +11,14 @@ import {
   AlertCircle,
   Eye
 } from 'lucide-react';
-import { Order, Stats } from '../types/Order';
+import type { Order, Stats } from '../types/Order';
 import { useAuth } from '../hooks/useAuth';
 import LoadingSpinner from '../components/LoadingSpinner';
 import OrdersQueue from '../components/OrdersQueue';
 import ValidationQueue from '../components/ValidationQueue';
 import ContentGenerator from '../components/ContentGenerator';
 import ContentValidator from '../components/ContentValidator';
-import { api } from '../utils/api';
+import { api, endpoints } from '../utils/api';
 import toast from 'react-hot-toast';
 
 const DeskPage: React.FC = () => {
@@ -39,6 +39,9 @@ const DeskPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshTimeout, setRefreshTimeout] = useState<number | null>(null);
+  const [takingOrderId, setTakingOrderId] = useState<string | null>(null);
+  const [validatingOrderId, setValidatingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -62,7 +65,7 @@ const DeskPage: React.FC = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await api.get('/expert/orders/pending');
+      const response = await api.get(endpoints.expert.orders);
       console.log('📋 Fetched pending orders:', response.data);
       
       if (response.data && response.data.orders) {
@@ -82,7 +85,7 @@ const DeskPage: React.FC = () => {
 
   const fetchValidationOrders = async () => {
     try {
-      const response = await api.get('/expert/orders/validation-queue');
+      const response = await api.get(endpoints.expert.validationQueue);
       console.log('📋 Fetched validation orders:', response.data);
       
       if (response.data && response.data.orders) {
@@ -102,7 +105,7 @@ const DeskPage: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await api.get('/expert/stats');
+      const response = await api.get(endpoints.expert.stats);
       setStats(response.data);
     } catch (error: any) {
       console.error('Error fetching stats:', error);
@@ -115,23 +118,15 @@ const DeskPage: React.FC = () => {
   const handleTakeOrder = async (order: Order) => {
     try {
       console.log('🎯 Taking order:', order._id);
-      const response = await api.post(`/expert/orders/${order._id}/assign`);
+      setTakingOrderId(order._id);
+      
+      const response = await api.post(endpoints.expert.assignOrder(order._id));
       console.log('✅ Order assigned successfully:', response.data);
       
       toast.success('Commande prise en charge avec succès !');
       
       // Actualiser la liste des commandes
       await fetchOrders();
-      // Set assigned order as active to show editor
-      const updatedOrder = (response.data && (response.data as any).order) as Order | undefined;
-      if (updatedOrder) {
-        setSelectedOrder(updatedOrder);
-        setActiveTab('orders');
-      } else {
-        setSelectedOrder(order);
-        setActiveTab('orders');
-      }
-      return;
       
       // Fermer les détails si c'était la commande sélectionnée
       if (selectedOrder?._id === order._id) {
@@ -141,12 +136,15 @@ const DeskPage: React.FC = () => {
       console.error('❌ Error taking order:', error);
       const errorMessage = error.response?.data?.error || 'Erreur lors de la prise en charge';
       toast.error(errorMessage);
+    } finally {
+      setTakingOrderId(null);
     }
   };
 
   const handleValidateContent = async (orderId: string, action: 'approve' | 'reject', notes: string, rejectionReason?: string) => {
     try {
       console.log('🔍 Validating content:', { orderId, action, notes, rejectionReason });
+      setValidatingOrderId(orderId);
       
       const payload = {
         orderId,
@@ -155,7 +153,7 @@ const DeskPage: React.FC = () => {
         ...(rejectionReason && { rejectionReason })
       };
       
-      const response = await api.post('/expert/validate-content', payload);
+      const response = await api.post(endpoints.expert.validateContent, payload);
       console.log('✅ Content validated:', response.data);
       
       toast.success(response.data.message || 'Validation effectuée avec succès');
@@ -171,6 +169,8 @@ const DeskPage: React.FC = () => {
       console.error('❌ Error validating content:', error);
       const errorMessage = error.response?.data?.error || 'Erreur lors de la validation';
       toast.error(errorMessage);
+    } finally {
+      setValidatingOrderId(null);
     }
   };
 
@@ -180,13 +180,29 @@ const DeskPage: React.FC = () => {
   };
 
   const refreshOrders = async () => {
-    setRefreshing(true);
-    await fetchOrders();
-    await fetchValidationOrders();
-    await fetchStats();
-    setRefreshing(false);
-    toast.success('Données actualisées');
+    // Debounce de 200ms pour éviter rafales d'appels API
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+    }
+    
+    const timeout = window.setTimeout(async () => {
+      setRefreshing(true);
+      await fetchOrders();
+      await fetchValidationOrders();
+      await fetchStats();
+      setRefreshing(false);
+      toast.success('Données actualisées');
+    }, 200);
+    
+    setRefreshTimeout(timeout);
   };
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+    };
+  }, [refreshTimeout]);
 
   const handleOrderUpdate = () => {
     refreshOrders();
@@ -363,7 +379,8 @@ const DeskPage: React.FC = () => {
                 onSelectOrder={(order: Order) => setSelectedOrder(order)}
                 onRefresh={refreshOrders}
                 refreshing={refreshing}
-                onTakeOrder={(order: Order) => handleTakeOrder(order)}
+                onTakeOrder={handleTakeOrder}
+                takingOrder={takingOrderId || undefined}
               />
             ) : (
               <ValidationQueue
@@ -373,6 +390,7 @@ const DeskPage: React.FC = () => {
                 onValidateContent={handleValidationOrderSelect}
                 onRefresh={refreshOrders}
                 refreshing={refreshing}
+                validatingOrder={validatingOrderId || undefined}
               />
             )}
           </motion.div>

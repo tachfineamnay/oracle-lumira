@@ -51,12 +51,14 @@ api.interceptors.response.use(
 export const endpoints = {
   expert: {
     login: '/expert/login',
+    register: '/expert/register',
     verify: '/expert/verify',
     stats: '/expert/stats',
     orders: '/expert/orders/pending',
     validationQueue: '/expert/orders/validation-queue',
     validateContent: '/expert/validate-content',
     orderDetails: (id: string) => `/expert/orders/${id}`,
+    assignOrder: (id: string) => `/expert/orders/${id}/assign`,
     processOrder: '/expert/process-order',
     presignFile: '/expert/files/presign'
   }

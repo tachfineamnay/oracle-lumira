@@ -57,11 +57,7 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
       return data.url as string;
     } catch (e) {
       console.warn('Failed to presign URL, falling back to raw:', e);
-      // P1: Feedback utilisateur si presign échoue
-      toast('Aperçu non sécurisé (fallback S3)', { 
-        duration: 2000,
-        icon: '⚠️'
-      });
+      // Fallback silencieux sans toast pour éviter la pollution visuelle
       return urlOrPath;
     }
   };
@@ -398,6 +394,7 @@ PERSONNALISATION:
                           src={imageUrls[fileUrl] || fileUrl} 
                           alt={displayName} 
                           className="w-14 h-14 object-cover rounded border border-white/20"
+                          loading="lazy"
                           onError={(e) => handleThumbnailError(e, fileUrl!)}
                         />
                       </button>

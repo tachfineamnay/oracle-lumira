@@ -1,6 +1,7 @@
 import { Order } from '../types/Order';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import DOMPurify from 'dompurify';
 import { 
   CheckCircle, 
   XCircle, 
@@ -300,7 +301,11 @@ const ContentValidator: React.FC<ContentValidatorProps> = ({
                     <p className="text-lg font-medium mb-4">Mandala généré</p>
                     <div 
                       className="mx-auto max-w-md"
-                      dangerouslySetInnerHTML={{ __html: order.generatedContent.mandalaSvg }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(order.generatedContent.mandalaSvg, {
+                        USE_PROFILES: { svg: true, svgFilters: true },
+                        ADD_TAGS: ['svg', 'path', 'circle', 'rect', 'polygon', 'ellipse', 'line', 'polyline', 'g', 'defs', 'linearGradient', 'radialGradient', 'stop'],
+                        ADD_ATTR: ['viewBox', 'xmlns', 'fill', 'stroke', 'stroke-width', 'd', 'cx', 'cy', 'r', 'x', 'y', 'width', 'height', 'transform', 'id', 'offset', 'stop-color']
+                      }) }}
                     />
                   </div>
                 )}

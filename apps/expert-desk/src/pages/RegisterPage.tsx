@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { api, endpoints } from '../utils/api';
+import toast from 'react-hot-toast';
 
 export const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -20,33 +22,33 @@ export const RegisterPage: React.FC = () => {
     try {
       console.log('🚀 Starting registration process...');
       
-      const response = await fetch('/api/expert/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, name }),
+      const response = await api.post(endpoints.expert.register, { 
+        email, 
+        password, 
+        name 
       });
+      
+      console.log('📋 Registration response:', response.data);
 
-      const data = await response.json();
-      console.log('📋 Registration response:', { status: response.status, data });
-
-      if (response.ok) {
+      if (response.data && response.data.success !== false) {
         console.log('✅ Registration successful, logging in...');
         // Auto-login after registration
         const loginResult = await login(email, password);
         if (loginResult.success) {
+          toast.success('Compte créé avec succès !');
           navigate('/desk');
         } else {
           setError(loginResult.error || 'Erreur lors de la connexion automatique');
         }
       } else {
-        setError(data.error || 'Erreur lors de l\'enregistrement');
-        console.error('❌ Registration failed:', data);
+        setError(response.data?.error || 'Erreur lors de l\'enregistrement');
+        console.error('❌ Registration failed:', response.data);
       }
     } catch (err: any) {
       console.error('❌ Registration error:', err);
-      setError('Erreur de connexion au serveur');
+      const errorMessage = err.response?.data?.error || 'Erreur de connexion au serveur';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
