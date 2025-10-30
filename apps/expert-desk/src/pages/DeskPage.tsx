@@ -125,13 +125,12 @@ const DeskPage: React.FC = () => {
       
       toast.success('Commande prise en charge avec succès !');
       
-      // Actualiser la liste des commandes
-      await fetchOrders();
+      // Ouvrir la commande dans le générateur de contenu
+      setSelectedOrder(order);
+      setActiveTab('orders');
       
-      // Fermer les détails si c'était la commande sélectionnée
-      if (selectedOrder?._id === order._id) {
-        setSelectedOrder(null);
-      }
+      // Actualiser la liste des commandes en arrière-plan
+      await fetchOrders();
     } catch (error: any) {
       console.error('❌ Error taking order:', error);
       const errorMessage = error.response?.data?.error || 'Erreur lors de la prise en charge';
