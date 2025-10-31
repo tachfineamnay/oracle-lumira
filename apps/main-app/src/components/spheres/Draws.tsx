@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Headphones, Image as ImageIcon, Lock, Download, 
   Play, Eye, Calendar, Sparkles, Star, ArrowRight, Check,
-  Clock, AlertCircle, Crown, Zap
+  Clock, AlertCircle, Crown, Zap, Award, Home, Menu, ChevronRight, User
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
@@ -139,11 +139,12 @@ const UPGRADE_OPTIONS: Record<number, UpgradeOption> = {
 
 const DrawsContent: React.FC = () => {
   const navigate = useNavigate();
-  const { orders, isLoading, user } = useSanctuaire();
+  const { orders, isLoading, user, levelMetadata } = useSanctuaire();
   const { play, setTrack } = useAudioPlayer();
   
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modal, setModal] = useState<{ 
     open: boolean; 
     pdfUrl?: string; 
@@ -218,9 +219,13 @@ const DrawsContent: React.FC = () => {
 
   // =================== SKELETON LOADING ===================
 
+  const levelName = (levelMetadata?.name as string) || 'Initié';
+  const levelColor = (levelMetadata?.color as string) || 'amber';
+
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
+        <div className="space-y-6 max-w-6xl mx-auto p-6">
         <div className="h-8 w-48 bg-amber-400/20 rounded-lg animate-pulse" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
@@ -240,6 +245,7 @@ const DrawsContent: React.FC = () => {
                 ))}
               </div>
             </GlassCard>
+          </div>
           </div>
         </div>
       </div>
@@ -261,40 +267,139 @@ const DrawsContent: React.FC = () => {
   // =================== RENDU PRINCIPAL ===================
 
   return (
-    <div className="space-y-6">
-      
-      {/* En-tête */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+    <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
+      {/* Bouton Menu Mobile */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white hover:bg-white/20 transition-all shadow-xl"
       >
-        <div>
-          <h2 className="text-2xl font-playfair italic text-amber-400 flex items-center gap-3">
-            <Sparkles className="w-6 h-6" />
-            Mes Lectures Oracle
-          </h2>
-          <p className="text-white/70 mt-1">
-            Accédez à vos ressources spirituelles personnalisées
-          </p>
-        </div>
+        <Menu className="w-5 h-5" />
+      </button>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/commande')}
-          className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-semibold rounded-lg hover:from-amber-500 hover:to-amber-600 transition-all shadow-lg"
-        >
-          Nouvelle lecture
-        </motion.button>
-      </motion.div>
+      {/* Sidebar Navigation */}
+      <AnimatePresence>
+        {(sidebarOpen || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
+          <motion.aside
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed left-0 top-0 h-screen w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 z-40 overflow-y-auto"
+          >
+            {/* Header Sidebar */}
+            <div className="p-6 border-b border-white/10">
+              <button
+                onClick={() => navigate('/sanctuaire')}
+                className="flex items-center gap-3 text-white/80 hover:text-white transition-all group w-full"
+              >
+                <div className="p-2 bg-amber-400/10 rounded-lg group-hover:bg-amber-400/20 transition-all">
+                  <Home className="w-5 h-5 text-amber-400" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium">Retour au</p>
+                  <p className="text-xs text-white/60">Sanctuaire</p>
+                </div>
+              </button>
+            </div>
 
-      {/* Layout principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Colonne gauche: Assets de la lecture sélectionnée */}
-        <div className="lg:col-span-2">
-          {selectedLecture && (
+            {/* Profil Résumé */}
+            <div className="p-6 border-b border-white/10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-gradient-to-br from-amber-400/20 to-purple-400/20 rounded-full">
+                  <User className="w-5 h-5 text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium truncate">
+                    {user?.firstName || 'Client'} {user?.lastName || 'Oracle'}
+                  </p>
+                  <p className="text-xs text-white/60 truncate">{user?.email}</p>
+                </div>
+              </div>
+              <div className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-${levelColor}-400/10 to-purple-400/10 rounded-lg border border-${levelColor}-400/20`}>
+                <Award className={`w-4 h-4 text-${levelColor}-400`} />
+                <span className="text-sm text-white/80">{levelName}</span>
+              </div>
+            </div>
+
+            {/* Liste des lectures */}
+            <div className="p-4">
+              <p className="px-3 py-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+                Mes Lectures
+              </p>
+              <div className="space-y-2 mt-2">
+                {lectures.map((lecture) => (
+                  <button
+                    key={lecture.id}
+                    onClick={() => {
+                      setSelectedLecture(lecture);
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left p-3 rounded-lg transition-all ${
+                      selectedLecture?.id === lecture.id
+                        ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30'
+                        : 'text-white/60 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium line-clamp-1">
+                          {lecture.title}
+                        </div>
+                        <div className="text-xs text-white/60 mt-1 flex items-center gap-2">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR')}
+                        </div>
+                      </div>
+                      {selectedLecture?.id === lecture.id && (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions Quick */}
+            <div className="p-4 mt-auto border-t border-white/10">
+              <button
+                onClick={() => navigate('/commande')}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/30 rounded-lg transition-all"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm font-medium">Nouvelle lecture</span>
+              </button>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* Overlay Mobile */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+        />
+      )}
+
+      {/* Contenu Principal */}
+      <div className="lg:ml-64 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-6xl mx-auto space-y-6">
+
+          {/* Header aligné Profil */}
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <Sparkles className={`w-6 h-6 text-${levelColor}-400`} />
+              <h1 className="text-3xl font-bold text-white">Mes Lectures</h1>
+            </div>
+            <p className="text-white/60">
+              Niveau actuel : <span className={`text-${levelColor}-400 font-medium`}>{levelName}</span>
+            </p>
+          </div>
+
+          {/* Layout principal - Changement: une seule colonne car sidebar gère la liste */}
+          <div className="space-y-6">
+            {/* Assets de la lecture sélectionnée - Maintenant en pleine largeur */}
+            {selectedLecture && (
             <LectureAssets
               lecture={selectedLecture}
               availableFormats={orderContent.availableFormats}
@@ -324,55 +429,26 @@ const DrawsContent: React.FC = () => {
                 }
               }}
             />
-          )}
-        </div>
+            )}
 
-        {/* Colonne droite: Liste des lectures + Upgrades */}
-        <div className="space-y-6">
-          
-          {/* Liste des lectures */}
-          <GlassCard className="p-4">
-            <h3 className="text-sm font-semibold text-white/80 mb-3">Mes lectures</h3>
-            <div className="space-y-2">
-              {lectures.map((lecture) => (
-                <button
-                  key={lecture.id}
-                  onClick={() => setSelectedLecture(lecture)}
-                  className={`w-full text-left p-3 rounded-lg transition-all ${
-                    selectedLecture?.id === lecture.id
-                      ? 'bg-amber-400/20 border border-amber-400/30'
-                      : 'bg-white/5 hover:bg-white/10 border border-transparent'
-                  }`}
-                >
-                  <div className="text-sm font-medium text-white line-clamp-1">
-                    {lecture.title}
-                  </div>
-                  <div className="text-xs text-white/60 mt-1 flex items-center gap-2">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR')}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </GlassCard>
+            {/* Section Upgrades */}
+            {selectedLecture && (
+              <UpgradeSection level={selectedLecture.level} />
+            )}
 
-          {/* Section Upgrades */}
-          {selectedLecture && (
-            <UpgradeSection level={selectedLecture.level} />
-          )}
+            {/* Modal pour PDF et Mandala */}
+            {modal.open && (
+              <AssetsModal
+                open={modal.open}
+                onClose={() => setModal({ open: false })}
+                pdfUrl={modal.pdfUrl}
+                mandalaSvg={modal.mandalaSvg}
+                title={modal.title}
+              />
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Modal pour PDF et Mandala */}
-      {modal.open && (
-        <AssetsModal
-          open={modal.open}
-          onClose={() => setModal({ open: false })}
-          pdfUrl={modal.pdfUrl}
-          mandalaSvg={modal.mandalaSvg}
-          title={modal.title}
-        />
-      )}
     </div>
   );
 };
