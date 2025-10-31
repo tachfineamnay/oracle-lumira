@@ -23,7 +23,6 @@ import {
   Mail, Phone, User
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
-import GlassCard from '../ui/GlassCard';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -702,9 +701,9 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
         animate={{ opacity: 1 }}
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-mystical-abyss/20 backdrop-blur-sm"
       >
-        <div className="flex flex-col items-center gap-4 bg-mystical-midnight backdrop-blur-md border border-white/20 rounded-2xl p-8">
+        <div className="flex flex-col items-center gap-4 bg-mystical-midnight border border-white/10 rounded-2xl p-8">
           <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
-          <p className="text-white/90 text-lg">🔍 Chargement de vos informations...</p>
+          <p className="text-white text-lg">🔍 Chargement de vos informations...</p>
         </div>
       </motion.div>
     );
@@ -716,7 +715,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-mystical-abyss/20 backdrop-blur-sm"
     >
-      <GlassCard className="w-full max-w-2xl bg-mystical-midnight backdrop-blur-md border-white/20 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl bg-mystical-midnight border border-white/10 rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
         
         {/* En-tête */}
         <motion.div
@@ -724,10 +723,10 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
           animate={{ y: 0, opacity: 1 }}
           className="text-center mb-6"
         >
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-400/30 to-blue-400/20 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Star className="w-6 h-6 text-purple-400" />
+          <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Star className="w-6 h-6 text-blue-400" />
           </div>
-          <h2 className="text-2xl font-playfair italic text-purple-400 mb-1">
+          <h2 className="text-2xl font-playfair italic text-blue-400 mb-1">
             Complétez votre Profil
           </h2>
           <p className="text-sm text-white/60">
@@ -741,16 +740,16 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             <div key={step} className="flex items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
                 step === currentStep
-                  ? 'bg-purple-400 text-white scale-110'
+                  ? 'bg-blue-500 text-white scale-110'
                   : step < currentStep
-                  ? 'bg-purple-400/50 text-white'
+                  ? 'bg-blue-500/50 text-white'
                   : 'bg-white/10 text-white/40'
               }`}>
                 {step < currentStep ? <Check className="w-4 h-4" /> : step + 1}
               </div>
               {step < 3 && (
                 <div className={`w-8 h-0.5 mx-1 ${
-                  step < currentStep ? 'bg-purple-400/50' : 'bg-white/10'
+                  step < currentStep ? 'bg-blue-500/50' : 'bg-white/10'
                 }`} />
               )}
             </div>
@@ -884,7 +883,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             <button
               onClick={handleNext}
               disabled={!canProceed()}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-purple-400/50 focus:outline-none"
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-400/50 focus:outline-none"
             >
               <span>Suivant</span>
               <ChevronRight className="w-4 h-4" />
@@ -893,7 +892,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             <button
             onClick={handleFinalize}
               disabled={!canProceed() || isSubmitting}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-purple-400/50 focus:outline-none"
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-400/50 focus:outline-none"
             >
               {isSubmitting ? (
                 <>
@@ -909,7 +908,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
             </button>
           )}
         </div>
-      </GlassCard>
+      </div>
     </motion.div>
   );
 };
