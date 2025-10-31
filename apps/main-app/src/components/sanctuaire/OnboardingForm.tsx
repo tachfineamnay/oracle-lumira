@@ -699,9 +699,9 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-cosmic-void/95 via-cosmic-deep/95 to-cosmic-nebula/95"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-cosmic-void/20 via-cosmic-deep/25 to-cosmic-nebula/20 backdrop-blur-sm"
       >
-        <div className="flex flex-col items-center gap-4 bg-gradient-to-br from-cosmic-deep via-cosmic-nebula to-cosmic-galaxy border border-purple-400/30 rounded-2xl p-8 shadow-cosmic">
+        <div className="flex flex-col items-center gap-4 bg-gradient-to-br from-cosmic-deep via-cosmic-nebula to-cosmic-galaxy border border-purple-400/40 rounded-2xl p-8 shadow-aurora">
           <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
           <p className="text-white text-lg">🔍 Chargement de vos informations...</p>
         </div>
@@ -713,9 +713,9 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-cosmic-void/95 via-cosmic-deep/95 to-cosmic-nebula/95"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-cosmic-void/20 via-cosmic-deep/25 to-cosmic-nebula/20 backdrop-blur-sm"
     >
-      <div className="w-full max-w-2xl bg-gradient-to-br from-cosmic-deep via-cosmic-nebula to-cosmic-galaxy border border-purple-400/30 rounded-2xl p-6 max-h-[90vh] overflow-y-auto shadow-cosmic">
+      <div className="w-full max-w-2xl bg-gradient-to-br from-cosmic-deep via-cosmic-nebula to-cosmic-galaxy border border-purple-400/40 rounded-2xl p-6 max-h-[90vh] overflow-y-auto shadow-aurora">
         
         {/* En-tête */}
         <motion.div
