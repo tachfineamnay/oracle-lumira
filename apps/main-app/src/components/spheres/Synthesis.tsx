@@ -267,16 +267,13 @@ const Synthesis: React.FC = () => {
                         markSeen(cat, insight.updatedAt);
                         setSidebarOpen(false);
                       }
-                      // Si pas d'insight, ne rien faire (pas de scroll vers section vide)
+                      // Si pas d'insight, ne rien faire
                     }}
-                    disabled={!insight}
                     className={`w-full flex flex-col gap-2 px-3 py-2.5 rounded-lg transition-all group ${
-                      !insight 
-                        ? 'opacity-50 cursor-not-allowed text-white/40'
-                        : activeSection === sectionId
-                        ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20 cursor-pointer'
-                        : 'text-white/60 hover:text-white hover:bg-white/5 cursor-pointer'
-                    }`}
+                      activeSection === sectionId
+                        ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20'
+                        : 'text-white/60 hover:text-white hover:bg-white/5'
+                    } ${!insight ? 'cursor-default' : 'cursor-pointer'}`}
                   >
                     <div className="flex items-center gap-3 w-full">
                       <span className="flex-1 text-left text-sm font-medium">{cat}</span>
@@ -289,8 +286,8 @@ const Synthesis: React.FC = () => {
                         {insight.short}
                       </p>
                     ) : (
-                      <p className="text-xs text-white/30 italic text-left">
-                        Bientôt disponible
+                      <p className="text-xs text-white/40 italic text-left">
+                        En cours de génération...
                       </p>
                     )}
                   </button>
@@ -349,19 +346,8 @@ const Synthesis: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: categoriesInOrder.indexOf(cat) * 0.1 }}
-              onClick={() => {
-                if (insight) {
-                  setSelected(insight);
-                  markSeen(cat, insight.updatedAt);
-                }
-              }}
-              className={insight ? "cursor-pointer" : "cursor-default"}
             >
-              <GlassCard className={`h-48 border flex flex-col justify-between p-6 transition-all duration-300 ${
-                insight 
-                  ? 'border-mystical-500/40 hover:border-amber-400/40' 
-                  : 'border-white/10 opacity-60'
-              }`}>
+              <GlassCard className="h-48 border border-mystical-500/40 flex flex-col justify-between p-6 hover:border-amber-400/40 transition-all duration-300">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-4">
                     <div className="font-playfair italic text-lg font-medium text-amber-400">{cat}</div>
