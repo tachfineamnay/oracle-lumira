@@ -702,7 +702,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
         animate={{ opacity: 1 }}
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-mystical-abyss/20 backdrop-blur-sm"
       >
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 bg-mystical-midnight backdrop-blur-md border border-white/20 rounded-2xl p-8">
           <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
           <p className="text-white/90 text-lg">🔍 Chargement de vos informations...</p>
         </div>
@@ -716,7 +716,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-mystical-abyss/20 backdrop-blur-sm"
     >
-      <GlassCard className="w-full max-w-2xl bg-mystical-midnight/95 backdrop-blur-md border-white/20 p-6 max-h-[90vh] overflow-y-auto">
+      <GlassCard className="w-full max-w-2xl bg-mystical-midnight backdrop-blur-md border-white/20 p-6 max-h-[90vh] overflow-y-auto">
         
         {/* En-tête */}
         <motion.div
