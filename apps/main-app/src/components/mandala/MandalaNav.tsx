@@ -67,12 +67,26 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
   const refs = useRef<Array<HTMLAnchorElement | null>>([]);
   const location = useLocation();
 
-  // Auto-detect active sphere from current route
-  const currentSphere = location.pathname.split('/').pop();
-  const activeKey = currentSphere === 'path' ? 'spiritualPath' : 
-                   currentSphere === 'draws' ? 'rawDraws' : 
-                   ORDER.includes(currentSphere || '') ? currentSphere : 
-                   active || 'spiritualPath';
+  // Auto-detect active sphere from current route - Fixed to avoid pre-selection
+  const getCurrentSphere = () => {
+    const pathParts = location.pathname.split('/');
+    const lastPart = pathParts[pathParts.length - 1];
+    
+    // If we're on /sanctuaire exactly, don't select anything
+    if (location.pathname === '/sanctuaire') {
+      return null;
+    }
+    
+    // Map routes to sphere keys
+    if (lastPart === 'path') return 'spiritualPath';
+    if (lastPart === 'draws') return 'rawDraws';
+    if (lastPart === 'chat') return 'conversations';
+    if (ORDER.includes(lastPart)) return lastPart;
+    
+    return active || null;
+  };
+
+  const activeKey = getCurrentSphere();
 
   useEffect(() => {
     // ensure focus follows focusIndex
@@ -325,17 +339,41 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                   )}
                 </motion.div>
 
-                {/* Tooltip on hover */}
+                {/* Tooltip on hover with improved positioning */}
                 {hoveredIndex === i && (
                  <motion.div
                     initial={{ opacity: 0, scale: 0.9, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-20 z-50"
+                    className={`absolute z-50 ${
+                      key === 'conversations' 
+                        ? 'right-full top-1/2 -translate-y-1/2 mr-4' 
+                        : key === 'synthesis'
+                        ? 'left-full top-1/2 -translate-y-1/2 ml-4'
+                        : key === 'spiritualPath'
+                        ? 'top-0 left-1/2 transform -translate-x-1/2 -mt-16'
+                        : key === 'profile'
+                        ? 'left-full bottom-1/2 translate-y-1/2 ml-4'
+                        : key === 'rawDraws'
+                        ? 'right-full bottom-1/2 translate-y-1/2 mr-4'
+                        : 'top-full left-1/2 transform -translate-x-1/2 mt-20'
+                    }`}
                   >
-                    <div className="bg-black/90 backdrop-blur-xl text-white text-xs px-3 py-2 rounded-xl border border-white/20 max-w-48 text-center">
+                    <div className="bg-black/90 backdrop-blur-xl text-white text-xs px-3 py-2 rounded-xl border border-white/20 max-w-48 text-center whitespace-normal">
                       {SPHERE_DESCRIPTIONS[key]}
-                      <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black/90 rotate-45 border-l border-t border-white/20"></div>
+                      <div className={`absolute w-2 h-2 bg-black/90 rotate-45 ${
+                        key === 'conversations'
+                          ? 'right-0 top-1/2 -translate-y-1/2 translate-x-1/2 border-r border-t border-white/20'
+                          : key === 'synthesis'
+                          ? 'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-l border-b border-white/20'
+                          : key === 'spiritualPath'
+                          ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 border-b border-r border-white/20'
+                          : key === 'profile'
+                          ? 'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-l border-t border-white/20'
+                          : key === 'rawDraws'
+                          ? 'right-0 top-1/2 -translate-y-1/2 translate-x-1/2 border-r border-b border-white/20'
+                          : '-top-1 left-1/2 transform -translate-x-1/2 border-l border-t border-white/20'
+                      }`}></div>
                     </div>
                   </motion.div>
                 )}
