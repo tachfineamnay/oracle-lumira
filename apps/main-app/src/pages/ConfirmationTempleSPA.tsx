@@ -237,16 +237,18 @@ const ConfirmationTemple: React.FC = () => {
     return (
       <PageLayout variant="dark" className="py-12">
         <div className="flex items-center justify-center">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center space-y-6">
-            <Loader className="w-12 h-12 text-mystical-gold animate-spin mx-auto" />
-            <h2 className="text-2xl font-bold text-white">Préparation de votre Sanctuaire...</h2>
-            <p className="text-gray-300">Nous finalisons votre accès. Cela peut prendre quelques instants.</p>
-            <div className="mt-4 text-sm text-gray-400">
-              <p>✨ Vérification du paiement</p>
-              <p>🔐 Activation de vos privilèges</p>
-              <p>🏛️ Ouverture des portes du Sanctuaire</p>
-            </div>
-          </motion.div>
+          <GlassCard>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center space-y-6">
+              <Loader className="w-12 h-12 text-mystical-gold animate-spin mx-auto" />
+              <h2 className="text-2xl font-bold text-white">Préparation de votre Sanctuaire...</h2>
+              <p className="text-gray-300">Nous finalisons votre accès. Cela peut prendre quelques instants.</p>
+              <div className="mt-4 text-sm text-gray-400">
+                <p>✨ Vérification du paiement</p>
+                <p>🔐 Activation de vos privilèges</p>
+                <p>🏛️ Ouverture des portes du Sanctuaire</p>
+              </div>
+            </motion.div>
+          </GlassCard>
         </div>
       </PageLayout>
     );
@@ -349,14 +351,14 @@ const ConfirmationTemple: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleGoToSanctuary}
-              className="w-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-dark font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-mystical-gold/50 hover:shadow-lg flex items-center justify-center space-x-2"
+              className="w-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-dark font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-mystical-gold/50 hover:shadow-lg flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-mystical-gold/50"
             >
               <Crown className="w-5 h-5" />
               <span>Entrer dans le Sanctuaire</span>
               <ArrowRight className="w-5 h-5" />
             </motion.button>
 
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400" aria-live="polite">
               Redirection automatique dans {redirectCountdown} seconde{redirectCountdown > 1 ? 's' : ''}...
             </p>
           </div>
@@ -429,54 +431,58 @@ const ConfirmationTemple: React.FC = () => {
 
   return (
     <PageLayout variant="dark" className="py-12">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto p-8 text-center space-y-6">
-        {/* Status Icon */}
-        <div className={`w-16 h-16 ${statusInfo.bgColor} rounded-full flex items-center justify-center mx-auto`}>
-          <StatusIcon className={`w-8 h-8 ${statusInfo.color} ${(status === 'pending' || status === 'processing') ? 'animate-spin' : ''}`} />
-        </div>
+      <div className="max-w-md mx-auto">
+        <GlassCard>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-6 text-center space-y-6" role="status" aria-live="polite">
+            {/* Status Icon */}
+            <div className={`w-16 h-16 ${statusInfo.bgColor} rounded-full flex items-center justify-center mx-auto`}>
+              <StatusIcon className={`w-8 h-8 ${statusInfo.color} ${(status === 'pending' || status === 'processing') ? 'animate-spin' : ''}`} aria-hidden="true" />
+            </div>
 
-        {/* Status Message */}
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-white">{statusInfo.title}</h2>
-          <p className="text-gray-300">{statusInfo.message}</p>
-        </div>
+            {/* Status Message */}
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-white">{statusInfo.title}</h2>
+              <p className="text-gray-300">{statusInfo.message}</p>
+            </div>
 
-        {/* Order Details */}
-        <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-xl p-4 space-y-2">
-          <p className="text-sm text-gray-400">Commande #{orderIdShort}</p>
-          <p className="text-white font-semibold">{productName}</p>
-          <p className="text-mystical-gold">{(orderAmount / 100).toFixed(2)} €</p>
-        </div>
+            {/* Order Details */}
+            <div className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-xl p-4 space-y-2">
+              <p className="text-sm text-gray-400">Commande #{orderIdShort}</p>
+              <p className="text-white font-semibold">{productName}</p>
+              <p className="text-mystical-gold">{(orderAmount / 100).toFixed(2)} €</p>
+            </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          {status === 'failed' || status === 'refunded' ? (
-            <button
-              onClick={() => {
-                stopPolling();
-                navigate(`/commande?product=${orderData.level}`);
-              }}
-              className="w-full bg-mystical-gold text-mystical-dark px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold-light transition-colors"
-            >
-              Réessayer le paiement
-            </button>
-          ) : null}
-          
-          <button
-            onClick={handleBackToHome}
-            className="w-full bg-transparent border border-mystical-gold/50 text-mystical-gold px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold/10 transition-colors"
-          >
-            Retour à l'accueil
-          </button>
-        </div>
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {status === 'failed' || status === 'refunded' ? (
+                <button
+                  onClick={() => {
+                    stopPolling();
+                    navigate(`/commande?product=${orderData.level}`);
+                  }}
+                  className="w-full bg-mystical-gold text-mystical-dark px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold-light transition-colors focus:outline-none focus:ring-2 focus:ring-mystical-gold/40"
+                >
+                  Réessayer le paiement
+                </button>
+              ) : null}
+              
+              <button
+                onClick={handleBackToHome}
+                className="w-full bg-transparent border border-mystical-gold/50 text-mystical-gold px-6 py-3 rounded-lg font-semibold hover:bg-mystical-gold/10 transition-colors focus:outline-none focus:ring-2 focus:ring-mystical-gold/40"
+              >
+                Retour à l'accueil
+              </button>
+            </div>
 
-        {/* Help Text */}
-        {(status === 'pending' || status === 'paid' || status === 'processing') && (
-          <p className="text-xs text-gray-500">
-            Cette page se mettra à jour automatiquement dès que votre Sanctuaire sera prêt.
-          </p>
-        )}
-      </motion.div>
+            {/* Help Text */}
+            {(status === 'pending' || status === 'paid' || status === 'processing') && (
+              <p className="text-xs text-gray-500">
+                Cette page se mettra à jour automatiquement dès que votre Sanctuaire sera prêt.
+              </p>
+            )}
+          </motion.div>
+        </GlassCard>
+      </div>
     </PageLayout>
   );
 };
