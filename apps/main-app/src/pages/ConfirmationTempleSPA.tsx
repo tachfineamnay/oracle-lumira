@@ -31,7 +31,6 @@ const ConfirmationTemple: React.FC = () => {
   });
   
   const [error, setError] = useState<string | null>(null);
-  const [redirectCountdown, setRedirectCountdown] = useState(5);
   const redirectStartedRef = useRef(false);
   // Migration: UserLevel initialization now handled by SanctuaireProvider
   const derivedLevelName = orderData ? getLevelNameSafely(orderData.level) : 'Simple';
@@ -130,14 +129,14 @@ const ConfirmationTemple: React.FC = () => {
     if (accessGranted && orderData && tokenReady) {
       if (redirectStartedRef.current) return;
       redirectStartedRef.current = true;
-      console.log('[ConfirmationTemple] Accès accordé et token prêt ! Démarrage du compte à rebours...');
+      console.log('[ConfirmationTemple] Accès accordé et token prêt ! Redirection immédiate...');
       
       // Stocker le PaymentIntentId pour l'upload côté Sanctuaire
       try {
         if (orderData.paymentIntentId) {
           localStorage.setItem('oraclelumira_last_payment_intent_id', orderData.paymentIntentId);
         }
-        // PASSAGE 7 - P0 : Stocker l'email pour les retries automatiques dans Sanctuaire.tsx
+        // Stocker l'email pour les retries automatiques dans Sanctuaire.tsx
         const email = searchParams.get('email');
         if (email) {
           sessionStorage.setItem('sanctuaire_email', email);
@@ -147,41 +146,29 @@ const ConfirmationTemple: React.FC = () => {
         console.error('[ConfirmationTemple] Erreur stockage PI/email:', err);
       }
 
-      // Démarrer le compte à rebours
-      const countdown = setInterval(() => {
-        setRedirectCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(countdown);
-            stopPolling();
-            
-            // Vérifier que le token est bien présent avant redirection
-            const storedToken = localStorage.getItem('sanctuaire_token');
-            if (!storedToken) {
-              console.error('[Auth] ⚠️ CRITIQUE: Token manquant avant redirection !');
-            }
-            
-            // Redirection SIMPLE vers /sanctuaire (sans paramètres inutiles)
-            console.log('[ConfirmationTemple] Redirection vers /sanctuaire...');
-            
-            // CORRECTION CRITIQUE : Ajouter un délai asynchrone pour éviter le crash contextuel React
-            // Le délai permet à React de terminer le cycle de rendu avant la navigation
-            setTimeout(() => {
-              try {
-                navigate('/sanctuaire', { replace: true });
-              } catch {
-                // Fallback dur en cas d'échec client-side
-                window.location.href = '/sanctuaire';
-              }
-            }, 150); // 150ms suffisent pour stabiliser le contexte React
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(countdown);
+      // Redirection immédiate sans countdown
+      stopPolling();
+      
+      // Vérifier que le token est bien présent avant redirection
+      const storedToken = localStorage.getItem('sanctuaire_token');
+      if (!storedToken) {
+        console.error('[Auth] ⚠️ CRITIQUE: Token manquant avant redirection !');
+      }
+      
+      // Redirection SIMPLE vers /sanctuaire (sans paramètres inutiles)
+      console.log('[ConfirmationTemple] Redirection vers /sanctuaire...');
+      
+      // Délai asynchrone pour éviter le crash contextuel React
+      setTimeout(() => {
+        try {
+          navigate('/sanctuaire', { replace: true });
+        } catch {
+          // Fallback dur en cas d'échec client-side
+          window.location.href = '/sanctuaire';
+        }
+      }, 150); // 150ms suffisent pour stabiliser le contexte React
     }
-  }, [accessGranted, orderData, tokenReady, navigate, stopPolling]);
+  }, [accessGranted, orderData, tokenReady, navigate, stopPolling, searchParams]);
 
   // Gérer les erreurs
   useEffect(() => {
@@ -193,40 +180,7 @@ const ConfirmationTemple: React.FC = () => {
     }
   }, [orderError, orderId]);
 
-  const handleGoToSanctuary = () => {
-    stopPolling();
-    
-    // Vérifier que le token est présent
-    const storedToken = localStorage.getItem('sanctuaire_token');
-    if (!storedToken) {
-      console.error('[Auth] ⚠️ Token manquant lors du clic manuel !');
-    }
-    
-    // Stocker PI pour robustesse
-    const pi = orderData?.paymentIntentId;
-    if (pi) {
-      try { 
-        localStorage.setItem('oraclelumira_last_payment_intent_id', pi); 
-      } catch {}
-    }
-    
-    // PASSAGE 7 - P0 : Stocker email pour retries
-    const email = searchParams.get('email');
-    if (email) {
-      try {
-        sessionStorage.setItem('sanctuaire_email', email);
-      } catch {}
-    }
-    
-    // Redirection simple avec temporisation pour éviter le crash contextuel
-    setTimeout(() => {
-      try {
-        navigate('/sanctuaire', { replace: true });
-      } catch {
-        window.location.href = '/sanctuaire';
-      }
-    }, 150);
-  };
+
 
   const handleBackToHome = () => {
     stopPolling();
@@ -275,109 +229,6 @@ const ConfirmationTemple: React.FC = () => {
   const productName = derivedLevelName;
   const orderAmount = orderData.amount;
   const orderIdShort = orderData._id.substring(0, 8);
-
-  // Success state - payment completed and access granted
-  if (accessGranted) {
-    return (
-      <PageLayout variant="dark" className="py-12">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto p-8 text-center space-y-8">
-          {/* Success Icon */}
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring" }}
-            className="relative"
-          >
-            <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-green-500/30">
-              <CheckCircle className="w-12 h-12 text-white" />
-            </div>
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-2 border-2 border-mystical-gold/30 rounded-full"
-            />
-          </motion.div>
-
-          {/* Success Message */}
-          <div className="space-y-4">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-mystical-gold to-mystical-gold-light bg-clip-text text-transparent">
-              Félicitations !
-            </h1>
-            <h2 className="text-2xl font-semibold text-white">
-              Votre accès au {productName} est activé
-            </h2>
-            <p className="text-gray-300 max-w-md mx-auto">
-              Votre paiement a été confirmé et vos privilèges mystiques sont maintenant disponibles.
-            </p>
-          </div>
-
-          {/* Order Details */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-mystical-dark/50 to-mystical-purple/30 backdrop-blur-sm border border-mystical-gold/30 rounded-2xl p-6 space-y-4"
-          >
-            <div className="flex items-center justify-center space-x-2 text-mystical-gold">
-              <Crown className="w-6 h-6" />
-              <span className="font-semibold">Détails de votre accès</span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-400">Niveau</span>
-                <p className="text-white font-semibold">{productName}</p>
-              </div>
-              <div>
-                <span className="text-gray-400">Montant</span>
-                <p className="text-white font-semibold">
-                  {(orderAmount / 100).toFixed(2)} €
-                </p>
-              </div>
-              <div>
-                <span className="text-gray-400">Commande</span>
-                <p className="text-white font-mono text-xs">#{orderIdShort}</p>
-              </div>
-              <div>
-                <span className="text-gray-400">Statut</span>
-                <p className="text-green-400 font-semibold">✅ Confirmé</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Action Buttons */}
-          <div className="space-y-4">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleGoToSanctuary}
-              className="w-full bg-gradient-to-r from-mystical-gold to-mystical-gold-light text-mystical-dark font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-mystical-gold/50 hover:shadow-lg flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-mystical-gold/50"
-            >
-              <Crown className="w-5 h-5" />
-              <span>Entrer dans le Sanctuaire</span>
-              <ArrowRight className="w-5 h-5" />
-            </motion.button>
-
-            <p className="text-sm text-gray-400" aria-live="polite">
-              Redirection automatique dans {redirectCountdown} seconde{redirectCountdown > 1 ? 's' : ''}...
-            </p>
-          </div>
-
-          {/* Additional Info */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-sm text-gray-400 space-y-2 border-t border-mystical-gold/20 pt-6"
-          >
-            <p>📧 Un email de confirmation sera envoyé prochainement</p>
-            <p>🔮 Vos accès mystiques sont maintenant activés</p>
-            <p>💎 Profitez de votre voyage initiatique</p>
-          </motion.div>
-        </motion.div>
-      </PageLayout>
-    );
-  }
 
   // Payment pending or in progress state
   const getStatusInfo = () => {
