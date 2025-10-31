@@ -5,8 +5,6 @@ import CommandeTempleSPA from './pages/CommandeTempleSPA';
 import ConfirmationTempleSPA from './pages/ConfirmationTempleSPA';
 import ConfirmationPage from './pages/ConfirmationPage';
 import PaymentSuccessRedirect from './pages/PaymentSuccessRedirect';
-import SanctuairePage from './pages/SanctuairePage';
-import SanctuaireUnified from './pages/SanctuaireUnified';
 import LoginSanctuaireSimple from './pages/LoginSanctuaireSimple';
 import LoginSanctuaire from './pages/LoginSanctuaire';
 import MentionsLegales from './pages/MentionsLegales';
@@ -20,11 +18,9 @@ import SphereSkeleton from './components/ui/SphereSkeleton';
 // Lazy imports pour les composants du Sanctuaire
 const LazySpiritualPath = React.lazy(() => import('./components/spheres/SpiritualPath'));
 const LazyDraws = React.lazy(() => import('./components/spheres/Draws'));
-const LazyMesLectures = React.lazy(() => import('./components/spheres/MesLectures'));
 const LazySynthesis = React.lazy(() => import('./components/spheres/Synthesis'));
 const LazyConversations = React.lazy(() => import('./components/spheres/Conversations'));
 const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
-const LazyRawDraws = React.lazy(() => import('./components/spheres/RawDraws'));
 const LazyRituals = React.lazy(() => import('./components/spheres/Rituals'));
 const LazyMandala = React.lazy(() => import('./components/spheres/Mandala'));
 
@@ -35,7 +31,6 @@ const AppRoutes: React.FC = () => (
     <Route path="/confirmation" element={<ConfirmationTempleSPA />} />
     <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
-    <Route path="/upload-sanctuaire" element={<SanctuairePage />} />
     
     {/* ROUTE PRINCIPALE SANCTUAIRE - RESTAURATION SYSTÈME FONCTIONNEL */}
     {/* ✅ UTILISE Sanctuaire.tsx avec OnboardingForm (stepper 4 étapes validé pendant 3 jours) */}
@@ -86,13 +81,6 @@ const AppRoutes: React.FC = () => (
       }
     />
     <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
-    
-    {/* Route unifiée alternative pour tests */}
-    <Route path="/sanctuaire-unified" element={
-      <SanctuaireProvider>
-        <SanctuaireUnified />
-      </SanctuaireProvider>
-    } />
     
     <Route path="/mentions-legales" element={<MentionsLegales />} />
     <Route path="/login" element={<LoginSanctuaire />} />
