@@ -716,7 +716,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-mystical-abyss/20 backdrop-blur-sm"
     >
-      <GlassCard className="w-full max-w-2xl bg-mystical-midnight/70 backdrop-blur-md border-white/20 p-6 max-h-[90vh] overflow-y-auto">
+      <GlassCard className="w-full max-w-2xl bg-mystical-midnight/95 backdrop-blur-md border-white/20 p-6 max-h-[90vh] overflow-y-auto">
         
         {/* En-tête */}
         <motion.div
