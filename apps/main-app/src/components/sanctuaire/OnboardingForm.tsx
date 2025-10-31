@@ -700,7 +700,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xl"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-blue-900/30 via-purple-900/30 to-indigo-900/30 backdrop-blur-xl"
       >
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-purple-400 animate-spin" />
@@ -714,9 +714,9 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xl"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-blue-900/30 via-purple-900/30 to-indigo-900/30 backdrop-blur-xl"
     >
-      <GlassCard className="w-full max-w-2xl bg-mystical-dark/80 backdrop-blur-2xl border-purple-400/40 shadow-2xl shadow-purple-500/20 p-6 max-h-[90vh] overflow-y-auto">
+      <GlassCard className="w-full max-w-2xl bg-gradient-to-br from-blue-950/70 via-purple-950/60 to-indigo-950/70 backdrop-blur-2xl border-purple-400/40 shadow-2xl shadow-purple-500/20 p-6 max-h-[90vh] overflow-y-auto">
         
         {/* En-tête */}
         <motion.div
