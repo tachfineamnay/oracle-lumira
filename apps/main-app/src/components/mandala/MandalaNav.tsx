@@ -107,7 +107,7 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
   // Enhanced hexagon positions with better spacing (5 sphères)
   const positions = ORDER.map((_, i) => {
     const angle = (i / ORDER.length) * Math.PI * 2 - Math.PI / 2;
-    const r = 180; // Increased radius for more airy layout
+    const r = 140; // Reduced radius for better fit with 5 sphères
     return { 
       left: `calc(50% + ${Math.round(Math.cos(angle) * r)}px)`, 
       top: `calc(50% + ${Math.round(Math.sin(angle) * r)}px)` 
@@ -119,13 +119,13 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
   return (
     <GlassCard className="w-full max-w-5xl mx-auto backdrop-blur-2xl bg-gradient-to-br from-white/10 via-white/5 to-white/10 border border-white/20 shadow-2xl">
       {/* Desktop / large: enhanced pentagon mandala */}
-      <div className="relative w-full h-[36rem] hidden lg:block p-8" onKeyDown={handleKey} role="navigation" aria-label="Mandala navigation cosmique">
+      <div className="relative w-full h-[28rem] hidden lg:block p-8" onKeyDown={handleKey} role="navigation" aria-label="Mandala navigation cosmique">
         
-        {/* Background minimal - subtle rings only */}
+        {/* Background minimal (remove fast stellar animations) */}
         {effects !== 'none' && (
           <div className="absolute inset-0 overflow-hidden rounded-3xl" aria-hidden>
-            <div className="absolute w-[40rem] h-[40rem] rounded-full border border-purple-400/10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-            <div className="absolute w-[32rem] h-[32rem] rounded-full border border-blue-400/8 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute w-[32rem] h-[32rem] rounded-full border border-white/10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute w-[24rem] h-[24rem] rounded-full border border-white/5 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
           </div>
         )}
 
@@ -230,19 +230,19 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                 className="block group relative"
               >
                 {/* Enhanced sphere with multiple layers */}
-                <div className={`relative w-24 h-24 rounded-full transition-all duration-500 ${
+                <div className={`relative w-20 h-20 rounded-full transition-all duration-500 ${
                   isActive 
                     ? `ring-3 ring-amber-400/60 bg-gradient-to-br ${colors.gradient} ${colors.shadow} shadow-lg` 
-                    : 'bg-gradient-to-br from-purple-500/15 via-blue-500/10 to-indigo-500/15 border border-purple-400/30 hover:border-amber-400/50 hover:bg-gradient-to-br hover:from-purple-400/20 hover:to-blue-400/20'
+                    : 'bg-gradient-to-br from-white/10 to-white/5 border border-white/30 hover:border-amber-400/50 hover:bg-gradient-to-br hover:from-white/20 hover:to-white/10'
                 }`}>
                   
                   {/* Progress ring with enhanced visibility */}
-                  <svg className="absolute -inset-1 w-26 h-26" viewBox="0 0 104 104" aria-hidden>
-                    <circle cx="52" cy="52" r="44" strokeWidth="2" stroke="rgba(168, 85, 247, 0.15)" fill="none" />
+                  <svg className="absolute -inset-1 w-22 h-22" viewBox="0 0 88 88" aria-hidden>
+                    <circle cx="44" cy="44" r="36" strokeWidth="2" stroke="rgba(255,255,255,0.1)" fill="none" />
                     <motion.circle
-                      cx="52"
-                      cy="52"
-                      r="44"
+                      cx="44"
+                      cy="44"
+                      r="36"
                       strokeWidth="3"
                       stroke={isActive ? "rgb(251, 191, 36)" : "rgba(251, 191, 36, 0.7)"}
                       strokeLinecap="round"
@@ -260,14 +260,12 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div 
                       className={`transition-all duration-300 ${
-                        isActive ? colors.accent : 'text-purple-200/90 group-hover:text-amber-400'
+                        isActive ? colors.accent : 'text-white/80 group-hover:text-amber-400'
                       }`}
                       animate={isActive ? { scale: [1, 1.1, 1] } : {}}
                       transition={{ duration: 2, repeat: Infinity }}
                     >
-                      {React.cloneElement(ICONS[key] as React.ReactElement, { 
-                        className: "w-7 h-7" 
-                      })}
+                      {ICONS[key]}
                     </motion.div>
                   </div>
 
@@ -310,18 +308,18 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
 
                 {/* Enhanced label with better typography */}
                 <motion.div 
-                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-4 text-center"
+                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-3 text-center"
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 + i * 0.1 }}
                 >
-                  <div className={`text-base font-medium transition-colors duration-300 whitespace-nowrap ${
-                    isActive ? 'text-amber-400' : 'text-purple-200/95 group-hover:text-amber-300'
+                  <div className={`text-sm font-medium transition-colors duration-300 ${
+                    isActive ? 'text-amber-400' : 'text-white/90 group-hover:text-amber-300'
                   }`}>
                     {labels[key as SphereKey]}
                   </div>
                   {prog > 0 && (
-                    <div className="text-xs text-purple-300/70 mt-1">
+                    <div className="text-xs text-white/60 mt-1">
                       {prog}% complété
                     </div>
                   )}
@@ -333,11 +331,11 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                     initial={{ opacity: 0, scale: 0.9, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-24 z-50"
+                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-20 z-50"
                   >
-                    <div className="bg-gradient-to-br from-purple-900/95 to-indigo-900/95 backdrop-blur-xl text-white text-xs px-4 py-2.5 rounded-xl border border-purple-400/30 max-w-52 text-center shadow-lg shadow-purple-500/20">
+                    <div className="bg-black/90 backdrop-blur-xl text-white text-xs px-3 py-2 rounded-xl border border-white/20 max-w-48 text-center">
                       {SPHERE_DESCRIPTIONS[key]}
-                      <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-purple-900 rotate-45 border-l border-t border-purple-400/30"></div>
+                      <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black/90 rotate-45 border-l border-t border-white/20"></div>
                     </div>
                   </motion.div>
                 )}
