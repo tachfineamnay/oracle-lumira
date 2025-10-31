@@ -218,7 +218,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       if (file.size <= 3 * 1024 * 1024) return file;
 
       const dataUrl = await readFileAsDataURL(file);
-      const img = new Image();
+      const img = document.createElement('img') as HTMLImageElement;
       const loaded: Promise<void> = new Promise((resolve, reject) => {
         img.onload = () => resolve();
         img.onerror = () => reject(new Error('Image load error'));
