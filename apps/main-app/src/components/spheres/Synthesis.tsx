@@ -4,7 +4,8 @@ import EmptyState from '../ui/EmptyState';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PrimaryButton, TertiaryButton } from '../ui/Buttons';
-import { X } from 'lucide-react';
+import { X, Award } from 'lucide-react';
+import { useSanctuaire } from '../../contexts/SanctuaireContext';
 
 type CategoryKey = 'Relations' | 'Travail' | 'Santé' | 'Spirituel' | 'Finance' | 'Créativité' | 'Emotions' | 'Mission';
 
@@ -43,6 +44,9 @@ const Synthesis: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Insight | null>(null);
+  const { levelMetadata } = useSanctuaire();
+  const levelName = (levelMetadata?.name as string) || 'Initié';
+  const levelColor = (levelMetadata?.color as string) || 'amber';
 
   useEffect(() => {
     let mounted = true;
@@ -94,28 +98,48 @@ const Synthesis: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <GlassCard key={i} className="h-48 p-6">
-            <div className="space-y-4">
-              <div className="h-5 bg-amber-400/20 rounded-full animate-pulse w-1/2" />
-              <div className="h-3 bg-white/10 rounded-full animate-pulse w-3/4" />
-              <div className="h-3 bg-white/10 rounded-full animate-pulse w-1/2" />
-              <div className="flex justify-between items-center mt-6">
-                <div className="h-3 bg-white/5 rounded animate-pulse w-20" />
-                <div className="h-8 bg-amber-400/20 rounded animate-pulse w-16" />
-              </div>
+      <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <GlassCard key={i} className="h-48 p-6">
+                  <div className="space-y-4">
+                    <div className="h-5 bg-amber-400/20 rounded-full animate-pulse w-1/2" />
+                    <div className="h-3 bg-white/10 rounded-full animate-pulse w-3/4" />
+                    <div className="h-3 bg-white/10 rounded-full animate-pulse w-1/2" />
+                    <div className="flex justify-between items-center mt-6">
+                      <div className="h-3 bg-white/5 rounded animate-pulse w-20" />
+                      <div className="h-8 bg-amber-400/20 rounded animate-pulse w-16" />
+                    </div>
+                  </div>
+                </GlassCard>
+              ))}
             </div>
-          </GlassCard>
-        ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
-      {/* Layout responsive en grille 2 colonnes au lieu de 3x3 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-5xl mx-auto space-y-6">
+
+          {/* Header aligné Profil */}
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <Award className={`w-6 h-6 text-${levelColor}-400`} />
+              <h1 className="text-3xl font-bold text-white">Synthèse</h1>
+            </div>
+            <p className="text-white/60">
+              Niveau actuel : <span className={`text-${levelColor}-400 font-medium`}>{levelName}</span>
+            </p>
+          </div>
+
+          {/* Grille 2 colonnes existante */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {categoriesInOrder.map((cat) => {
           const insight = insights[cat];
           const isNew = insight && new Date(insight.updatedAt) > new Date(lastSeen[cat] || 0);
@@ -164,10 +188,10 @@ const Synthesis: React.FC = () => {
             </motion.div>
           );
         })}
-      </div>
+          </div>
 
-      {/* Modal détaillé avec design amélioré */}
-      <AnimatePresence>
+          {/* Modal détaillée (inchangée) */}
+          <AnimatePresence>
         {selected && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -220,8 +244,10 @@ const Synthesis: React.FC = () => {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </>
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
   );
 };
 

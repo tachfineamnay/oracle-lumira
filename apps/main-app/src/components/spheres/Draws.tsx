@@ -704,10 +704,52 @@ const UpgradeSection: React.FC<UpgradeSectionProps> = ({ level }) => {
 
 // =================== WRAPPER AVEC AUDIO PROVIDER ===================
 
-const Draws: React.FC = () => (
-  <AudioPlayerProvider>
-    <DrawsContent />
-  </AudioPlayerProvider>
-);
+const Draws: React.FC = () => {
+  const { levelMetadata } = useSanctuaire();
+  const levelName = (levelMetadata?.name as string) || 'Initié';
+  const levelColor = (levelMetadata?.color as string) || 'amber';
+
+  return (
+    <AudioPlayerProvider>
+      <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-6xl mx-auto space-y-6">
+            {/* Header aligné Profil */}
+            <div className="text-center space-y-3">
+              <div className="flex items-center justify-center gap-3">
+                <Sparkles className={`w-6 h-6 text-${levelColor}-400`} />
+                <h1 className="text-3xl font-bold text-white">Mes Lectures</h1>
+              </div>
+              <p className="text-white/60">
+                Niveau actuel : <span className={`text-${levelColor}-400 font-medium`}>{levelName}</span>
+              </p>
+            </div>
+
+            {/* Bannière Bientôt disponible (sans bloquer l'accès existant) */}
+            <GlassCard className="p-6 border-amber-400/30 bg-amber-400/5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-amber-400">Bientôt disponible</h2>
+                  <p className="text-white/80 mt-1">
+                    Une refonte visuelle arrive pour harmoniser cette page avec votre Profil. Vos lectures restent accessibles ci-dessous.
+                  </p>
+                </div>
+                <div className={`px-3 py-1 rounded-full bg-${levelColor}-400/10 border border-${levelColor}-400/30`}>
+                  <div className="flex items-center gap-2">
+                    <Award className={`w-4 h-4 text-${levelColor}-400`} />
+                    <span className={`text-sm font-medium text-${levelColor}-400`}>{levelName}</span>
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+
+            {/* Contenu existant conservé */}
+            <DrawsContent />
+          </div>
+        </div>
+      </div>
+    </AudioPlayerProvider>
+  );
+};
 
 export default Draws;
