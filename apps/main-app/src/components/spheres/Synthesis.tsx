@@ -251,23 +251,39 @@ const Synthesis: React.FC = () => {
             {/* Navigation Sections */}
             <div className="p-4 space-y-1">
               <p className="px-3 py-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
-                Navigation
+                Catégories
               </p>
               {categoriesInOrder.map((cat) => {
                 const sectionId = cat.toLowerCase().replace(/é/g, 'e');
+                const insight = insights[cat];
                 return (
                   <button
                     key={cat}
-                    onClick={() => scrollToSection(sectionId)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${
+                    onClick={() => {
+                      if (insight) {
+                        setSelected(insight);
+                        markSeen(cat, insight.updatedAt);
+                        setSidebarOpen(false);
+                      } else {
+                        scrollToSection(sectionId);
+                      }
+                    }}
+                    className={`w-full flex flex-col gap-2 px-3 py-2.5 rounded-lg transition-all group ${
                       activeSection === sectionId
                         ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20'
                         : 'text-white/60 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <span className="flex-1 text-left text-sm font-medium">{cat}</span>
-                    {activeSection === sectionId && (
-                      <ChevronRight className="w-4 h-4" />
+                    <div className="flex items-center gap-3 w-full">
+                      <span className="flex-1 text-left text-sm font-medium">{cat}</span>
+                      {activeSection === sectionId && (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </div>
+                    {insight && (
+                      <p className="text-xs text-white/50 line-clamp-2 text-left">
+                        {insight.short}
+                      </p>
                     )}
                   </button>
                 );
@@ -325,6 +341,13 @@ const Synthesis: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: categoriesInOrder.indexOf(cat) * 0.1 }}
+              onClick={() => {
+                if (insight) {
+                  setSelected(insight);
+                  markSeen(cat, insight.updatedAt);
+                }
+              }}
+              className="cursor-pointer"
             >
               <GlassCard className="h-48 border border-mystical-500/40 flex flex-col justify-between p-6 hover:border-amber-400/40 transition-all duration-300">
                 <div className="flex-1">
