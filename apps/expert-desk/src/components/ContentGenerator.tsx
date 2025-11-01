@@ -8,7 +8,6 @@ import {
   MapPin,
   Clock,
   Download,
-  ExternalLink,
   X as CloseIcon
 } from 'lucide-react';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -29,7 +28,6 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const [expertPrompt, setExpertPrompt] = useState('');
   const [expertInstructions, setExpertInstructions] = useState('');
   const [sending, setSending] = useState(false);
-  const [n8nWebhookUrl, setN8nWebhookUrl] = useState('');
   const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
   const hostBase = typeof apiBase === 'string' ? apiBase.replace(/\/api\/?$/, '') : '';
   const buildFileUrl = (p: string | undefined, fallbackName?: string) => {
@@ -272,8 +270,7 @@ PERSONNALISATION:
       const payload = {
         orderId: order._id,
         expertPrompt,
-        expertInstructions,
-        n8nWebhookUrl: n8nWebhookUrl || undefined
+        expertInstructions
       };
 
       const response = await api.post(endpoints.expert.processOrder, payload);
@@ -483,26 +480,6 @@ PERSONNALISATION:
             className="textarea min-h-[100px]"
             placeholder="Instructions spécifiques pour cette consultation..."
           />
-        </div>
-
-        {/* n8n Webhook URL (optional) */}
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">
-            URL Webhook n8n (optionnel)
-          </label>
-          <div className="relative">
-            <input
-              type="url"
-              value={n8nWebhookUrl}
-              onChange={(e) => setN8nWebhookUrl(e.target.value)}
-              className="input pr-8"
-              placeholder="https://your-n8n-instance.com/webhook/oracle-lumira"
-            />
-            <ExternalLink className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Laissez vide pour utiliser l'URL par défaut
-          </p>
         </div>
 
         {/* Send Button */}
