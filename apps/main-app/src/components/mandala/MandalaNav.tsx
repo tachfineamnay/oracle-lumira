@@ -347,9 +347,9 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                     exit={{ opacity: 0, scale: 0.9 }}
                     className={`absolute z-[100] pointer-events-none ${
                       key === 'conversations' 
-                        ? 'left-full top-1/2 -translate-y-1/2 ml-6' 
+                        ? 'right-full top-1/2 -translate-y-1/2 mr-6' 
                         : key === 'synthesis'
-                        ? 'right-full top-1/2 -translate-y-1/2 mr-6'
+                        ? 'left-full top-1/2 -translate-y-1/2 ml-6'
                         : key === 'spiritualPath'
                         ? 'bottom-full left-1/2 -translate-x-1/2 mb-6'
                         : key === 'profile'
@@ -363,9 +363,9 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                       {SPHERE_DESCRIPTIONS[key]}
                       <div className={`absolute w-2 h-2 bg-black/95 rotate-45 ${
                         key === 'conversations'
-                          ? 'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-l border-b border-white/30'
-                          : key === 'synthesis'
                           ? 'right-0 top-1/2 -translate-y-1/2 translate-x-1/2 border-r border-t border-white/30'
+                          : key === 'synthesis'
+                          ? 'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-l border-b border-white/30'
                           : key === 'spiritualPath'
                           ? 'top-full left-1/2 -translate-x-1/2 -translate-y-1/2 border-b border-r border-white/30'
                           : key === 'profile'
