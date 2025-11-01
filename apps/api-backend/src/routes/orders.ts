@@ -557,6 +557,12 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
     const formDataRaw = __safeParse2(req.body.formData || req.body.form_data || req.body);
     const clientInputs = __safeParse2(req.body.clientInputs);
 
+    // CORRECTION CRITIQUE: extraire objective depuis formDataRaw et le placer dans clientInputs
+    if (formDataRaw.objective && !clientInputs.lifeQuestion) {
+      clientInputs.lifeQuestion = formDataRaw.objective;
+      structuredLogger.info('[CLIENT-SUBMIT] Objectif spirituel extrait depuis formData', { objective: formDataRaw.objective }, req);
+    }
+
     // =================== ENRICHISSEMENT AVEC PRIORITÉ CORRECTE ===================
     // Priorité: 1) Client-submitted data, 2) PaymentIntent metadata, 3) Order.formData, 4) User doc
     structuredLogger.info('[CLIENT-SUBMIT][ENRICH] Starting enrichment with priority cascade', {
