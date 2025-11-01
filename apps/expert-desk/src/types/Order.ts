@@ -54,7 +54,7 @@ export interface Order {
     birthTime?: string;
     birthPlace?: string;
     specificContext?: string;
-    lifeQuestion?: string;
+    lifeQuestion?: string; // Objectif spirituel
   };
   createdAt: string;
   updatedAt: string;

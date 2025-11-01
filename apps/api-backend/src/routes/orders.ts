@@ -744,7 +744,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
       birthTime: clientInputs.birthTime ?? order.clientInputs?.birthTime,
       birthPlace: clientInputs.birthPlace ?? order.clientInputs?.birthPlace,
       specificContext: clientInputs.specificContext ?? order.clientInputs?.specificContext,
-      lifeQuestion: clientInputs.lifeQuestion ?? order.clientInputs?.lifeQuestion,
+      lifeQuestion: clientInputs.lifeQuestion ?? formData.objective ?? order.clientInputs?.lifeQuestion,
     } as any;
 
     order.updatedAt = new Date();
@@ -801,7 +801,7 @@ router.post('/by-payment-intent/:paymentIntentId/client-submit',
           structuredLogger.info('[CLIENT-SUBMIT] Photo paume sauvegardée', { url: palmPhotoFile.url }, req);
         }
 
-        // Synchroniser aussi les données du formulaire vers le profil
+    // Synchroniser aussi les données du formulaire vers le profil
         if (formData.dateOfBirth) {
           profileData.birthDate = formData.dateOfBirth;
         }

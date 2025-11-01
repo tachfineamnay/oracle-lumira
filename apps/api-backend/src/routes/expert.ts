@@ -772,6 +772,48 @@ router.get('/orders/:id([0-9a-fA-F]{24})', authenticateExpert, async (req: any, 
   }
 });
 
+// Assign order to expert ("Prendre cette commande")
+router.post('/orders/:id/assign', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('userId', 'firstName lastName email phone');
+
+    if (!order) {
+      return res.status(404).json({ error: 'Commande non trouvée' });
+    }
+
+    // Vérifier que la commande n'est pas déjà assignée
+    if (order.expertReview?.expertId && order.expertReview.expertId !== req.expert._id.toString()) {
+      return res.status(409).json({ 
+        error: 'Cette commande est déjà assignée à un autre expert' 
+      });
+    }
+
+    // Assigner la commande à l'expert actuel
+    order.expertReview = {
+      expertId: req.expert._id.toString(),
+      expertName: req.expert.name,
+      assignedAt: new Date(),
+      status: 'pending',
+      notes: 'Commande prise en charge par l\'expert'
+    };
+
+    await order.save();
+
+    console.log(`✅ Commande ${order._id} assignée à l'expert ${req.expert.name}`);
+
+    res.json({
+      success: true,
+      message: 'Commande assignée avec succès',
+      order
+    });
+
+  } catch (error) {
+    console.error('❌ Assign order error:', error);
+    res.status(500).json({ error: 'Erreur lors de l\'assignation de la commande' });
+  }
+});
+
 // Process order - Send to n8n
 router.post('/process-order', authenticateExpert, async (req: any, res: any) => {
   try {

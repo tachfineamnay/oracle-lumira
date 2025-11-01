@@ -209,6 +209,7 @@ ${client.specificQuestion ? `Question du client: "${client.specificQuestion}"` :
 ${order.clientInputs?.birthTime ? `Heure de naissance: ${order.clientInputs.birthTime}` : ''}
 ${order.clientInputs?.birthPlace ? `Lieu de naissance: ${order.clientInputs.birthPlace}` : ''}
 ${order.clientInputs?.specificContext ? `Contexte: ${order.clientInputs.specificContext}` : ''}
+${order.clientInputs?.lifeQuestion ? `Objectif spirituel: "${order.clientInputs.lifeQuestion}"` : ''}
 
 CONSIGNES POUR LA LECTURE ${level.toUpperCase()}:
 `;
@@ -370,6 +371,14 @@ PERSONNALISATION:
           <div className="mt-3 p-3 bg-white/10 rounded border border-white/20">
             <span className="text-white/70 text-xs">Question du client:</span>
             <p className="text-sm italic mt-1 text-amber-100">"{order.formData.specificQuestion}"</p>
+          </div>
+        )}
+
+        {/* Objectif spirituel */}
+        {order.clientInputs?.lifeQuestion && (
+          <div className="mt-3 p-3 bg-blue-500/10 rounded border border-blue-500/30">
+            <span className="text-blue-300 text-xs font-semibold">Objectif spirituel:</span>
+            <p className="text-sm italic mt-1 text-blue-100">"{order.clientInputs.lifeQuestion}"</p>
           </div>
         )}
 
