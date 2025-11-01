@@ -59,7 +59,7 @@ const SPHERE_DESCRIPTIONS: Record<string, string> = {
   profile: "Gérez votre profil et vos préférences spirituelles",
 };
 
-const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0, 0], effects = 'minimal' }) => {
+const MandalaNav: React.FC<Props> = ({ onSelect, progress = [0, 0, 0, 0, 0], effects = 'minimal' }) => {
   const shouldReduce = useReducedMotion();
   const [focusIndex, setFocusIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -73,7 +73,7 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
     const lastPart = pathParts[pathParts.length - 1];
     
     // If we're on /sanctuaire exactly, don't select anything
-    if (location.pathname === '/sanctuaire') {
+    if (location.pathname === '/sanctuaire' || lastPart === 'sanctuaire') {
       return null;
     }
     
@@ -83,7 +83,7 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
     if (lastPart === 'chat') return 'conversations';
     if (ORDER.includes(lastPart)) return lastPart;
     
-    return active || null;
+    return null;
   };
 
   const activeKey = getCurrentSphere();
@@ -276,8 +276,6 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                       className={`transition-all duration-300 ${
                         isActive ? colors.accent : 'text-white/80 group-hover:text-amber-400'
                       }`}
-                      animate={isActive ? { scale: [1, 1.1, 1] } : {}}
-                      transition={{ duration: 2, repeat: Infinity }}
                     >
                       {ICONS[key]}
                     </motion.div>
