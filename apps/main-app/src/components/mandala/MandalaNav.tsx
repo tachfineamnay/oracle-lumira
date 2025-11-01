@@ -342,37 +342,37 @@ const MandalaNav: React.FC<Props> = ({ active, onSelect, progress = [0, 0, 0, 0,
                 {/* Tooltip on hover with improved positioning */}
                 {hoveredIndex === i && (
                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    className={`absolute z-50 ${
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className={`absolute z-[100] pointer-events-none ${
                       key === 'conversations' 
-                        ? 'right-full top-1/2 -translate-y-1/2 mr-4' 
+                        ? 'left-full top-1/2 -translate-y-1/2 ml-6' 
                         : key === 'synthesis'
-                        ? 'left-full top-1/2 -translate-y-1/2 ml-4'
+                        ? 'right-full top-1/2 -translate-y-1/2 mr-6'
                         : key === 'spiritualPath'
-                        ? 'top-0 left-1/2 transform -translate-x-1/2 -mt-16'
+                        ? 'bottom-full left-1/2 -translate-x-1/2 mb-6'
                         : key === 'profile'
-                        ? 'left-full bottom-1/2 translate-y-1/2 ml-4'
+                        ? 'top-full left-1/2 -translate-x-1/2 mt-6'
                         : key === 'rawDraws'
-                        ? 'right-full bottom-1/2 translate-y-1/2 mr-4'
+                        ? 'bottom-full left-1/2 -translate-x-1/2 mb-6'
                         : 'top-full left-1/2 transform -translate-x-1/2 mt-20'
                     }`}
                   >
-                    <div className="bg-black/90 backdrop-blur-xl text-white text-xs px-3 py-2 rounded-xl border border-white/20 max-w-48 text-center whitespace-normal">
+                    <div className="bg-black/95 backdrop-blur-xl text-white text-xs px-4 py-2.5 rounded-xl border border-white/30 shadow-2xl max-w-52 text-center whitespace-normal">
                       {SPHERE_DESCRIPTIONS[key]}
-                      <div className={`absolute w-2 h-2 bg-black/90 rotate-45 ${
+                      <div className={`absolute w-2 h-2 bg-black/95 rotate-45 ${
                         key === 'conversations'
-                          ? 'right-0 top-1/2 -translate-y-1/2 translate-x-1/2 border-r border-t border-white/20'
+                          ? 'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-l border-b border-white/30'
                           : key === 'synthesis'
-                          ? 'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-l border-b border-white/20'
+                          ? 'right-0 top-1/2 -translate-y-1/2 translate-x-1/2 border-r border-t border-white/30'
                           : key === 'spiritualPath'
-                          ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 border-b border-r border-white/20'
+                          ? 'top-full left-1/2 -translate-x-1/2 -translate-y-1/2 border-b border-r border-white/30'
                           : key === 'profile'
-                          ? 'left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-l border-t border-white/20'
+                          ? 'bottom-full left-1/2 -translate-x-1/2 translate-y-1/2 border-t border-l border-white/30'
                           : key === 'rawDraws'
-                          ? 'right-0 top-1/2 -translate-y-1/2 translate-x-1/2 border-r border-b border-white/20'
-                          : '-top-1 left-1/2 transform -translate-x-1/2 border-l border-t border-white/20'
+                          ? 'top-full left-1/2 -translate-x-1/2 -translate-y-1/2 border-b border-l border-white/30'
+                          : '-top-1 left-1/2 transform -translate-x-1/2 border-l border-t border-white/30'
                       }`}></div>
                     </div>
                   </motion.div>
