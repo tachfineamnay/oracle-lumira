@@ -2,7 +2,7 @@ export type SphereKey = 'spiritualPath' | 'rawDraws' | 'synthesis' | 'conversati
 
 export const sphereLabels: Record<SphereKey, string> = {
   spiritualPath: 'Chemin spirituel',
-  rawDraws: 'Tirages bruts',
+  rawDraws: 'Mes lectures',
   synthesis: 'Synthèse',
   conversations: 'Conversations',
   profile: 'Profil',
@@ -11,12 +11,12 @@ export const sphereLabels: Record<SphereKey, string> = {
 
 export const labels = {
   spiritualPath: 'Cheminement Spirituel',
-  rawDraws: 'Tirages Bruts',
+  rawDraws: 'Mes lectures',
   synthesis: 'Synthèse par Catégories',
   conversations: "Conversations avec l'Oracle",
   profile: 'Profil Spirituel',
   path: 'Cheminement Spirituel',
-  draws: 'Tirages Bruts',
+  draws: 'Mes lectures',
   chat: "Conversations avec l'Oracle",
   ctaNext: 'Explorer le prochain portail',
   emptyPath: 'Aucun enseignement pour l\'instant',

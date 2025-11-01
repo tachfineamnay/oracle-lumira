@@ -53,7 +53,7 @@ const SPHERE_COLORS: Record<string, { gradient: string; accent: string; shadow: 
 
 const SPHERE_DESCRIPTIONS: Record<string, string> = {
   spiritualPath: "Explorez votre chemin de croissance spirituelle personnalisé",
-  rawDraws: "Consultez vos tirages et lectures énergétiques brutes", 
+  rawDraws: "Consultez vos lectures et tirages énergétiques", 
   synthesis: "Découvrez la synthèse de vos insights spirituels",
   conversations: "Engagez des dialogues sacrés avec votre guide spirituel",
   profile: "Gérez votre profil et vos préférences spirituelles",
