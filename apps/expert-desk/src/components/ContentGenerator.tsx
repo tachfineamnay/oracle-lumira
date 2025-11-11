@@ -13,6 +13,7 @@ import {
 import { LoadingSpinner } from './LoadingSpinner';
 import type { Order } from '../types/Order';
 import { api, endpoints } from '../utils/api';
+import { getApiBaseUrl } from '../utils/apiBase';
 import toast from 'react-hot-toast';
 import { getLevelNameSafely } from '../utils/orderUtils';
 
@@ -28,7 +29,7 @@ const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const [expertPrompt, setExpertPrompt] = useState('');
   const [expertInstructions, setExpertInstructions] = useState('');
   const [sending, setSending] = useState(false);
-  const apiBase = (import.meta as any).env?.VITE_API_URL || '/api';
+  const apiBase = getApiBaseUrl();
   const hostBase = typeof apiBase === 'string' ? apiBase.replace(/\/api\/?$/, '') : '';
   const buildFileUrl = (p: string | undefined, fallbackName?: string) => {
     // Pour S3, utiliser directement l'URL complète si elle commence par http

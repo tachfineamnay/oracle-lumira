@@ -1,121 +1,37 @@
-# Expert Desk - React + Vite + TypeScript Production Build
+## Expert Desk - React + Vite + TypeScript
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy expert-desk package files
+# Copy package files and install deps
 COPY apps/expert-desk/package*.json ./
+RUN npm ci --verbose || npm install --verbose
 
-# Install dependencies (use npm install since package-lock.json might not be available)
-RUN npm install --verbose
-
-# Copy expert-desk source code
+# Copy source and build fresh (avoid reusing stale dist/meta CSP)
 COPY apps/expert-desk ./
-
-# Set production environment variables
 ENV NODE_ENV=production
-
-# Build the application
-RUN npm run build
+RUN rm -rf dist .vite node_modules/.vite node_modules/.cache && npm run build
 
 # Production stage
 FROM nginx:alpine
-
-# Install curl for healthcheck
 RUN apk add --no-cache curl
 
 # Copy built application
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create nginx configuration for SPA
-RUN echo 'server { \
-    listen 80; \
-    server_name desk.oraclelumira.com localhost; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    \
-    # Security headers \
-    add_header X-Frame-Options "SAMEORIGIN" always; \
-    add_header X-Content-Type-Options "nosniff" always; \
-    add_header X-XSS-Protection "1; mode=block" always; \
-    add_header Referrer-Policy "no-referrer-when-downgrade" always; \
-    add_header Content-Security-Policy "default-src '\''self'\'' https://oraclelumira.com https://n8automate.ialexia.fr data: blob: '\''unsafe-inline'\''" always; \
-    \
-    # Handle SPA routing \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-        \
-        # Cache static assets \
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ { \
-            expires 1y; \
-            add_header Cache-Control "public, immutable"; \
-        } \
-    } \
-    \
-    # API proxy to backend (dedicated API domain) \
-    # Note: ensure the target matches your deployed API. \
-    # If your API is served under the main domain (https://oraclelumira.com/api), \
-    # change the proxy_pass and Host accordingly. \
-    location /api/ { \
-        proxy_pass https://api.oraclelumira.com/api/; \
-        proxy_set_header Host api.oraclelumira.com; \
-        proxy_set_header X-Real-IP $remote_addr; \
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-        proxy_set_header X-Forwarded-Proto $scheme; \
-        proxy_set_header Origin https://desk.oraclelumira.com; \
-        \
-        # CORS headers for cross-origin requests \
-        add_header Access-Control-Allow-Origin "https://desk.oraclelumira.com" always; \
-        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always; \
-        add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With" always; \
-        add_header Access-Control-Allow-Credentials "true" always; \
-        \
-        # Handle preflight OPTIONS requests \
-        if ($request_method = OPTIONS) { \
-            add_header Access-Control-Allow-Origin "https://desk.oraclelumira.com"; \
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"; \
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With"; \
-            add_header Access-Control-Allow-Credentials "true"; \
-            add_header Content-Length 0; \
-            add_header Content-Type text/plain; \
-            return 200; \
-        } \
-    } \
-    \
-    # Health check \
-    location /health { \
-        access_log off; \
-        return 200 "healthy\\n"; \
-        add_header Content-Type text/plain; \
-    } \
-    \
-    # Gzip compression \
-    gzip on; \
-    gzip_vary on; \
-    gzip_min_length 1024; \
-    gzip_proxied any; \
-    gzip_comp_level 6; \
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript; \
-}' > /etc/nginx/conf.d/default.conf
+# Use repository nginx configuration (CSP/proxy single source of truth)
+COPY apps/expert-desk/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf.bak 2>/dev/null || true
-
-# Set proper permissions
+# Permissions
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /var/cache/nginx
+    chown -R nginx:nginx /var/cache/nginx && \
+    mkdir -p /var/run/nginx && chown -R nginx:nginx /var/run/nginx
 
-# Create nginx PID directory
-RUN mkdir -p /var/run/nginx && \
-    chown -R nginx:nginx /var/run/nginx
-
-# Expose port 80
 EXPOSE 80
 
-# Health check
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/health || exit 1
+    CMD curl -f http://localhost/ || exit 1
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
+

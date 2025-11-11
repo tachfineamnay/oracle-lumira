@@ -1,9 +1,8 @@
 import axios from 'axios';
+import { getApiBaseUrl } from './apiBase';
 
-// API base URL - prefer same-origin proxy to avoid CORS/CSP issues in prod
-// In production, Nginx proxies /api -> https://api.oraclelumira.com
-// For local dev, set VITE_API_URL=http://localhost:3001/api
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// API base URL - prefer same-origin proxy in production to avoid CORS/CSP
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance
 export const api = axios.create({
