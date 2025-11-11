@@ -10,6 +10,8 @@ RUN npm ci --verbose || npm install --verbose
 # Copy source and build fresh (avoid reusing stale dist/meta CSP)
 COPY apps/expert-desk ./
 ENV NODE_ENV=production
+# Hard default to same-origin API for build-time to avoid accidental absolute injection
+ENV VITE_API_URL=/api
 RUN rm -rf dist .vite node_modules/.vite node_modules/.cache && npm run build
 
 # Production stage
@@ -34,4 +36,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
-
