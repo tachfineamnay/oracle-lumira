@@ -861,6 +861,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
         dateOfBirth: order.formData.dateOfBirth
       },
       formData: order.formData,
+      clientInputs: order.clientInputs || {},
       files: order.files || [],
       expertPrompt,
       expertInstructions: expertInstructions || '',
