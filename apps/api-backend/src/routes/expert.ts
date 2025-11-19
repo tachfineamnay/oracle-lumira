@@ -50,7 +50,7 @@ router.post('/create-debug', async (req, res) => {
   try {
     // Vérifier si expert existe déjà
     const existingExpert = await Expert.findOne({ email: 'expert@oraclelumira.com' });
-    
+
     if (existingExpert) {
       console.log('🔍 Expert already exists, updating password');
       // set plain password; schema pre-save will hash it
@@ -61,7 +61,7 @@ router.post('/create-debug', async (req, res) => {
     } else {
       console.log('🆕 Creating new expert');
       // use pre-save hashing for default password
-      
+
       const expert = new Expert({
         email: 'expert@oraclelumira.com',
         password: 'Lumira2025L',
@@ -118,7 +118,7 @@ router.post('/register', async (req: any, res: any) => {
     }
 
     const { email, password, name } = req.body;
-    
+
     // Check if expert already exists
     const existingExpert = await Expert.findOne({ email: email.toLowerCase() });
     if (existingExpert) {
@@ -143,11 +143,11 @@ router.post('/register', async (req: any, res: any) => {
       return res.status(500).json({ error: 'Server configuration error: JWT secret missing' });
     }
     const token = jwt.sign(
-      { 
-        expertId: expert._id, 
+      {
+        expertId: expert._id,
         email: expert.email,
         name: expert.name,
-        role: expert.role 
+        role: expert.role
       },
       secret,
       { expiresIn: '24h' }
@@ -168,7 +168,7 @@ router.post('/register', async (req: any, res: any) => {
   } catch (error) {
     console.error('❌ Registration error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erreur serveur lors de l\'enregistrement',
       details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     });
@@ -186,14 +186,14 @@ const promptSchema = Joi.object({
 export const authenticateExpert = async (req: any, res: any, next: any) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       return res.status(401).json({ error: 'Token d\'authentification requis' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
     const expert = await Expert.findById(decoded.expertId).select('-password');
-    
+
     if (!expert || !expert.isActive) {
       return res.status(401).json({ error: 'Expert non autorisé' });
     }
@@ -214,15 +214,15 @@ router.post('/login', authLimiter, async (req: any, res: any) => {
     }
 
     const { email, password } = req.body;
-    
+
     // Find expert
     let expert = await Expert.findOne({ email: email.toLowerCase(), isActive: true });
-    
+
     // AUTO-CREATE EXPERT IF NOT EXISTS (for expert@oraclelumira.com only)
     if (!expert && email.toLowerCase() === 'expert@oraclelumira.com' && process.env.ENABLE_AUTO_CREATE_EXPERT === 'true' && process.env.NODE_ENV !== 'production') {
       console.log('🆕 Auto-creating expert for first login');
       // default password will be hashed by schema pre-save
-      
+
       expert = new Expert({
         email: 'expert@oraclelumira.com',
         password: process.env.DEFAULT_EXPERT_PASSWORD || 'Lumira2025L',
@@ -230,11 +230,11 @@ router.post('/login', authLimiter, async (req: any, res: any) => {
         expertise: ['tarot', 'oracle', 'spiritualité'],
         isActive: true
       });
-      
+
       await expert.save();
       console.log('✅ Expert auto-created successfully');
     }
-    
+
     if (!expert) {
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
@@ -251,10 +251,10 @@ router.post('/login', authLimiter, async (req: any, res: any) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { 
-        expertId: expert._id, 
+      {
+        expertId: expert._id,
         email: expert.email,
-        name: expert.name 
+        name: expert.name
       },
       process.env.JWT_SECRET!,
       { expiresIn: '8h' }
@@ -294,134 +294,134 @@ if (process.env.ENABLE_DEBUG_ROUTES === 'true') {
   router.post('/debug-login', async (req: any, res: any) => {
     try {
       console.log('🔍 DEBUG LOGIN - Début diagnostic');
-    console.log('Body reçu:', req.body);
-    
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      console.log('❌ Email ou mot de passe manquant');
-      return res.status(400).json({ 
-        error: 'Email et mot de passe requis',
-        debug: { email: !!email, password: !!password }
-      });
-    }
-    
-    // Recherche de l'expert
-    console.log('🔍 Recherche expert avec email:', email);
-    const expert = await Expert.findOne({ email: email.toLowerCase() });
-    
-    if (!expert) {
-      console.log('❌ Expert non trouvé');
-      console.log('🔍 Experts disponibles:');
-      const allExperts = await Expert.find({}, 'email name isActive');
-      console.log(allExperts);
-      return res.status(401).json({ 
-        error: 'Expert non trouvé',
-        debug: { 
-          emailSearched: email.toLowerCase(),
-          availableExperts: allExperts.map(e => ({ email: e.email, isActive: e.isActive }))
-        }
-      });
-    }
-    
-    console.log('✅ Expert trouvé:', {
-      id: expert._id,
-      email: expert.email,
-      name: expert.name,
-      role: expert.role,
-      isActive: expert.isActive,
-      createdAt: expert.createdAt
-    });
-    
-    // Test du mot de passe avec bcrypt direct
-    console.log('🔐 Test mot de passe...');
-    console.log('Mot de passe fourni:', password);
-    console.log('Hash stocké (premiers 20 chars):', expert.password.substring(0, 20) + '...');
-    
-    const isValidMethod = await expert.comparePassword(password);
-    const isValidDirect = await bcrypt.compare(password, expert.password);
-    
-    console.log('Résultat méthode comparePassword:', isValidMethod);
-    console.log('Résultat bcrypt.compare direct:', isValidDirect);
-    
-    if (!isValidMethod && !isValidDirect) {
-      console.log('❌ Mot de passe incorrect');
-      
-      // Test avec différentes variantes
-      const variants = [
-        password,
-        password.trim(),
-        'Lumira2025L',
-        'lumira2025l'
-      ];
-      
-      console.log('🔍 Test de variantes:');
-      for (const variant of variants) {
-        const testResult = await bcrypt.compare(variant, expert.password);
-        console.log(`"${variant}":`, testResult);
+      console.log('Body reçu:', req.body);
+
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        console.log('❌ Email ou mot de passe manquant');
+        return res.status(400).json({
+          error: 'Email et mot de passe requis',
+          debug: { email: !!email, password: !!password }
+        });
       }
-      
-      return res.status(401).json({
-        error: 'Mot de passe incorrect',
-        debug: {
-          methodResult: isValidMethod,
-          directResult: isValidDirect,
-          expertFound: true,
-          isActive: expert.isActive,
-          testedVariants: variants.length
-        }
-      });
-    }
-    
-    if (!expert.isActive) {
-      console.log('❌ Compte expert désactivé');
-      return res.status(401).json({
-        error: 'Compte désactivé',
-        debug: { isActive: expert.isActive }
-      });
-    }
-    
-    console.log('✅ Authentification réussie!');
-    
-    // Génération du token comme dans la vraie route
-    const token = jwt.sign(
-      { 
-        expertId: expert._id, 
-        email: expert.email,
-        name: expert.name 
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: '8h' }
-    );
-    
-    return res.json({
-      success: true,
-      token,
-      expert: {
+
+      // Recherche de l'expert
+      console.log('🔍 Recherche expert avec email:', email);
+      const expert = await Expert.findOne({ email: email.toLowerCase() });
+
+      if (!expert) {
+        console.log('❌ Expert non trouvé');
+        console.log('🔍 Experts disponibles:');
+        const allExperts = await Expert.find({}, 'email name isActive');
+        console.log(allExperts);
+        return res.status(401).json({
+          error: 'Expert non trouvé',
+          debug: {
+            emailSearched: email.toLowerCase(),
+            availableExperts: allExperts.map(e => ({ email: e.email, isActive: e.isActive }))
+          }
+        });
+      }
+
+      console.log('✅ Expert trouvé:', {
         id: expert._id,
         email: expert.email,
         name: expert.name,
-        role: expert.role
-      },
-      debug: {
-        methodResult: isValidMethod,
-        directResult: isValidDirect,
+        role: expert.role,
         isActive: expert.isActive,
-        message: 'Authentification complètement réussie!',
-        tokenGenerated: true
+        createdAt: expert.createdAt
+      });
+
+      // Test du mot de passe avec bcrypt direct
+      console.log('🔐 Test mot de passe...');
+      console.log('Mot de passe fourni:', password);
+      console.log('Hash stocké (premiers 20 chars):', expert.password.substring(0, 20) + '...');
+
+      const isValidMethod = await expert.comparePassword(password);
+      const isValidDirect = await bcrypt.compare(password, expert.password);
+
+      console.log('Résultat méthode comparePassword:', isValidMethod);
+      console.log('Résultat bcrypt.compare direct:', isValidDirect);
+
+      if (!isValidMethod && !isValidDirect) {
+        console.log('❌ Mot de passe incorrect');
+
+        // Test avec différentes variantes
+        const variants = [
+          password,
+          password.trim(),
+          'Lumira2025L',
+          'lumira2025l'
+        ];
+
+        console.log('🔍 Test de variantes:');
+        for (const variant of variants) {
+          const testResult = await bcrypt.compare(variant, expert.password);
+          console.log(`"${variant}":`, testResult);
+        }
+
+        return res.status(401).json({
+          error: 'Mot de passe incorrect',
+          debug: {
+            methodResult: isValidMethod,
+            directResult: isValidDirect,
+            expertFound: true,
+            isActive: expert.isActive,
+            testedVariants: variants.length
+          }
+        });
       }
-    });
-    
-  } catch (error: any) {
-    console.error('❌ Erreur dans debug-login:', error);
-    return res.status(500).json({
-      error: 'Erreur serveur',
-      debug: {
-        message: error?.message || 'Unknown error',
-        stack: error?.stack
+
+      if (!expert.isActive) {
+        console.log('❌ Compte expert désactivé');
+        return res.status(401).json({
+          error: 'Compte désactivé',
+          debug: { isActive: expert.isActive }
+        });
       }
-    });
-  }
+
+      console.log('✅ Authentification réussie!');
+
+      // Génération du token comme dans la vraie route
+      const token = jwt.sign(
+        {
+          expertId: expert._id,
+          email: expert.email,
+          name: expert.name
+        },
+        process.env.JWT_SECRET!,
+        { expiresIn: '8h' }
+      );
+
+      return res.json({
+        success: true,
+        token,
+        expert: {
+          id: expert._id,
+          email: expert.email,
+          name: expert.name,
+          role: expert.role
+        },
+        debug: {
+          methodResult: isValidMethod,
+          directResult: isValidDirect,
+          isActive: expert.isActive,
+          message: 'Authentification complètement réussie!',
+          tokenGenerated: true
+        }
+      });
+
+    } catch (error: any) {
+      console.error('❌ Erreur dans debug-login:', error);
+      return res.status(500).json({
+        error: 'Erreur serveur',
+        debug: {
+          message: error?.message || 'Unknown error',
+          stack: error?.stack
+        }
+      });
+    }
   });
 }
 
@@ -435,10 +435,10 @@ router.get('/orders/pending', authenticateExpert, async (req: any, res: any) => 
     const orders = await Order.find({
       status: { $in: ['pending', 'paid'] }
     })
-    .populate('userId', 'firstName lastName email phone')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
+      .populate('userId', 'firstName lastName email phone')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     const total = await Order.countDocuments({
       status: { $in: ['pending', 'paid'] }
@@ -532,18 +532,7 @@ router.post('/n8n-callback', async (req: any, res: any) => {
       ? req.body
       : Buffer.from(typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
 
-    // Support optional prefix like 'sha256=...'
-    const provided = signatureHeader.startsWith('sha256=') ? signatureHeader.slice(7) : signatureHeader;
-    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-
-    // Constant-time comparison
-    const a = Buffer.from(provided, 'utf8');
-    const b = Buffer.from(expected, 'utf8');
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
-
-    // Parse JSON payload after verifying signature
+    // Parse JSON payload first to support custom signature schemes
     let payload: any;
     try {
       payload = JSON.parse(rawBody.toString('utf8'));
@@ -552,10 +541,34 @@ router.post('/n8n-callback', async (req: any, res: any) => {
       return res.status(400).json({ error: 'Invalid JSON payload' });
     }
 
-    const { orderId, success, generatedContent, files, error, isRevision } = payload;
-    
-    console.log('📨 Callback n8n reçu:', { orderId, success, isRevision });
-    
+    // Support optional prefix like 'sha256=...'
+    const provided = signatureHeader.startsWith('sha256=') ? signatureHeader.slice(7) : signatureHeader;
+
+    // Strategy 1: Sign entire body (Standard)
+    const expectedBody = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+
+    // Strategy 2: Sign orderId:orderNumber (n8n specific)
+    const orderIdStr = payload.orderId || '';
+    const orderNumberStr = payload.orderNumber || '';
+    const expectedCustom = crypto.createHmac('sha256', secret).update(`${orderIdStr}:${orderNumberStr}`).digest('hex');
+
+    // Constant-time comparison
+    const a = Buffer.from(provided, 'utf8');
+    const bBody = Buffer.from(expectedBody, 'utf8');
+    const bCustom = Buffer.from(expectedCustom, 'utf8');
+
+    const matchBody = a.length === bBody.length && crypto.timingSafeEqual(a, bBody);
+    const matchCustom = a.length === bCustom.length && crypto.timingSafeEqual(a, bCustom);
+
+    if (!matchBody && !matchCustom) {
+      console.error('❌ Signature mismatch');
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    const { orderId, success, generatedContent, files, error, isRevision, pdfUrl, status } = payload;
+
+    console.log('📨 Callback n8n reçu:', { orderId, success, isRevision, pdfUrl, status });
+
     // Récupérer la commande pour vérifier le contexte
     const order = await Order.findById(orderId);
     if (!order) {
@@ -566,18 +579,26 @@ router.post('/n8n-callback', async (req: any, res: any) => {
     const updateData: any = {
       updatedAt: new Date()
     };
-    
-    if (success && generatedContent) {
+
+    // Support both formats:
+    // 1. Standard: { success: true, generatedContent: { ... } }
+    // 2. Simple PDF: { pdfUrl: "...", status: "awaiting_validation" }
+    const isSuccess = success === true || (!!pdfUrl && status === 'awaiting_validation');
+
+    if (isSuccess) {
       // Stocker le contenu généré
+      // Si generatedContent est présent, on l'utilise, sinon on construit à partir de pdfUrl
+      const content = generatedContent || {};
+
       updateData.generatedContent = {
-        archetype: generatedContent.archetype || '',
-        reading: generatedContent.reading || generatedContent.text || generatedContent,
-        audioUrl: generatedContent.audioUrl || files?.find((f: any) => f.type === 'audio')?.url || '',
-        pdfUrl: generatedContent.pdfUrl || files?.find((f: any) => f.type === 'pdf')?.url || '',
-        mandalaSvg: generatedContent.mandalaSvg || '',
-        ritual: generatedContent.ritual || '',
-        blockagesAnalysis: generatedContent.blockagesAnalysis || '',
-        soulProfile: generatedContent.soulProfile || ''
+        archetype: content.archetype || '',
+        reading: content.reading || content.text || (typeof content === 'string' ? content : ''),
+        audioUrl: content.audioUrl || files?.find((f: any) => f.type === 'audio')?.url || '',
+        pdfUrl: pdfUrl || content.pdfUrl || files?.find((f: any) => f.type === 'pdf')?.url || '',
+        mandalaSvg: content.mandalaSvg || '',
+        ritual: content.ritual || '',
+        blockagesAnalysis: content.blockagesAnalysis || '',
+        soulProfile: content.soulProfile || ''
       };
 
       // Logique conditionnelle pour la validation
@@ -601,20 +622,20 @@ router.post('/n8n-callback', async (req: any, res: any) => {
         };
         console.log(`✅ Order ${orderId} généré → awaiting_validation (première génération)`);
       }
-      
+
     } else if (error) {
       // Erreur de génération
       updateData.status = 'failed';
       updateData.error = error;
       console.log(`❌ Order ${orderId} → failed (erreur génération)`);
     }
-    
+
     const updatedOrder = await Order.findByIdAndUpdate(orderId, updateData, { new: true });
-    
+
     if (updatedOrder) {
-      res.json({ 
-        success: true, 
-        orderId, 
+      res.json({
+        success: true,
+        orderId,
         status: updateData.status,
         needsValidation: updateData.status === 'awaiting_validation'
       });
@@ -688,10 +709,10 @@ router.get('/orders/validation-queue', authenticateExpert, async (req: any, res:
       status: 'awaiting_validation',
       'expertValidation.validationStatus': 'pending'
     })
-    .populate('userId', 'firstName lastName email phone')
-    .sort({ updatedAt: -1 })
-    .skip(skip)
-    .limit(limit);
+      .populate('userId', 'firstName lastName email phone')
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     const total = await Order.countDocuments({
       status: 'awaiting_validation',
@@ -726,16 +747,16 @@ router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) =>
     const orders = await Order.find({
       'expertReview.expertId': req.expert._id.toString()
     })
-    .populate('userId', 'firstName lastName email phone')
-    .sort({ 'expertReview.assignedAt': -1 }) // Most recent first
-    .skip(skip)
-    .limit(limit);
+      .populate('userId', 'firstName lastName email phone')
+      .sort({ 'expertReview.assignedAt': -1 }) // Most recent first
+      .skip(skip)
+      .limit(limit);
 
     const total = await Order.countDocuments({
       'expertReview.expertId': req.expert._id.toString()
     });
 
-    res.json({ 
+    res.json({
       orders,
       pagination: {
         page,
@@ -744,13 +765,13 @@ router.get('/orders/assigned', authenticateExpert, async (req: any, res: any) =>
         pages: Math.ceil(total / limit)
       }
     });
-    
+
   } catch (error) {
     console.error('? Get assigned orders error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erreur lors du chargement des commandes assignées',
-      details: errorMessage 
+      details: errorMessage
     });
   }
 });
@@ -784,8 +805,8 @@ router.post('/orders/:id/assign', authenticateExpert, async (req: any, res: any)
 
     // Vérifier que la commande n'est pas déjà assignée
     if (order.expertReview?.expertId && order.expertReview.expertId !== req.expert._id.toString()) {
-      return res.status(409).json({ 
-        error: 'Cette commande est déjà assignée à un autre expert' 
+      return res.status(409).json({
+        error: 'Cette commande est déjà assignée à un autre expert'
       });
     }
 
@@ -882,7 +903,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
       await order.save();
       return res.status(503).json({ error: "Service non configur	 (N8N_WEBHOOK_URL manquant)" });
     }
-    
+
     // Retry-enabled webhook call
     const token = process.env.N8N_WEBHOOK_TOKEN || '';
     const timeoutMs = parseInt(process.env.N8N_TIMEOUT_MS || '10000', 10);
@@ -922,7 +943,7 @@ router.post('/process-order', authenticateExpert, async (req: any, res: any) => 
     order.errorLog = `n8n webhook failed after ${maxRetries} attempts: ${finalMessage}`;
     await order.save();
     return res.status(502).json({ error: 'Echec de l\'envoi vers l\'assistant IA', details: finalMessage, attempts: maxRetries });
-    
+
     /* try {
       console.log('🚀 Envoi vers n8n:', webhookUrl);
       const n8nResponse = await axios.post(webhookUrl, n8nPayload, {
@@ -1113,7 +1134,7 @@ router.get('/stats', authenticateExpert, async (req: any, res: any) => {
 router.post('/orders/:orderId/assign', authenticateExpert, async (req: any, res: any) => {
   try {
     const { orderId } = req.params;
-    
+
     const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ error: 'Commande non trouvée' });
@@ -1132,7 +1153,7 @@ router.post('/orders/:orderId/assign', authenticateExpert, async (req: any, res:
       assignedAt: new Date(),
       status: 'pending'
     };
-    
+
     // Update order status
     if (order.status === 'paid') {
       order.status = 'processing';
@@ -1141,18 +1162,18 @@ router.post('/orders/:orderId/assign', authenticateExpert, async (req: any, res:
     await order.save();
 
     console.log(`✅ Order ${orderId} assigned to expert ${req.expert.email}`);
-    
-    res.json({ 
+
+    res.json({
       message: 'Commande assignée avec succès',
-      order 
+      order
     });
-    
+
   } catch (error) {
     console.error('❌ Assign order error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erreur lors de l\'assignation de la commande',
-      details: errorMessage 
+      details: errorMessage
     });
   }
 });
@@ -1185,7 +1206,7 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
 
     // Validation des paramètres
     if (!orderId || !action || !['approve', 'reject'].includes(action)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Paramètres invalides',
         details: 'orderId et action (approve/reject) sont requis'
       });
@@ -1199,7 +1220,7 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
 
     // Vérifier que la commande est en attente de validation
     if (order.status !== 'awaiting_validation' || order.expertValidation?.validationStatus !== 'pending') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Cette commande n\'est pas en attente de validation',
         currentStatus: order.status,
         validationStatus: order.expertValidation?.validationStatus
@@ -1220,11 +1241,11 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
         validatedAt: now
       };
       order.deliveredAt = now;
-      
+
       console.log(`✅ Order ${orderId} APPROUVÉ → completed (livraison sanctuaire)`);
-      
+
       await order.save();
-      
+
       res.json({
         success: true,
         message: 'Contenu validé et livré au sanctuaire du client',
@@ -1232,7 +1253,7 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
         status: 'completed',
         action: 'approved'
       });
-      
+
     } else if (action === 'reject') {
       // VALIDATION REJETÉE → Retour vers n8n pour régénération
       order.status = 'processing'; // Retour en traitement
@@ -1245,14 +1266,14 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
         rejectionReason: rejectionReason || 'Qualité insuffisante',
         validatedAt: now
       };
-      
+
       // Incrémenter le compteur de révisions
       order.revisionCount = (order.revisionCount || 0) + 1;
-      
+
       console.log(`❌ Order ${orderId} REJETÉ → processing (révision #${order.revisionCount})`);
-      
+
       await order.save();
-      
+
       // Relancer le processus n8n avec le contexte de révision
       try {
         const revisionPayload = {
@@ -1278,7 +1299,7 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
           },
           timestamp: new Date().toISOString()
         };
-        
+
         const webhookUrl = process.env.N8N_WEBHOOK_URL;
         if (!webhookUrl) {
           console.error('N8N webhook URL not configured (N8N_WEBHOOK_URL)');
@@ -1291,9 +1312,9 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
             'User-Agent': 'Oracle-Lumira-Expert-Validation/1.0'
           }
         });
-        
+
         console.log(`🚀 Révision envoyée à n8n:`, n8nResponse.status);
-        
+
         res.json({
           success: true,
           message: 'Contenu rejeté et envoyé pour régénération',
@@ -1303,7 +1324,7 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
           revisionCount: order.revisionCount,
           n8nStatus: n8nResponse.status
         });
-        
+
       } catch (webhookError) {
         console.error('❌ Erreur webhook révision:', webhookError);
         res.status(500).json({
@@ -1312,7 +1333,7 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
         });
       }
     }
-    
+
   } catch (error) {
     console.error('❌ Validate content error:', error);
     res.status(500).json({ error: 'Erreur lors de la validation du contenu' });
@@ -1326,7 +1347,7 @@ async function calculateAverageRevisions(): Promise<number> {
       { $match: { revisionCount: { $exists: true, $gt: 0 } } },
       { $group: { _id: null, avgRevisions: { $avg: '$revisionCount' } } }
     ];
-    
+
     const result = await Order.aggregate(pipeline);
     return result.length > 0 ? Math.round(result[0].avgRevisions * 10) / 10 : 0;
   } catch (error) {
