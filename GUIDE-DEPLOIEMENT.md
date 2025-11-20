@@ -226,7 +226,7 @@ ls dist/
 Créer `apps/api-backend/.env.production` :
 
 ```env
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/lumira-prod
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>
 JWT_SECRET=<NOUVEAU_SECRET_FORT_GENERE>
 STRIPE_SECRET_KEY=sk_live_...
 AWS_S3_BUCKET_NAME=lumira-prod-uploads

@@ -495,7 +495,7 @@ node check-env.js
 
 # Redémarrage avec variables correctes
 export STRIPE_SECRET_KEY="sk_live_xxxxxxxxxxxxx"
-export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/db"
+export MONGODB_URI="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>"
 pm2 restart api-backend
 ```
 
@@ -566,7 +566,7 @@ openssl s_client -connect oraclelumira.com:443 -servername oraclelumira.com
 curl -I https://api.oraclelumira.com/api/healthz
 
 # Test de connectivité MongoDB
-mongo --uri "mongodb+srv://user:pass@cluster.mongodb.net/test"
+mongo --uri "mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>"
 
 # Test de paiements Stripe
 curl -X POST https://api.stripe.com/v1/payment_intents \

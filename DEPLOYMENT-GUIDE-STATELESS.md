@@ -35,7 +35,7 @@ NODE_ENV=production
 PORT=3000
 
 # Base de Données
-MONGODB_URI="mongodb+srv://user:password@cluster.mongodb.net/database_name"
+MONGODB_URI="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>"
 
 # Stockage S3
 AWS_ACCESS_KEY_ID="your_aws_access_key_id"

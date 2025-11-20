@@ -31,7 +31,7 @@ Review secret detected in apps/api-backend/.env.example#L13 • commit 244a8de2
 GitHub Secret Scanning détecte les secrets dans **TOUS les commits de l'historique**, pas seulement le dernier commit. 
 
 **Commit concerné** : `244a8de2`
-- Ce commit contenait : `mongodb+srv://user:password@cluster.mongodb.net/database_name`
+- Ce commit contenait : `mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>`
 - Bien que ce soit un exemple, GitHub le détecte comme un pattern MongoDB valide
 
 ---
@@ -67,7 +67,7 @@ git branch backup-before-rewrite
 # 2. Réécrire l'historique pour supprimer le pattern sensible
 git filter-branch --tree-filter '
   if [ -f apps/api-backend/.env.example ]; then
-    sed -i "s|mongodb+srv://user:password@cluster|mongodb+srv://<username>:<password>@<cluster>|g" apps/api-backend/.env.example
+    sed -i "s|mongodb+srv://[^@]*@[^/]*|mongodb+srv://<username>:<password>@<cluster>|g" apps/api-backend/.env.example
   fi
 ' HEAD~3..HEAD
 

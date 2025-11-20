@@ -26,7 +26,7 @@ VITE_APP_DOMAIN=https://oraclelumira.com
 #### Runtime Variables (for backend API)
 ```bash
 # Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/lumira-mvp
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>
 MONGO_DB_NAME=lumira-mvp
 
 # Stripe
@@ -60,7 +60,7 @@ VITE_APP_DOMAIN=https://oraclelumira.com
 
 #### Mark as "Runtime" (for backend API):
 ```
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/lumira-mvp
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>
 STRIPE_SECRET_KEY=sk_live_51xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 JWT_SECRET=your-secure-jwt-secret
