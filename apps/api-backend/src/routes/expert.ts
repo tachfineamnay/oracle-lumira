@@ -566,25 +566,11 @@ router.post('/n8n-callback', async (req: any, res: any) => {
     const matchBodyB64 = isB64 && (() => { const a = Buffer.from(provided, 'base64'); const b = expectedBodyBuf; return a.length === b.length && crypto.timingSafeEqual(a, b); })();
 
     if (!(matchCustomHex || matchBodyHex || matchCustomB64 || matchBodyB64)) {
-      console.error('? Signature mismatch', {
-        providedLength: provided.length,
-        providedPreview: provided.slice(0, 12),
-        hasOrderId: !!orderIdStr,
-        hasOrderNumber: !!orderNumberStr,
-        secretPreview: secret ? `${secret.substring(0, 4)}...${secret.substring(secret.length - 4)}` : 'MISSING',
-        secretLength: secret.length,
-        stringToSign: `${orderIdStr}:${orderNumberStr}`,
-        expectedCustomPreview: expectedCustomHex.slice(0, 12),
-        expectedBodyPreview: expectedBodyHex.slice(0, 12)
+      console.error('❌ N8N callback signature mismatch', {
+        orderIdPresent: !!orderIdStr,
+        orderNumberPresent: !!orderNumberStr
       });
-      return res.status(401).json({
-        error: 'Invalid signature',
-        debug: {
-          providedPreview: provided.slice(0, 12),
-          expectedCustomPreview: expectedCustomHex.slice(0, 12),
-          stringToSign: `${orderIdStr}:${orderNumberStr}`
-        }
-      });
+      return res.status(401).json({ error: 'Invalid signature' });
     }
 
     const { orderId, success, generatedContent, files, error, isRevision, pdfUrl, status } = payload;
