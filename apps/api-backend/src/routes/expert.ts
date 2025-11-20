@@ -565,19 +565,27 @@ router.post('/n8n-callback', async (req: any, res: any) => {
     const matchCustomB64 = isB64 && (() => { const a = Buffer.from(provided, 'base64'); const b = expectedCustomBuf; return a.length === b.length && crypto.timingSafeEqual(a, b); })();
     const matchBodyB64 = isB64 && (() => { const a = Buffer.from(provided, 'base64'); const b = expectedBodyBuf; return a.length === b.length && crypto.timingSafeEqual(a, b); })();
 
-        if (!(matchCustomHex || matchBodyHex || matchCustomB64 || matchBodyB64)) {
+    if (!(matchCustomHex || matchBodyHex || matchCustomB64 || matchBodyB64)) {
       console.error('? Signature mismatch', {
         providedLength: provided.length,
         providedPreview: provided.slice(0, 12),
         hasOrderId: !!orderIdStr,
         hasOrderNumber: !!orderNumberStr,
+        secretPreview: secret ? `${secret.substring(0, 4)}...${secret.substring(secret.length - 4)}` : 'MISSING',
+        secretLength: secret.length,
+        stringToSign: `${orderIdStr}:${orderNumberStr}`,
+        expectedCustomPreview: expectedCustomHex.slice(0, 12),
+        expectedBodyPreview: expectedBodyHex.slice(0, 12)
       });
-      return res.status(401).json({ error: 'Invalid signature' });
+      return res.status(401).json({
+        error: 'Invalid signature',
+        debug: {
+          providedPreview: provided.slice(0, 12),
+          expectedCustomPreview: expectedCustomHex.slice(0, 12),
+          stringToSign: `${orderIdStr}:${orderNumberStr}`
+        }
+      });
     }
-
-    const { orderId, success, generatedContent, files, error, isRevision, pdfUrl, status } = payload;
-
-    console.log('📨 Callback n8n reçu:', { orderId, success, isRevision, pdfUrl, status });
 
     // Récupérer la commande pour vérifier le contexte
     const order = await Order.findById(orderId);
@@ -663,7 +671,7 @@ router.post('/n8n-callback', async (req: any, res: any) => {
       'User-Agent': 'Oracle-Lumira-Expert-Desk/1.0'
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-
+  
     let lastError: any = null;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -688,12 +696,12 @@ router.post('/n8n-callback', async (req: any, res: any) => {
         }
       }
     }
-
+  
     const finalMessage = lastError instanceof Error ? lastError.message : 'Unknown webhook error';
     order.status = 'pending';
     order.errorLog = `n8n webhook failed after ${maxRetries} attempts: ${finalMessage}`;
     await order.save();
-
+  
     return res.status(502).json({
       error: '\u00C9chec de l\'envoi vers l\'assistant IA',
       details: finalMessage,
