@@ -587,6 +587,8 @@ router.post('/n8n-callback', async (req: any, res: any) => {
       });
     }
 
+    const { orderId, success, generatedContent, files, error, isRevision, pdfUrl, status } = payload;
+
     // Récupérer la commande pour vérifier le contexte
     const order = await Order.findById(orderId);
     if (!order) {
@@ -671,7 +673,7 @@ router.post('/n8n-callback', async (req: any, res: any) => {
       'User-Agent': 'Oracle-Lumira-Expert-Desk/1.0'
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-  
+   
     let lastError: any = null;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -696,12 +698,12 @@ router.post('/n8n-callback', async (req: any, res: any) => {
         }
       }
     }
-  
+   
     const finalMessage = lastError instanceof Error ? lastError.message : 'Unknown webhook error';
     order.status = 'pending';
     order.errorLog = `n8n webhook failed after ${maxRetries} attempts: ${finalMessage}`;
     await order.save();
-  
+   
     return res.status(502).json({
       error: '\u00C9chec de l\'envoi vers l\'assistant IA',
       details: finalMessage,
