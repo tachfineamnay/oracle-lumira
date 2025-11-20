@@ -23,6 +23,7 @@ import paymentRoutes from './routes/payments';
 import productRoutes from './routes/products';
 import envDebugRoutes from './routes/env-debug';
 import uploadsRoutes from './routes/uploads';
+import adminRoutes from './routes/admin';
 
 console.log('? [API] server.ts - Imports loaded');
 
@@ -178,8 +179,8 @@ console.log('? [API] server.ts - Middleware configured');
 
 // Simple healthcheck endpoint for Coolify
 app.get('/api/healthz', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy', 
+  res.status(200).json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version || '1.0.0',
     environment: process.env.NODE_ENV || 'development'
@@ -202,6 +203,7 @@ app.use('/api/orders', apiLimiter, orderRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/expert', apiLimiter, expertRoutes);
 app.use('/api/uploads', apiLimiter, uploadsRoutes);
+app.use('/api/admin', apiLimiter, adminRoutes); // Diagnostic routes (protected by expert auth)
 // =================== END SELECTIVE RATE LIMITING ===================
 
 // Test/debug routes only in non-production environments
@@ -236,7 +238,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   logger.warn('?? MONGODB_URI is not defined - Using mock MongoDB mode for development');
   console.warn('?? [API] MONGODB_URI is not defined - Using mock MongoDB mode for development');
-  
+
   // Start server without MongoDB in mock mode
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`? [API] Server is running on port ${PORT} (all interfaces) - MOCK MODE`);
@@ -256,13 +258,13 @@ if (!MONGODB_URI) {
     .then(() => {
       console.log('? [API] server.ts - MongoDB connected successfully');
       logger.info('MongoDB connected successfully');
-      
+
       // =================== START CLEANUP JOB ===================
       // Uncomment when node-cron is installed (npm install node-cron @types/node-cron)
       // startCleanupJob();
       // logger.info('Cleanup job started - runs daily at 3 AM');
       // =================== END CLEANUP JOB ===================
-      
+
       // Listen on all interfaces for Docker compatibility
       app.listen(PORT, '0.0.0.0', () => {
         console.log(`? [API] Server is running on port ${PORT} (all interfaces)`);
@@ -272,11 +274,11 @@ if (!MONGODB_URI) {
     .catch(err => {
       console.error('? [API] server.ts - MongoDB connection error:', err.message);
       logger.error('MongoDB connection error:', { error: err.message, stack: err.stack });
-      
+
       // START IN DEGRADED MODE - Server fonctionne mais sans sauvegarde MongoDB
       console.warn('?? [API] Starting server in DEGRADED MODE (MongoDB unavailable)');
       logger.warn('Starting server in DEGRADED MODE - MongoDB operations will fail gracefully');
-      
+
       app.listen(PORT, '0.0.0.0', () => {
         console.log(`? [API] Server is running on port ${PORT} (DEGRADED MODE - No MongoDB)`);
         logger.info(`Server is running on port ${PORT} (DEGRADED MODE - No MongoDB)`);
