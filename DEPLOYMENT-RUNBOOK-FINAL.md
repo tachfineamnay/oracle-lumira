@@ -31,7 +31,7 @@ Navigate to: **Configuration → Environment Variables**
 
 Set these variables with **"Is Build Variable?" checked**:
 ```bash
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51S4iWfCg2sJwWkKJEVoXyWYjclvCVA2T2nzmUiTvWsZTrmG1fAhbh2Ve4ksNalbcbOfln2x6auK32tUAyHcHR8cc00gu9wOgnl
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
 VITE_API_BASE_URL=https://oraclelumira.com/api
 ```
 
@@ -130,3 +130,4 @@ If deployment fails:
 ---
 
 **Expected Result**: Container healthy, all endpoints working, no "server unavailable" errors.
+

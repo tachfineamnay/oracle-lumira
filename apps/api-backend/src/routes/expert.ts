@@ -517,7 +517,7 @@ router.get('/files/presign', authenticateExpert, async (req: any, res: any) => {
 // Add callback route for n8n (secured with HMAC signature)
 router.post('/n8n-callback', async (req: any, res: any) => {
   try {
-    const secret = process.env.N8N_CALLBACK_SECRET || '';
+    const secret = (process.env.N8N_CALLBACK_SECRET || '').trim();
     const signatureHeader = (req.header('X-N8N-Signature') || req.header('x-n8n-signature') || '').trim();
 
     if (!secret) {
@@ -541,27 +541,37 @@ router.post('/n8n-callback', async (req: any, res: any) => {
       return res.status(400).json({ error: 'Invalid JSON payload' });
     }
 
-    // Support optional prefix like 'sha256=...'
-    const provided = signatureHeader.startsWith('sha256=') ? signatureHeader.slice(7) : signatureHeader;
+    // Normalize optional prefix like 'sha256=' (case-insensitive)
+    const lower = signatureHeader.toLowerCase();
+    const providedRaw = lower.startsWith('sha256=') ? signatureHeader.slice(7) : signatureHeader;
 
     // Strategy 1: Sign entire body (Standard)
-    const expectedBody = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+    const expectedBodyBuf = crypto.createHmac('sha256', secret).update(rawBody).digest();
+    const expectedBodyHex = expectedBodyBuf.toString('hex');
 
     // Strategy 2: Sign orderId:orderNumber (n8n specific)
-    const orderIdStr = payload.orderId || '';
-    const orderNumberStr = payload.orderNumber || '';
-    const expectedCustom = crypto.createHmac('sha256', secret).update(`${orderIdStr}:${orderNumberStr}`).digest('hex');
+    const orderIdStr = String(payload.orderId || '');
+    const orderNumberStr = String(payload.orderNumber || '');
+    const expectedCustomBuf = crypto.createHmac('sha256', secret).update(`${orderIdStr}:${orderNumberStr}`).digest();
+    const expectedCustomHex = expectedCustomBuf.toString('hex');
 
-    // Constant-time comparison
-    const a = Buffer.from(provided, 'utf8');
-    const bBody = Buffer.from(expectedBody, 'utf8');
-    const bCustom = Buffer.from(expectedCustom, 'utf8');
+    // Constant-time comparison with hex/base64 support
+    const provided = providedRaw.trim();
+    const isHex = /^[0-9a-f]+$/i.test(provided);
+    const isB64 = /^[A-Za-z0-9+/]+={0,2}$/.test(provided);
 
-    const matchBody = a.length === bBody.length && crypto.timingSafeEqual(a, bBody);
-    const matchCustom = a.length === bCustom.length && crypto.timingSafeEqual(a, bCustom);
+    const matchCustomHex = isHex && (() => { const a = Buffer.from(provided, 'hex'); const b = Buffer.from(expectedCustomHex, 'hex'); return a.length === b.length && crypto.timingSafeEqual(a, b); })();
+    const matchBodyHex = isHex && (() => { const a = Buffer.from(provided, 'hex'); const b = Buffer.from(expectedBodyHex, 'hex'); return a.length === b.length && crypto.timingSafeEqual(a, b); })();
+    const matchCustomB64 = isB64 && (() => { const a = Buffer.from(provided, 'base64'); const b = expectedCustomBuf; return a.length === b.length && crypto.timingSafeEqual(a, b); })();
+    const matchBodyB64 = isB64 && (() => { const a = Buffer.from(provided, 'base64'); const b = expectedBodyBuf; return a.length === b.length && crypto.timingSafeEqual(a, b); })();
 
-    if (!matchBody && !matchCustom) {
-      console.error('❌ Signature mismatch');
+        if (!(matchCustomHex || matchBodyHex || matchCustomB64 || matchBodyB64)) {
+      console.error('? Signature mismatch', {
+        providedLength: provided.length,
+        providedPreview: provided.slice(0, 12),
+        hasOrderId: !!orderIdStr,
+        hasOrderNumber: !!orderNumberStr,
+      });
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
@@ -1357,3 +1367,6 @@ async function calculateAverageRevisions(): Promise<number> {
 }
 
 export { router as expertRoutes };
+
+
+

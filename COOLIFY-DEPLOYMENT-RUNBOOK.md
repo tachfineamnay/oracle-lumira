@@ -24,7 +24,7 @@ Internal Port: 8080
 
 ### Build Arguments (Environment Variables)
 ```bash
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51S4iWfCg2sJwWkKJEVoXyWYjclvCVA2T2nzmUiTvWsZTrmG1fAhbh2Ve4ksNalbcbOfln2x6auK32tUAyHcHR8cc00gu9wOgnl
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
 VITE_API_BASE_URL=https://oraclelumira.com/api
 ```
 
@@ -97,3 +97,4 @@ curl -f "https://oraclelumira.com/commande?product=mystique"
 - **Fix Applied**: nginx@8080 + pm2-runtime + api proxy + foreground process
 - **Commit**: `fix(runtime): nginx@8080 + pm2-runtime + api proxy`
 - **Expected**: Container healthy, all endpoints working
+
