@@ -518,26 +518,24 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       
       // ✅ CORRECTIF CRITIQUE : Attendre que le backend ait bien sauvegardé avant refresh
       // Sans ce délai, refresh() peut récupérer l'ancien profil depuis l'API
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800)); // Augmenté à 800ms
       
       // PASSAGE 11 - P0 CRITIQUE : Forcer rafraîchissement pour afficher dashboard
       console.log('🔄 [OnboardingForm] Rafraîchissement du profil depuis l\'API...');
       await refresh(); // ✅ Recharger profile depuis l'API
       console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
-      // PASSAGE 20 - DEVOPS : Naviguer IMMÉDIATEMENT après refresh (pas dans setTimeout)
-      // Pour éviter re-render du OnboardingForm qui reset le stepper à étape 0
-      if (onComplete) {
-        console.log('🚀 [OnboardingForm] Navigation vers dashboard immédiate...');
-        onComplete();  // ✅ Navigation IMMEDIATE
-      }
+      // ✅ CORRECTIF : Nettoyer IMMÉDIATEMENT les flags pour éviter réaffichage
+      sessionStorage.removeItem('first_visit');
+      localStorage.removeItem('oraclelumira_last_payment_intent_id');
+      console.log('🧹 [OnboardingForm] Flags nettoyés (first_visit + paymentIntentId)');
       
-      // PASSAGE 20 - DEVOPS : Nettoyer localStorage APRÈS navigation
-      setTimeout(() => {
-        sessionStorage.removeItem('first_visit');
-        localStorage.removeItem('oraclelumira_last_payment_intent_id');
-        console.log('🧹 [OnboardingForm] localStorage nettoyé après navigation');
-      }, 100);
+      // PASSAGE 20 - DEVOPS : Laisser le useEffect de Sanctuaire.tsx gérer la fermeture
+      // Le profil est maintenant profileCompleted=true, le useEffect va automatiquement masquer l'onboarding
+      if (onComplete) {
+        console.log('🚀 [OnboardingForm] Appel onComplete pour fermeture modale...');
+        onComplete();  // ✅ Fermer la modale
+      }
       
     } catch (err: any) {
       console.error('❌ [OnboardingForm] Erreur:', err);
@@ -673,25 +671,24 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       
       // ✅ CORRECTIF CRITIQUE : Attendre que le backend ait bien sauvegardé avant refresh
       // Sans ce délai, refresh() peut récupérer l'ancien profil depuis l'API
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800)); // Augmenté à 800ms
       
       // PASSAGE 11 - P0 CRITIQUE : Forcer rafraîchissement pour afficher dashboard
       console.log('🔄 [OnboardingForm] Rafraîchissement du profil depuis l\'API...');
       await refresh(); // ✅ Recharger profile depuis l'API
       console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
-      // PASSAGE 20 - DEVOPS : Naviguer IMMÉDIATEMENT après refresh (pas dans setTimeout)
-      if (onComplete) {
-        console.log('🚀 [OnboardingForm] Navigation vers dashboard immédiate...');
-        onComplete();  // ✅ Navigation IMMEDIATE
-      }
+      // ✅ CORRECTIF : Nettoyer IMMÉDIATEMENT les flags pour éviter réaffichage
+      sessionStorage.removeItem('first_visit');
+      localStorage.removeItem('oraclelumira_last_payment_intent_id');
+      console.log('🧹 [OnboardingForm] Flags nettoyés (first_visit + paymentIntentId)');
       
-      // PASSAGE 20 - DEVOPS : Nettoyer localStorage APRÈS navigation
-      setTimeout(() => {
-        sessionStorage.removeItem('first_visit');
-        localStorage.removeItem('oraclelumira_last_payment_intent_id');
-        console.log('🧹 [OnboardingForm] localStorage nettoyé après navigation');
-      }, 100);
+      // PASSAGE 20 - DEVOPS : Laisser le useEffect de Sanctuaire.tsx gérer la fermeture
+      // Le profil est maintenant profileCompleted=true, le useEffect va automatiquement masquer l'onboarding
+      if (onComplete) {
+        console.log('🚀 [OnboardingForm] Appel onComplete pour fermeture modale...');
+        onComplete();  // ✅ Fermer la modale
+      }
     } catch (e: any) {
       console.error('❌ [OnboardingForm] Une erreur est survenue durant le processus de soumission final:', e);
       setError(e?.message || 'Erreur lors de la soumission finale');
