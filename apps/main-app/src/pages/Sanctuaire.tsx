@@ -562,34 +562,51 @@ const Sanctuaire: React.FC = () => {
   }, [authenticateWithEmail, clearAuthError, cooldownActive]);
 
   // Détection first_visit pour afficher OnboardingForm
-  // PASSAGE 21 - DEVOPS : Masquer onboarding quand profileCompleted = true
+  // PASSAGE 21 - DEVOPS : Masquer onboarding quand le profil contient déjà les données essentielles
   React.useEffect(() => {
     const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
-    const hasIncompleteProfile = profile && !profile.profileCompleted;
+    
+    const hasEssentialData = !!profile && (
+      profile.birthDate ||
+      profile.specificQuestion ||
+      profile.facePhotoUrl ||
+      profile.palmPhotoUrl
+    );
+
+    const hasCompletedFlag = !!profile?.profileCompleted;
+    const needsOnboarding = !hasEssentialData && !hasCompletedFlag;
     
     console.log('[Sanctuaire] Vérification onboarding:', {
       isAuthenticated,
       isFirstVisit,
-      hasIncompleteProfile,
-      profileCompleted: profile?.profileCompleted
+      hasEssentialData,
+      hasCompletedFlag,
+      needsOnboarding,
     });
     
-    if (isAuthenticated && (isFirstVisit || hasIncompleteProfile)) {
+    if (isAuthenticated && (isFirstVisit || needsOnboarding)) {
       console.log('[Sanctuaire] ✅ Affichage onboarding');
       setShowOnboarding(true);
     } else {
-      // PASSAGE 21 : MASQUER onboarding si profil complété
+      // PASSAGE 21 : MASQUER onboarding si profil complété ou déjà renseigné
       console.log('[Sanctuaire] ❌ Masquage onboarding');
       setShowOnboarding(false);
     }
-  }, [isAuthenticated, profile?.profileCompleted]); // ✅ Dépendances optimisées
+  }, [isAuthenticated, profile]); // ✅ Dépendances optimisées
 
   const handleOnboardingComplete = useCallback(() => {
     console.log('[Sanctuaire] OnboardingComplete appelé');
     setShowOnboarding(false);
     sessionStorage.removeItem('first_visit');
-    // Pas de reload - le refresh() dans OnboardingForm suffit
-  }, []);
+    // Rediriger explicitement vers l'accueil du sanctuaire
+    try {
+      // Utiliser la navigation SPA si possible
+      navigate('/sanctuaire/dashboard', { replace: true });
+    } catch {
+      // Fallback dur en cas de problème de routing
+      window.location.href = '/sanctuaire/dashboard';
+    }
+  }, [navigate]);
 
   // Effet 1: Auto-login via email/token depuis l'URL ou session
   // PASSAGE 5 - P0 : Retry automatique avec backoff pour race condition webhook
