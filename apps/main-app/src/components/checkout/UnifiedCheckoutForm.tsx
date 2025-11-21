@@ -453,15 +453,9 @@ export const UnifiedCheckoutForm = ({
     }
   };
 
-  // Auto-créer PaymentIntent dès que le formulaire est valide (produits payants ET gratuits)
-  useEffect(() => {
-    if (isFormValid && !orderId && !isCreatingIntent && !intentError) {
-      console.log('✨ [UnifiedCheckout] Form valid, auto-creating PaymentIntent...');
-      handleCreatePaymentIntent();
-    }
-  }, [isFormValid, orderId, isCreatingIntent, intentError]);
-
-  // Ce useEffect n'est plus nécessaire car la logique gratuite est dans handleCreatePaymentIntent
+  // ❌ SUPPRIMÉ: Auto-trigger qui validait prématurément le formulaire
+  // L'utilisateur doit maintenant cliquer explicitement sur "Continuer" ou "Payer"
+  // Cela évite la validation automatique quand il tape le 2e caractère du nom
 
   // Note: Customer info is NOW sent DURING PaymentIntent creation (not after)
 
@@ -696,6 +690,39 @@ export const UnifiedCheckoutForm = ({
               autoComplete="family-name"
             />
           </div>
+
+          {/* Bouton "Continuer" pour produits payants - Affiché AVANT le PaymentElement */}
+          {!isFreeProduct && !clientSecret && (
+            <motion.button
+              type="button"
+              onClick={handleCreatePaymentIntent}
+              disabled={!isFormValid || isCreatingIntent}
+              whileHover={{ scale: isFormValid && !isCreatingIntent ? 1.02 : 1 }}
+              whileTap={{ scale: isFormValid && !isCreatingIntent ? 0.98 : 1 }}
+              className={cn(
+                'w-full py-4 rounded-xl font-bold text-lg mt-2',
+                'bg-gradient-to-r from-mystical-gold to-cosmic-gold',
+                'text-mystical-night shadow-spiritual',
+                'transition-all duration-300',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                'relative overflow-hidden'
+              )}
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {isCreatingIntent ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Préparation du paiement...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-5 h-5" />
+                    Continuer vers le paiement
+                  </>
+                )}
+              </span>
+            </motion.button>
+          )}
 
           {/* Stripe Payment Element - Uniquement pour produits payants */}
           {!isFreeProduct && clientSecret && (
