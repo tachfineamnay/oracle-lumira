@@ -1346,6 +1346,90 @@ router.post('/validate-content', authenticateExpert, async (req: any, res: any) 
   }
 });
 
+// Route pour récupérer l'historique des validations
+router.get('/orders/validated-history', authenticateExpert, async (req: any, res: any) => {
+  try {
+    console.log('📚 Fetching validated history for expert:', req.expert?.id);
+
+    // Récupérer toutes les commandes validées ou rejetées
+    const orders = await Order.find({
+      'expertValidation.validationStatus': { $in: ['approved', 'rejected'] }
+    })
+    .populate('userId', 'firstName lastName email phone')
+    .sort({ 'expertValidation.validatedAt': -1 })
+    .limit(100); // Limiter à 100 résultats récents
+
+    console.log(`✅ Found ${orders.length} validated orders`);
+    res.json({ orders });
+  } catch (error) {
+    console.error('❌ Error fetching validated history:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération de l\'historique' });
+  }
+});
+
+// Route pour relancer une lecture déjà validée
+router.post('/regenerate-lecture', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const { orderId, orderNumber } = req.body;
+    const expertId = req.expert?.id;
+    const expertName = req.expert?.name || 'Expert';
+
+    console.log('🔄 Regenerate lecture request:', { orderId, orderNumber, expertId });
+
+    if (!orderId) {
+      return res.status(400).json({ error: 'ID de commande requis' });
+    }
+
+    // Récupérer la commande
+    const order = await Order.findById(orderId).populate('userId', 'firstName lastName email');
+    if (!order) {
+      return res.status(404).json({ error: 'Commande introuvable' });
+    }
+
+    // Vérifier que la commande est bien validée
+    if (order.expertValidation?.validationStatus !== 'approved') {
+      return res.status(400).json({ error: 'Seules les lectures validées peuvent être relancées' });
+    }
+
+    // Incrémenter le compteur de révision
+    const newRevisionCount = (order.revisionCount || 0) + 1;
+
+    // Sauvegarder l'ancien contenu dans l'historique (optionnel, pour traçabilité)
+    const previousContent = order.generatedContent;
+
+    // Mettre à jour le statut de la commande
+    order.status = 'awaiting_validation';
+    order.revisionCount = newRevisionCount;
+    order.expertValidation = {
+      validatorId: expertId,
+      validatorName: expertName,
+      validationStatus: 'pending',
+      validationNotes: `Régénération demandée - Version ${newRevisionCount + 1}`,
+      validatedAt: new Date()
+    };
+
+    // Réinitialiser le contenu généré (ou le garder selon la logique)
+    // On peut choisir de garder l'ancien PDF jusqu'à la nouvelle validation
+    // order.generatedContent = undefined;
+
+    await order.save();
+
+    console.log(`✅ Lecture marked for regeneration - Version ${newRevisionCount + 1}`);
+    
+    // Optionnel: Déclencher le workflow n8n automatiquement
+    // (Selon votre architecture, vous pourriez appeler le webhook n8n ici)
+
+    res.json({ 
+      message: `Lecture relancée avec succès - Version ${newRevisionCount + 1}`,
+      order,
+      revisionCount: newRevisionCount
+    });
+  } catch (error) {
+    console.error('❌ Error regenerating lecture:', error);
+    res.status(500).json({ error: 'Erreur lors de la régénération de la lecture' });
+  }
+});
+
 // Fonction utilitaire pour calculer les statistiques
 async function calculateAverageRevisions(): Promise<number> {
   try {

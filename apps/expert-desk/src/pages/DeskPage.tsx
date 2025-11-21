@@ -9,15 +9,18 @@ import {
   Clock,
   TrendingUp,
   AlertCircle,
-  Eye
+  Eye,
+  History
 } from 'lucide-react';
 import type { Order, Stats } from '../types/Order';
 import { useAuth } from '../hooks/useAuth';
 import LoadingSpinner from '../components/LoadingSpinner';
 import OrdersQueue from '../components/OrdersQueue';
 import ValidationQueue from '../components/ValidationQueue';
+import HistoryQueue from '../components/HistoryQueue';
 import ContentGenerator from '../components/ContentGenerator';
 import ContentValidator from '../components/ContentValidator';
+import HistoryViewer from '../components/HistoryViewer';
 import { api, endpoints } from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -25,9 +28,11 @@ const DeskPage: React.FC = () => {
   const { expert, logout } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [validationOrders, setValidationOrders] = useState<Order[]>([]);
+  const [historyOrders, setHistoryOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedValidationOrder, setSelectedValidationOrder] = useState<Order | null>(null);
-  const [activeTab, setActiveTab] = useState<'orders' | 'validation'>('orders');
+  const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<Order | null>(null);
+  const [activeTab, setActiveTab] = useState<'orders' | 'validation' | 'history'>('orders');
   const [stats, setStats] = useState<Stats>({
     pending: 0,
     paid: 0,
@@ -42,6 +47,7 @@ const DeskPage: React.FC = () => {
   const [refreshTimeout, setRefreshTimeout] = useState<number | null>(null);
   const [takingOrderId, setTakingOrderId] = useState<string | null>(null);
   const [validatingOrderId, setValidatingOrderId] = useState<string | null>(null);
+  const [regeneratingOrderId, setRegeneratingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -53,6 +59,7 @@ const DeskPage: React.FC = () => {
       await Promise.all([
         fetchOrders(),
         fetchValidationOrders(),
+        fetchHistoryOrders(),
         fetchStats()
       ]);
     } catch (error) {
@@ -100,6 +107,26 @@ const DeskPage: React.FC = () => {
       const errorMessage = error.response?.data?.error || 'Erreur lors du chargement des validations';
       toast.error(errorMessage);
       setValidationOrders([]);
+    }
+  };
+
+  const fetchHistoryOrders = async () => {
+    try {
+      const response = await api.get(endpoints.expert.validatedHistory);
+      console.log('📚 Fetched history orders:', response.data);
+      
+      if (response.data && response.data.orders) {
+        setHistoryOrders(response.data.orders);
+        console.log(`✅ Loaded ${response.data.orders.length} history orders`);
+      } else {
+        setHistoryOrders([]);
+        console.log('⚠️ No history orders in response');
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching history orders:', error);
+      const errorMessage = error.response?.data?.error || 'Erreur lors du chargement de l\'historique';
+      toast.error(errorMessage);
+      setHistoryOrders([]);
     }
   };
 
@@ -178,6 +205,40 @@ const DeskPage: React.FC = () => {
     setActiveTab('validation');
   };
 
+  const handleHistoryOrderSelect = (order: Order) => {
+    setSelectedHistoryOrder(order);
+    setActiveTab('history');
+  };
+
+  const handleRegenerateLecture = async (order: Order) => {
+    try {
+      console.log('🔄 Regenerating lecture:', order._id);
+      setRegeneratingOrderId(order._id);
+      
+      const payload = {
+        orderId: order._id,
+        orderNumber: order.orderNumber
+      };
+      
+      const response = await api.post(endpoints.expert.regenerateLecture, payload);
+      console.log('✅ Regeneration initiated:', response.data);
+      
+      toast.success(response.data.message || 'Régénération lancée avec succès');
+      
+      // Actualiser les données
+      await fetchHistoryOrders();
+      await fetchValidationOrders();
+      await fetchStats();
+      
+    } catch (error: any) {
+      console.error('❌ Error regenerating lecture:', error);
+      const errorMessage = error.response?.data?.error || 'Erreur lors de la régénération';
+      toast.error(errorMessage);
+    } finally {
+      setRegeneratingOrderId(null);
+    }
+  };
+
   const refreshOrders = async () => {
     // Debounce de 200ms pour éviter rafales d'appels API
     if (refreshTimeout) {
@@ -188,6 +249,7 @@ const DeskPage: React.FC = () => {
       setRefreshing(true);
       await fetchOrders();
       await fetchValidationOrders();
+      await fetchHistoryOrders();
       await fetchStats();
       setRefreshing(false);
       toast.success('Données actualisées');
@@ -207,6 +269,7 @@ const DeskPage: React.FC = () => {
     refreshOrders();
     setSelectedOrder(null);
     setSelectedValidationOrder(null);
+    setSelectedHistoryOrder(null);
   };
 
   if (loading) {
@@ -337,6 +400,7 @@ const DeskPage: React.FC = () => {
             onClick={() => {
               setActiveTab('orders');
               setSelectedValidationOrder(null);
+              setSelectedHistoryOrder(null);
             }}
             className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'orders'
@@ -351,6 +415,7 @@ const DeskPage: React.FC = () => {
             onClick={() => {
               setActiveTab('validation');
               setSelectedOrder(null);
+              setSelectedHistoryOrder(null);
             }}
             className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'validation'
@@ -360,6 +425,21 @@ const DeskPage: React.FC = () => {
           >
             <Eye className="w-5 h-5" />
             Validations ({stats.awaitingValidation || 0})
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('history');
+              setSelectedOrder(null);
+              setSelectedValidationOrder(null);
+            }}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'history'
+                ? 'bg-amber-400 text-slate-900'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
+          >
+            <History className="w-5 h-5" />
+            Historique ({historyOrders.length})
           </button>
         </div>
 
@@ -381,7 +461,7 @@ const DeskPage: React.FC = () => {
                 onTakeOrder={handleTakeOrder}
                 takingOrder={takingOrderId || undefined}
               />
-            ) : (
+            ) : activeTab === 'validation' ? (
               <ValidationQueue
                 orders={validationOrders}
                 selectedOrder={selectedValidationOrder}
@@ -390,6 +470,16 @@ const DeskPage: React.FC = () => {
                 onRefresh={refreshOrders}
                 refreshing={refreshing}
                 validatingOrder={validatingOrderId || undefined}
+              />
+            ) : (
+              <HistoryQueue
+                orders={historyOrders}
+                selectedOrder={selectedHistoryOrder}
+                onSelectOrder={handleHistoryOrderSelect}
+                onRegenerate={handleRegenerateLecture}
+                onRefresh={refreshOrders}
+                refreshing={refreshing}
+                regeneratingOrder={regeneratingOrderId || undefined}
               />
             )}
           </motion.div>
@@ -405,7 +495,7 @@ const DeskPage: React.FC = () => {
                 order={selectedOrder}
                 onOrderUpdate={handleOrderUpdate}
               />
-            ) : (
+            ) : activeTab === 'validation' ? (
               <ContentValidator
                 order={selectedValidationOrder}
                 onBack={() => setSelectedValidationOrder(null)}
@@ -416,6 +506,12 @@ const DeskPage: React.FC = () => {
                   await handleValidateContent(orderId, 'reject', notes, reason);
                 }}
                 isProcessing={false}
+              />
+            ) : (
+              <HistoryViewer
+                order={selectedHistoryOrder}
+                onRegenerate={handleRegenerateLecture}
+                isProcessing={regeneratingOrderId === selectedHistoryOrder?._id}
               />
             )}
           </motion.div>
