@@ -56,6 +56,7 @@ const DeskPage: React.FC = () => {
   const [validatingOrderId, setValidatingOrderId] = useState<string | null>(null);
   const [regeneratingOrderId, setRegeneratingOrderId] = useState<string | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   const [clientStats, setClientStats] = useState<Map<string, ClientStats>>(new Map());
   const [clientOrders, setClientOrders] = useState<Order[]>([]);
 
@@ -331,6 +332,35 @@ const DeskPage: React.FC = () => {
     }
   };
 
+  const handleDeleteClient = async (client: Client) => {
+    try {
+      console.log('🗑️ Deleting client:', client._id);
+      setDeletingClientId(client._id);
+      
+      await api.delete(endpoints.expert.deleteClient(client._id));
+      console.log('✅ Client deleted successfully');
+      
+      toast.success(`Client ${client.firstName} ${client.lastName} supprimé avec succès`);
+      
+      // Réinitialiser la sélection si c'est le client sélectionné
+      if (selectedClient?._id === client._id) {
+        setSelectedClient(null);
+        setClientOrders([]);
+      }
+      
+      // Actualiser les données
+      await fetchClients();
+      await fetchStats();
+      
+    } catch (error: any) {
+      console.error('❌ Error deleting client:', error);
+      const errorMessage = error.response?.data?.error || 'Erreur lors de la suppression du client';
+      toast.error(errorMessage);
+    } finally {
+      setDeletingClientId(null);
+    }
+  };
+
   const refreshOrders = async () => {
     // Debounce de 200ms pour éviter rafales d'appels API
     if (refreshTimeout) {
@@ -601,8 +631,10 @@ const DeskPage: React.FC = () => {
                 clients={clients}
                 selectedClient={selectedClient}
                 onSelectClient={handleSelectClient}
+                onDeleteClient={handleDeleteClient}
                 onRefresh={fetchClients}
                 refreshing={refreshing}
+                deletingClient={deletingClientId || undefined}
                 clientStats={clientStats}
               />
             )}

@@ -9,7 +9,8 @@ import {
   Clock,
   RefreshCw,
   Euro,
-  Calendar
+  Calendar,
+  Trash2
 } from 'lucide-react';
 import type { Client, ClientStats } from '../types/Client';
 
@@ -17,8 +18,10 @@ interface ClientsListProps {
   clients: Client[];
   selectedClient: Client | null;
   onSelectClient: (client: Client) => void;
+  onDeleteClient: (client: Client) => void;
   onRefresh: () => void;
   refreshing: boolean;
+  deletingClient?: string;
   clientStats?: Map<string, ClientStats>;
 }
 
@@ -26,8 +29,10 @@ const ClientsList: React.FC<ClientsListProps> = ({
   clients,
   selectedClient,
   onSelectClient,
+  onDeleteClient,
   onRefresh,
   refreshing,
+  deletingClient,
   clientStats
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -207,6 +212,26 @@ const ClientsList: React.FC<ClientsListProps> = ({
                       )}
                     </div>
                   </div>
+                  
+                  {/* Bouton de suppression */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Voulez-vous vraiment supprimer le client ${client.firstName} ${client.lastName} ?
+
+Cette action est irréversible et supprimera :
+- Le compte utilisateur
+- Toutes ses commandes
+- Toutes ses données personnelles`)) {
+                        onDeleteClient(client);
+                      }
+                    }}
+                    disabled={deletingClient === client._id}
+                    className="px-2 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Supprimer ce client"
+                  >
+                    <Trash2 className={`w-4 h-4 ${deletingClient === client._id ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
 
                 <div className="space-y-2">

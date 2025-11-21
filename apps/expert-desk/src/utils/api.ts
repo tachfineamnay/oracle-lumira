@@ -68,7 +68,8 @@ export const endpoints = {
     clientDetails: (id: string) => `/expert/clients/${id}`,
     clientStats: (id: string) => `/expert/clients/${id}/stats`,
     clientOrders: (id: string) => `/expert/clients/${id}/orders`,
-    updateClient: (id: string) => `/expert/clients/${id}`
+    updateClient: (id: string) => `/expert/clients/${id}`,
+    deleteClient: (id: string) => `/expert/clients/${id}`
   }
 };
 

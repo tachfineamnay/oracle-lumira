@@ -1666,6 +1666,39 @@ router.get('/clients/:id', authenticateExpert, async (req: any, res: any) => {
   }
 });
 
+// Supprimer un client et toutes ses données associées
+router.delete('/clients/:id', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const clientId = req.params.id;
+    
+    console.log('🗑️ [Expert] Suppression du client:', clientId);
+    
+    // Vérifier que le client existe
+    const client = await User.findById(clientId);
+    if (!client) {
+      return res.status(404).json({ error: 'Client non trouvé' });
+    }
+    
+    // Supprimer toutes les commandes du client
+    const deletedOrders = await Order.deleteMany({ userId: clientId });
+    console.log(`✅ ${deletedOrders.deletedCount} commande(s) supprimée(s)`);
+    
+    // Supprimer le client
+    await User.findByIdAndDelete(clientId);
+    console.log('✅ Client supprimé avec succès');
+    
+    res.json({ 
+      success: true, 
+      message: `Client ${client.firstName} ${client.lastName} et ${deletedOrders.deletedCount} commande(s) supprimé(s) avec succès`,
+      deletedOrders: deletedOrders.deletedCount
+    });
+
+  } catch (error) {
+    console.error('❌ Delete client error:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression du client' });
+  }
+});
+
 export { router as expertRoutes };
 
 
