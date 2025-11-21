@@ -21,9 +21,11 @@ export interface FileUploadResult {
 export class S3Service {
   private s3Client: S3Client;
   private bucketName: string;
+  private lecturesBucketName: string;
 
   constructor(config: S3Config) {
     this.bucketName = config.bucketName;
+    this.lecturesBucketName = process.env.AWS_LECTURES_BUCKET_NAME || config.bucketName;
     
     this.s3Client = new S3Client({
       region: config.region,
@@ -100,9 +102,9 @@ export class S3Service {
   /**
    * Générer l'URL publique d'un fichier
    */
-  public getPublicUrl(key: string): string {
+  public getPublicUrl(key: string, bucketType: 'uploads' | 'lectures' = 'uploads'): string {
     const endpoint = process.env.S3_ENDPOINT;
-    const bucketName = this.bucketName;
+    const bucketName = bucketType === 'lectures' ? this.lecturesBucketName : this.bucketName;
     
     console.log('[S3Service] Génération URL publique pour:', { key, endpoint, bucketName });
     
@@ -189,13 +191,24 @@ export class S3Service {
   /**
    * Générer une URL signée (GET) temporaire pour accéder à un objet privé
    */
-  async getPresignedGetUrl(key: string, expiresInSeconds: number = 900): Promise<string> {
+  async getPresignedGetUrl(key: string, expiresInSeconds: number = 900, bucketType: 'uploads' | 'lectures' = 'uploads'): Promise<string> {
+    const bucketName = bucketType === 'lectures' ? this.lecturesBucketName : this.bucketName;
     const command = new GetObjectCommand({
-      Bucket: this.bucketName,
+      Bucket: bucketName,
       Key: key,
     });
     const url = await awsGetSignedUrl(this.s3Client, command, { expiresIn: expiresInSeconds });
     return url;
+  }
+
+  /**
+   * Détecter le type de bucket depuis une URL S3
+   */
+  public detectBucketTypeFromUrl(url: string): 'uploads' | 'lectures' {
+    if (url.includes('oracle-lumira-lectures') || url.includes('/lectures/')) {
+      return 'lectures';
+    }
+    return 'uploads';
   }
 
   /**

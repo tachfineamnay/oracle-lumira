@@ -916,9 +916,19 @@ router.get('/files/presign', async (req: any, res: any) => {
     }
 
     const bucket = process.env.AWS_S3_BUCKET_NAME || '';
+    const lecturesBucket = process.env.AWS_LECTURES_BUCKET_NAME || 'oracle-lumira-lectures';
     const extractKeyFromUrl = (u: string): string => {
       try {
         const decoded = decodeURIComponent(u);
+        
+        // Cas 1: oracle-lumira-lectures bucket (PDFs générés)
+        if (decoded.includes('oracle-lumira-lectures')) {
+          const lectureMatch = decoded.match(/oracle-lumira-lectures\.s3\.[^\/]+\.amazonaws\.com\/(.+)/) ||
+                               decoded.match(/oracle-lumira-lectures\/(.+)/);
+          if (lectureMatch) return lectureMatch[1];
+        }
+        
+        // Cas 2: oracle-lumira-uploads-tachfine-1983 bucket (uploads utilisateurs)
         const idxBucketSlash = decoded.indexOf(`/${bucket}/`);
         if (bucket && idxBucketSlash !== -1) {
           return decoded.substring(idxBucketSlash + bucket.length + 2);
@@ -931,8 +941,22 @@ router.get('/files/presign', async (req: any, res: any) => {
           const idx = decoded.indexOf(`${bucket}/`);
           if (idx !== -1) return decoded.substring(idx + bucket.length + 1);
         }
+        
+        // Cas 3: pattern générique /uploads/
         const upIdx = decoded.indexOf('/uploads/');
         if (upIdx !== -1) return decoded.substring(upIdx + 1);
+        
+        // Cas 4: pattern générique /lectures/ ou fichiers dans le bucket lectures
+        const lectIdx = decoded.indexOf('/lectures/');
+        if (lectIdx !== -1) return decoded.substring(lectIdx + 1);
+        
+        // Si le fichier est dans le bucket lectures sans préfixe
+        if (decoded.includes('.pdf') && !decoded.includes('uploads/')) {
+          // Extraire le nom de fichier direct depuis l'URL
+          const parts = decoded.split('/');
+          return parts[parts.length - 1];
+        }
+        
         return decoded;
       } catch {
         return u;
@@ -940,8 +964,25 @@ router.get('/files/presign', async (req: any, res: any) => {
     };
 
     const objectKey = key || extractKeyFromUrl(url!);
-    if (!objectKey || !objectKey.startsWith('uploads/')) {
-      return res.status(400).json({ error: 'Invalid object key' });
+    
+    // Détecter le type de bucket automatiquement
+    const s3 = getS3Service();
+    const bucketType = s3.detectBucketTypeFromUrl(url || objectKey);
+    
+    console.log('[Users] Presign request:', { 
+      originalUrl: url, 
+      extractedKey: objectKey, 
+      bucketType 
+    });
+    
+    // Validation de sécurité : autorise uploads/ et lectures/ (ou fichiers PDF directs dans lectures bucket)
+    const isValidKey = objectKey.startsWith('uploads/') || 
+                       objectKey.startsWith('lectures/') || 
+                       (bucketType === 'lectures' && objectKey.endsWith('.pdf'));
+    
+    if (!isValidKey) {
+      console.error('[Users] Presign rejected - invalid key:', objectKey);
+      return res.status(400).json({ error: 'Invalid object key - must start with uploads/ or lectures/' });
     }
 
     // Authorization: experts can presign any uploads/*; sanctuaire clients only for their delivered/approved content
@@ -961,12 +1002,14 @@ router.get('/files/presign', async (req: any, res: any) => {
         'expertValidation.validationStatus': 'approved'
       });
 
-      const bucket = process.env.AWS_S3_BUCKET_NAME || '';
       const collectedKeys = new Set<string>();
       const addKey = (u?: string) => {
         if (!u) return;
         const k = extractKeyFromUrl(u);
-        if (k && k.startsWith('uploads/')) collectedKeys.add(k);
+        // Accepter les clés uploads/ ET lectures/ (ou PDFs directs)
+        if (k && (k.startsWith('uploads/') || k.startsWith('lectures/') || k.endsWith('.pdf'))) {
+          collectedKeys.add(k);
+        }
       };
       for (const o of orders) {
         addKey(o.generatedContent?.pdfUrl as any);
@@ -975,13 +1018,20 @@ router.get('/files/presign', async (req: any, res: any) => {
       }
 
       if (!collectedKeys.has(objectKey)) {
+        console.error('[Users] Access denied:', { userId, objectKey, allowedKeys: Array.from(collectedKeys) });
         return res.status(403).json({ error: 'Access denied for requested object' });
       }
     }
 
     const exp = Math.min(Math.max(parseInt(String(expiresIn || '900'), 10) || 900, 60), 3600);
-    const s3 = getS3Service();
-    const signedUrl = await s3.getPresignedGetUrl(objectKey, exp);
+    const signedUrl = await s3.getPresignedGetUrl(objectKey, exp, bucketType);
+    
+    console.log('[Users] Presigned URL generated:', { 
+      key: objectKey, 
+      bucketType, 
+      expiresIn: exp 
+    });
+    
     res.json({ signedUrl, expiresIn: exp });
   } catch (error) {
     console.error('Sanctuaire presign error:', error);
