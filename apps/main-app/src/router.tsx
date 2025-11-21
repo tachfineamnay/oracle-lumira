@@ -32,55 +32,55 @@ const AppRoutes: React.FC = () => (
     <Route path="/payment-success" element={<PaymentSuccessRedirect />} />
     <Route path="/payment-confirmation" element={<ConfirmationPage />} />
     
-    {/* ROUTE PRINCIPALE SANCTUAIRE - RESTAURATION SYSTÈME FONCTIONNEL */}
-    {/* ✅ UTILISE Sanctuaire.tsx avec OnboardingForm (stepper 4 étapes validé pendant 3 jours) */}
+    {/* ROUTE PRINCIPALE SANCTUAIRE */}
+    {/* ✅ Sanctuaire.tsx fournit la mise en page (sidebar, header, onboarding overlay) et rend les sphères via <Outlet /> */}
     <Route
       path="/sanctuaire/*"
       element={
         <SanctuaireProvider>
-          <Routes>
-            <Route path="login" element={<LoginSanctuaireSimple />} />
-            <Route index element={<Sanctuaire />} />
-            <Route path="dashboard" element={<Sanctuaire />} />
-            <Route path="path" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazySpiritualPath />
-              </React.Suspense>
-            } />
-            <Route path="draws" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyDraws />
-              </React.Suspense>
-            } />
-            <Route path="synthesis" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazySynthesis />
-              </React.Suspense>
-            } />
-            <Route path="chat" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyConversations />
-              </React.Suspense>
-            } />
-            <Route path="profile" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyProfile />
-              </React.Suspense>
-            } />
-            <Route path="rituals" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyRituals />
-              </React.Suspense>
-            } />
-            <Route path="mandala" element={
-              <React.Suspense fallback={<SphereSkeleton />}>
-                <LazyMandala />
-              </React.Suspense>
-            } />
-          </Routes>
+          <Sanctuaire />
         </SanctuaireProvider>
       }
-    />
+    >
+      {/* Sous-routes rendues dans <Outlet /> de Sanctuaire.tsx pour les vues non-home */}
+      <Route path="path" element={
+        <React.Suspense fallback={<SphereSkeleton />}>
+          <LazySpiritualPath />
+        </React.Suspense>
+      } />
+      <Route path="draws" element={
+        <React.Suspense fallback={<SphereSkeleton />}>
+          <LazyDraws />
+        </React.Suspense>
+      } />
+      <Route path="synthesis" element={
+        <React.Suspense fallback={<SphereSkeleton />}>
+          <LazySynthesis />
+        </React.Suspense>
+      } />
+      <Route path="chat" element={
+        <React.Suspense fallback={<SphereSkeleton />}>
+          <LazyConversations />
+        </React.Suspense>
+      } />
+      <Route path="profile" element={
+        <React.Suspense fallback={<SphereSkeleton />}>
+          <LazyProfile />
+        </React.Suspense>
+      } />
+      <Route path="rituals" element={
+        <React.Suspense fallback={<SphereSkeleton />}>
+          <LazyRituals />
+        </React.Suspense>
+      } />
+      <Route path="mandala" element={
+        <React.Suspense fallback={<SphereSkeleton />}>
+          <LazyMandala />
+        </React.Suspense>
+      } />
+      {/* Page de login intégrée dans la mise en page du Sanctuaire */}
+      <Route path="login" element={<LoginSanctuaireSimple />} />
+    </Route>
     
     <Route path="/mentions-legales" element={<MentionsLegales />} />
     <Route path="/login" element={<LoginSanctuaire />} />
