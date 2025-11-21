@@ -165,6 +165,9 @@ const DrawsContent: React.FC = () => {
     };
   }>({});
 
+  // 8. Effet pluie d'étoiles au chargement (doit être déclaré avant tout return conditionnel)
+  const [showStars, setShowStars] = React.useState(true);
+
   // Mapper les orders vers le format Lecture
   useEffect(() => {
     if (orders && orders.length > 0) {
@@ -220,6 +223,12 @@ const DrawsContent: React.FC = () => {
     loadOrderContent();
   }, [selectedLecture]);
 
+  // Timer pour masquer la pluie d'étoiles après quelques secondes
+  React.useEffect(() => {
+    const timer = setTimeout(() => setShowStars(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // =================== SKELETON LOADING ===================
 
   const levelName = (levelMetadata?.name as string) || 'Initié';
@@ -268,14 +277,6 @@ const DrawsContent: React.FC = () => {
   }
 
   // =================== RENDU PRINCIPAL ===================
-
-  // 8. Effet pluie d'étoiles au chargement
-  const [showStars, setShowStars] = React.useState(true);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setShowStars(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950 relative overflow-hidden">
