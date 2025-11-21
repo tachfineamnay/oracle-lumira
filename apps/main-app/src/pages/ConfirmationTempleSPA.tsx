@@ -142,6 +142,11 @@ const ConfirmationTemple: React.FC = () => {
           sessionStorage.setItem('sanctuaire_email', email);
           console.log('[ConfirmationTemple] Email stocké pour retries:', email);
         }
+        
+        // ✅ CORRECTIF : Marquer first_visit pour nouveau client (formulaire d'onboarding)
+        // Cela garantit que le formulaire s'affichera dans le Sanctuaire
+        sessionStorage.setItem('first_visit', 'true');
+        console.log('[ConfirmationTemple] ✅ Flag first_visit activé - Formulaire d\'onboarding sera affiché');
       } catch (err) {
         console.error('[ConfirmationTemple] Erreur stockage PI/email:', err);
       }
