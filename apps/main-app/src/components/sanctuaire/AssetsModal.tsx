@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Download } from 'lucide-react';
+import SanctuairePDFViewer from './SanctuairePDFViewer';
 
 type Props = {
   open: boolean;
@@ -19,7 +20,8 @@ const AssetsModal: React.FC<Props> = ({ open, onClose, title, pdfUrl, mandalaSvg
         <div className="flex items-center justify-between p-3 border-b border-white/10">
           <div className="text-white/90 text-sm font-medium truncate">{title || 'Aperçu'}</div>
           <div className="flex items-center gap-2">
-            {onDownload && (
+            {/* Bouton télécharger masqué si PDF (géré par le viewer) */}
+            {!pdfUrl && onDownload && (
               <button onClick={onDownload} className="text-amber-400 hover:text-amber-300 flex items-center gap-1">
                 <Download className="w-4 h-4" />
                 <span className="text-sm">Télécharger</span>
@@ -30,9 +32,13 @@ const AssetsModal: React.FC<Props> = ({ open, onClose, title, pdfUrl, mandalaSvg
             </button>
           </div>
         </div>
-        <div className="bg-black/20">
+        <div className="bg-black/20 h-[75vh]">
           {pdfUrl && (
-            <iframe title="PDF" src={pdfUrl} className="w-full h-[75vh]" />
+            <SanctuairePDFViewer
+              pdfUrl={pdfUrl}
+              title={title}
+              onDownload={onDownload}
+            />
           )}
           {!pdfUrl && mandalaSvg && (
             <div className="p-4 max-h-[75vh] overflow-auto" dangerouslySetInnerHTML={{ __html: mandalaSvg }} />
