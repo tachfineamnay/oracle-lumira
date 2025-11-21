@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, Download, Play, Calendar, Home, Clock, User, FileText, Settings, CreditCard, Eye, Lock, Crown } from 'lucide-react';
@@ -559,20 +559,29 @@ const Sanctuaire: React.FC = () => {
     const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
     const hasIncompleteProfile = profile && !profile.profileCompleted;
     
+    console.log('[Sanctuaire] Vérification onboarding:', {
+      isAuthenticated,
+      isFirstVisit,
+      hasIncompleteProfile,
+      profileCompleted: profile?.profileCompleted
+    });
+    
     if (isAuthenticated && (isFirstVisit || hasIncompleteProfile)) {
+      console.log('[Sanctuaire] ✅ Affichage onboarding');
       setShowOnboarding(true);
     } else {
       // PASSAGE 21 : MASQUER onboarding si profil complété
+      console.log('[Sanctuaire] ❌ Masquage onboarding');
       setShowOnboarding(false);
     }
-  }, [isAuthenticated, profile]);
+  }, [isAuthenticated, profile?.profileCompleted]); // ✅ Dépendances optimisées
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = useCallback(() => {
+    console.log('[Sanctuaire] OnboardingComplete appelé');
     setShowOnboarding(false);
     sessionStorage.removeItem('first_visit');
-    // Recharger les données utilisateur
-    window.location.reload();
-  };
+    // Pas de reload - le refresh() dans OnboardingForm suffit
+  }, []);
 
   // Effet 1: Auto-login via email/token depuis l'URL ou session
   // PASSAGE 5 - P0 : Retry automatique avec backoff pour race condition webhook
