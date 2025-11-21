@@ -49,6 +49,7 @@ const DeskPage: React.FC = () => {
   const [takingOrderId, setTakingOrderId] = useState<string | null>(null);
   const [validatingOrderId, setValidatingOrderId] = useState<string | null>(null);
   const [regeneratingOrderId, setRegeneratingOrderId] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -237,6 +238,34 @@ const DeskPage: React.FC = () => {
       toast.error(errorMessage);
     } finally {
       setRegeneratingOrderId(null);
+    }
+  };
+
+  const handleDeleteOrder = async (order: Order) => {
+    try {
+      console.log('🗑️ Deleting order:', order._id);
+      setDeletingOrderId(order._id);
+      
+      await api.delete(endpoints.expert.deleteOrder(order._id));
+      console.log('✅ Order deleted successfully');
+      
+      toast.success(`Commande #${order.orderNumber} supprimée avec succès`);
+      
+      // Réinitialiser la sélection si c'est la commande sélectionnée
+      if (selectedOrder?._id === order._id) setSelectedOrder(null);
+      if (selectedHistoryOrder?._id === order._id) setSelectedHistoryOrder(null);
+      
+      // Actualiser les données
+      await fetchOrders();
+      await fetchHistoryOrders();
+      await fetchStats();
+      
+    } catch (error: any) {
+      console.error('❌ Error deleting order:', error);
+      const errorMessage = error.response?.data?.error || 'Erreur lors de la suppression';
+      toast.error(errorMessage);
+    } finally {
+      setDeletingOrderId(null);
     }
   };
 
@@ -460,7 +489,9 @@ const DeskPage: React.FC = () => {
                 onRefresh={refreshOrders}
                 refreshing={refreshing}
                 onTakeOrder={handleTakeOrder}
+                onDeleteOrder={handleDeleteOrder}
                 takingOrder={takingOrderId || undefined}
+                deletingOrder={deletingOrderId || undefined}
               />
             ) : activeTab === 'validation' ? (
               <ValidationQueue
@@ -478,9 +509,11 @@ const DeskPage: React.FC = () => {
                 selectedOrder={selectedHistoryOrder}
                 onSelectOrder={handleHistoryOrderSelect}
                 onRegenerate={handleRegenerateLecture}
+                onDeleteOrder={handleDeleteOrder}
                 onRefresh={refreshOrders}
                 refreshing={refreshing}
                 regeneratingOrder={regeneratingOrderId || undefined}
+                deletingOrder={deletingOrderId || undefined}
               />
             )}
           </motion.div>

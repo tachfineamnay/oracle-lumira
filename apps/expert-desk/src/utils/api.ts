@@ -58,6 +58,7 @@ export const endpoints = {
     validatedHistory: '/expert/orders/validated-history',
     validateContent: '/expert/validate-content',
     regenerateLecture: '/expert/regenerate-lecture',
+    deleteOrder: (id: string) => `/expert/orders/${id}`,
     orderDetails: (id: string) => `/expert/orders/${id}`,
     assignOrder: (id: string) => `/expert/orders/${id}/assign`,
     processOrder: '/expert/process-order',

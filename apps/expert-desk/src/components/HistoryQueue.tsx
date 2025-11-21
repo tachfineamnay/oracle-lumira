@@ -9,7 +9,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
 import type { Order } from '../types/Order';
 
@@ -18,9 +19,11 @@ interface Props {
   selectedOrder: Order | null;
   onSelectOrder: (order: Order) => void;
   onRegenerate: (order: Order) => void;
+  onDeleteOrder: (order: Order) => void;
   onRefresh: () => void;
   refreshing: boolean;
   regeneratingOrder?: string;
+  deletingOrder?: string;
 }
 
 const HistoryQueue: React.FC<Props> = ({
@@ -28,9 +31,11 @@ const HistoryQueue: React.FC<Props> = ({
   selectedOrder,
   onSelectOrder,
   onRegenerate,
+  onDeleteOrder,
   onRefresh,
   refreshing,
-  regeneratingOrder
+  regeneratingOrder,
+  deletingOrder
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'rejected'>('all');
@@ -202,29 +207,44 @@ const HistoryQueue: React.FC<Props> = ({
                     {new Date(order.expertValidation?.validatedAt || order.updatedAt).toLocaleDateString('fr-FR')}
                   </div>
 
-                  {order.expertValidation?.validationStatus === 'approved' && (
+                  <div className="flex items-center gap-2">
+                    {order.expertValidation?.validationStatus === 'approved' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRegenerate(order);
+                        }}
+                        disabled={regeneratingOrder === order._id}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-amber-400/10 text-amber-400 hover:bg-amber-400/20 rounded transition-colors disabled:opacity-50"
+                        title="Relancer cette lecture"
+                      >
+                        {regeneratingOrder === order._id ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            En cours...
+                          </>
+                        ) : (
+                          <>
+                            <RotateCcw className="w-3 h-3" />
+                            Relancer
+                          </>
+                        )}
+                      </button>
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onRegenerate(order);
+                        if (window.confirm(`Voulez-vous vraiment supprimer la commande #${order.orderNumber} de l'historique ?`)) {
+                          onDeleteOrder(order);
+                        }
                       }}
-                      disabled={regeneratingOrder === order._id}
-                      className="flex items-center gap-1 px-2 py-1 text-xs bg-amber-400/10 text-amber-400 hover:bg-amber-400/20 rounded transition-colors disabled:opacity-50"
-                      title="Relancer cette lecture"
+                      disabled={deletingOrder === order._id}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded transition-colors disabled:opacity-50"
+                      title="Supprimer de l'historique"
                     >
-                      {regeneratingOrder === order._id ? (
-                        <>
-                          <RefreshCw className="w-3 h-3 animate-spin" />
-                          En cours...
-                        </>
-                      ) : (
-                        <>
-                          <RotateCcw className="w-3 h-3" />
-                          Relancer
-                        </>
-                      )}
+                      <Trash2 className={`w-3 h-3 ${deletingOrder === order._id ? 'animate-spin' : ''}`} />
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
 

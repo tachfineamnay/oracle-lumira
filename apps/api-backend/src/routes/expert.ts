@@ -1430,6 +1430,43 @@ router.post('/regenerate-lecture', authenticateExpert, async (req: any, res: any
   }
 });
 
+// Route pour supprimer une commande
+router.delete('/orders/:id', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const expertId = req.expert?.id;
+    const expertName = req.expert?.name || 'Expert';
+
+    console.log('🗑️ Delete order request:', { orderId: id, expertId });
+
+    if (!id) {
+      return res.status(400).json({ error: 'ID de commande requis' });
+    }
+
+    // Récupérer la commande
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Commande introuvable' });
+    }
+
+    // Log pour traçabilité
+    console.log(`📝 Deleting order #${order.orderNumber} by expert ${expertName}`);
+
+    // Supprimer la commande
+    await Order.findByIdAndDelete(id);
+
+    console.log(`✅ Order #${order.orderNumber} deleted successfully`);
+
+    res.json({ 
+      message: `Commande #${order.orderNumber} supprimée avec succès`,
+      orderId: id
+    });
+  } catch (error) {
+    console.error('❌ Error deleting order:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression de la commande' });
+  }
+});
+
 // Fonction utilitaire pour calculer les statistiques
 async function calculateAverageRevisions(): Promise<number> {
   try {

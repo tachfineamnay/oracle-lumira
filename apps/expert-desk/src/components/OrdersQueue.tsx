@@ -10,7 +10,8 @@ import {
   FileText,
   Mail,
   Phone,
-  CheckCircle
+  CheckCircle,
+  Trash2
 } from 'lucide-react';
 import { getLevelNameSafely } from '../utils/orderUtils';
 
@@ -19,9 +20,11 @@ interface OrdersQueueProps {
   selectedOrder: Order | null;
   onSelectOrder: (order: Order) => void;
   onTakeOrder: (order: Order) => void;
+  onDeleteOrder: (order: Order) => void;
   onRefresh: () => void;
   refreshing: boolean;
   takingOrder?: string; // ID of the order being taken
+  deletingOrder?: string; // ID of the order being deleted
 }
 
 const OrdersQueue: React.FC<OrdersQueueProps> = ({
@@ -29,9 +32,11 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
   selectedOrder,
   onSelectOrder,
   onTakeOrder,
+  onDeleteOrder,
   onRefresh,
   refreshing,
-  takingOrder
+  takingOrder,
+  deletingOrder
 }) => {
   const levelColors: Record<string, string> = {
     'Simple': 'text-gray-400 bg-gray-500/10 border-gray-500/20',
@@ -155,18 +160,31 @@ const OrdersQueue: React.FC<OrdersQueueProps> = ({
                   </div>
                 )}
 
-                {/* Take Order Button */}
-                <div className="mt-3 pt-3 border-t border-white/20">
+                {/* Action Buttons */}
+                <div className="mt-3 pt-3 border-t border-white/20 flex gap-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onTakeOrder(order);
                     }}
                     disabled={takingOrder === order._id}
-                    className="w-full btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <CheckCircle className={`w-4 h-4 mr-2 ${takingOrder === order._id ? 'animate-spin' : ''}`} />
                     {takingOrder === order._id ? 'Prise en cours...' : 'Prendre cette commande'}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Voulez-vous vraiment supprimer la commande #${order.orderNumber} ?`)) {
+                        onDeleteOrder(order);
+                      }
+                    }}
+                    disabled={deletingOrder === order._id}
+                    className="px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Supprimer cette commande"
+                  >
+                    <Trash2 className={`w-4 h-4 ${deletingOrder === order._id ? 'animate-spin' : ''}`} />
                   </button>
                 </div>
               </div>
