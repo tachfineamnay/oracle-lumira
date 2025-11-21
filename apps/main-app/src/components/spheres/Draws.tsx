@@ -18,7 +18,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  FileText, Headphones, Image as ImageIcon, Lock, Download, 
+  FileText, Headphones, Image as ImageIcon, Lock, Unlock, Download, 
   Play, Eye, Calendar, Sparkles, Star, ArrowRight, Check,
   Clock, AlertCircle, Crown, Zap, Award, Home, Menu, ChevronRight, User
 } from 'lucide-react';
@@ -149,7 +149,9 @@ const DrawsContent: React.FC = () => {
     open: boolean; 
     pdfUrl?: string; 
     mandalaSvg?: string; 
-    title?: string 
+    title?: string;
+    downloadUrl?: string;
+    downloadFilename?: string;
   }>({ open: false });
   
   // PHASE 2 - P2 : Récupération dynamique des formats disponibles depuis le backend
@@ -406,7 +408,14 @@ const DrawsContent: React.FC = () => {
               onOpenPdf={async (pdfUrl: string, title: string) => {
                 try {
                   const signed = await sanctuaireService.getPresignedUrl(pdfUrl);
-                  setModal({ open: true, pdfUrl: signed, title });
+                  const filename = `${selectedLecture?.orderNumber || 'lecture'}_${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+                  setModal({ 
+                    open: true, 
+                    pdfUrl: signed, 
+                    title,
+                    downloadUrl: signed,
+                    downloadFilename: filename
+                  });
                 } catch (err) {
                   console.error('[Draws] Erreur PDF:', err);
                 }
@@ -444,6 +453,16 @@ const DrawsContent: React.FC = () => {
                 pdfUrl={modal.pdfUrl}
                 mandalaSvg={modal.mandalaSvg}
                 title={modal.title}
+                onDownload={modal.downloadUrl ? async () => {
+                  try {
+                    await sanctuaireService.downloadFile(
+                      modal.downloadUrl!,
+                      modal.downloadFilename || 'lecture.pdf'
+                    );
+                  } catch (err) {
+                    console.error('[Draws] Erreur téléchargement:', err);
+                  }
+                } : undefined}
               />
             )}
           </div>
@@ -630,11 +649,11 @@ const AssetTile: React.FC<AssetTileProps> = ({ asset, onOpen }) => {
     >
       <div className="flex items-start gap-3">
         <div className={`p-2 rounded-lg ${
-          isReady ? 'bg-amber-400/20 text-amber-400' :
+          isReady ? 'bg-green-400/20 text-green-400' :
           isLocked ? 'bg-gray-600/20 text-gray-400' :
           'bg-amber-400/20 text-amber-400'
         }`}>
-          {isLocked ? <Lock className="w-5 h-5" /> : asset.icon}
+          {isLocked ? <Lock className="w-5 h-5" /> : isReady ? <Unlock className="w-5 h-5" /> : asset.icon}
         </div>
 
         <div className="flex-1">
@@ -645,7 +664,7 @@ const AssetTile: React.FC<AssetTileProps> = ({ asset, onOpen }) => {
           {isReady && (
             <div className="text-xs text-green-400 flex items-center gap-1 mt-1">
               <Check className="w-3 h-3" />
-              Disponible
+              Disponible - Cliquez pour visualiser
             </div>
           )}
           
@@ -664,7 +683,7 @@ const AssetTile: React.FC<AssetTileProps> = ({ asset, onOpen }) => {
         </div>
 
         {isReady && (
-          <div className="text-amber-400">
+          <div className="text-green-400">
             {asset.type === 'pdf' && <Eye className="w-5 h-5" />}
             {asset.type === 'audio' && <Play className="w-5 h-5" />}
             {asset.type === 'mandala' && <Eye className="w-5 h-5" />}
