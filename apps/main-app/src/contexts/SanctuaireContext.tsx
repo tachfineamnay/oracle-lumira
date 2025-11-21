@@ -14,7 +14,6 @@ import { sanctuaireService, CompletedOrder, SanctuaireStats, SanctuaireUser, Ord
 import axios from 'axios';
 import { getApiBaseUrl } from '../lib/apiBase';
 import { ApiError } from '../utils/api';
-import toast from 'react-hot-toast';
 
 const API_BASE = getApiBaseUrl();
 const AUTH_COOLDOWN_MS = 60 * 1000; // 1 minute between auth attempts by default
@@ -193,13 +192,9 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     } catch (err: any) {
       console.error('[SanctuaireProvider] Erreur profile:', err.response?.data || err.message);
       
-      // =================== GESTION ERREUR 401 P0 : Toast + Notification ===================
+      // =================== GESTION ERREUR 401 P0 : Nettoyage session ===================
       if (err.response?.status === 401) {
         console.log('[SanctuaireProvider] Erreur 401 détectée sur profile - Token expiré');
-        toast.error('Session expirée. Reconnexion requise.', {
-          duration: 4000,
-          position: 'top-center',
-        });
         localStorage.removeItem('sanctuaire_token');
         setIsAuthenticated(false);
         setLastAuthError('Session expirée. Veuillez vous reconnecter.');
@@ -229,13 +224,9 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     } catch (err: any) {
       console.error('[SanctuaireProvider] Erreur entitlements:', err.response?.data || err.message);
       
-      // =================== GESTION ERREUR 401 P0 : Toast + Notification ===================
+      // =================== GESTION ERREUR 401 P0 : Nettoyage session ===================
       if (err.response?.status === 401) {
         console.log('[SanctuaireProvider] Erreur 401 détectée sur entitlements - Token expiré');
-        toast.error('Session expirée. Reconnexion requise.', {
-          duration: 4000,
-          position: 'top-center',
-        });
         localStorage.removeItem('sanctuaire_token');
         setIsAuthenticated(false);
         setLastAuthError('Session expirée. Veuillez vous reconnecter.');

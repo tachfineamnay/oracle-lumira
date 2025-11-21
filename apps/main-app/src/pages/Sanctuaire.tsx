@@ -15,7 +15,6 @@ import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
 import { useSanctuaire } from '../contexts/SanctuaireContext';
 import { CapabilityGuard, LockedCard } from '../components/auth/CapabilityGuard';
 import LoadingScreen from '../components/ui/LoadingScreen';
-import toast from 'react-hot-toast';
 
 const ProfileIcon: React.FC = () => {
   const navigate = useNavigate();
@@ -660,11 +659,7 @@ const Sanctuaire: React.FC = () => {
       
       // Éviter le toast pendant les tentatives de retry ou first visit
       if (sessionEmail && !isFirstVisit && !hasEmailInUrl && retryCount > MAX_RETRIES) {
-        console.log('[Sanctuaire] Session expirée détectée, notification + redirection');
-        toast.error('Session expirée. Veuillez vous reconnecter.', {
-          duration: 4000,
-          position: 'top-center',
-        });
+        console.log('[Sanctuaire] Session expirée détectée, redirection vers login');
         const t = setTimeout(() => navigate('/sanctuaire/login', { replace: true }), 1500);
         return () => clearTimeout(t);
       }
