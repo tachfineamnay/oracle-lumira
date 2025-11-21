@@ -25,7 +25,7 @@ import { api, endpoints } from '../utils/api';
 import toast from 'react-hot-toast';
 
 const DeskPage: React.FC = () => {
-  // Version 2.0 - Historique des validations
+  // Version 2.1 - Suppression de commandes
   const { expert, logout } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [validationOrders, setValidationOrders] = useState<Order[]>([]);
