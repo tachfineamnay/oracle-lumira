@@ -39,6 +39,7 @@ const AppRoutes: React.FC = () => (
       element={
         <SanctuaireProvider>
           <Routes>
+            <Route path="login" element={<LoginSanctuaireSimple />} />
             <Route index element={<Sanctuaire />} />
             <Route path="dashboard" element={<Sanctuaire />} />
             <Route path="path" element={
@@ -80,7 +81,6 @@ const AppRoutes: React.FC = () => (
         </SanctuaireProvider>
       }
     />
-    <Route path="/sanctuaire/login" element={<LoginSanctuaireSimple />} />
     
     <Route path="/mentions-legales" element={<MentionsLegales />} />
     <Route path="/login" element={<LoginSanctuaire />} />
