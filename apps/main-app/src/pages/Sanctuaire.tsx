@@ -510,6 +510,7 @@ const Sanctuaire: React.FC = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const [cooldownRemainingMs, setCooldownRemainingMs] = React.useState(0);
+  const [hasInitialLoad, setHasInitialLoad] = React.useState(false);
   const cooldownActive = authCooldownUntil ? authCooldownUntil > Date.now() : false;
   const cooldownSeconds = Math.max(0, Math.ceil(cooldownRemainingMs / 1000));
   
@@ -538,6 +539,13 @@ const Sanctuaire: React.FC = () => {
       setCooldownRemainingMs(0);
     }
   }, [isAuthenticated, clearAuthError]);
+
+  // Marquer la fin du premier chargement pour éviter de démonter la page lors des refresh suivants
+  React.useEffect(() => {
+    if (!isLoading) {
+      setHasInitialLoad(true);
+    }
+  }, [isLoading]);
 
   const handleRetryAuth = React.useCallback(() => {
     if (cooldownActive) {
@@ -677,15 +685,21 @@ const Sanctuaire: React.FC = () => {
 
   // =================== PROTECTION CRITIQUE : ATTENTE DU CONTEXTE ===================
   // Éviter le crash "useSanctuaire doit être utilisé à l'intérieur de SanctuaireProvider"
-  // en attendant que le contexte soit complètement initialisé avant de rendre les enfants
-  if (isLoading) {
+  // Premier chargement complet : afficher l'écran de loading. Ensuite, ne pas démonter la page pour conserver l'état (ex: onboarding en cours).
+  if (!hasInitialLoad && isLoading) {
     return <LoadingScreen type="cosmic" message="Initialisation du Sanctuaire..." />;
   }
-  
+
+  const showOverlayRefresh = hasInitialLoad && isLoading;
   const progress = 0; // Calcul du progrès basé sur le profil
   const isHome = location.pathname === '/sanctuaire' || location.pathname === '/sanctuaire/dashboard';
   return (
     <PageLayout variant="dark">
+      {showOverlayRefresh && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <LoadingScreen type="simple" message="Mise à jour du profil..." />
+        </div>
+      )}
       {/* Onboarding Form en overlay si first_visit ou profil incomplet */}
       {showOnboarding && <OnboardingForm onComplete={handleOnboardingComplete} />}
       

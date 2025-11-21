@@ -81,11 +81,13 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [uploading, setUploading] = useState<null | 'face' | 'palm'>(null);
   const [uploadedKeys, setUploadedKeys] = useState<{ facePhotoKey?: string; palmPhotoKey?: string }>({});
   const [useDirectUpload, setUseDirectUpload] = useState(true);
   const [uploadProgress, setUploadProgress] = useState<{ face?: number; palm?: number }>({});
   const autoSubmittedRef = useRef(false);
+  const draftKey = paymentIntentId ? `onboarding_draft_${paymentIntentId}` : null;
   
   // =================== IMAGE COMPRESSION UTILS ===================
   const readFileAsDataURL = (file: File): Promise<string> => {
@@ -305,6 +307,67 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
   }, []);
   
   // =================== CHARGEMENT DONNÉES UTILISATEUR ===================
+  
+  
+  // =================== RESTAURATION & SAUVEGARDE BROUILLON ===================
+  useEffect(() => {
+    if (!draftKey || draftLoaded) return;
+    const raw = sessionStorage.getItem(draftKey);
+    if (!raw) {
+      setDraftLoaded(true);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      const savedForm = parsed?.formData || {};
+      const savedStep = parsed?.currentStep;
+      setFormData(prev => ({
+        ...prev,
+        birthDate: savedForm.birthDate || prev.birthDate,
+        birthTime: savedForm.birthTime || prev.birthTime,
+        birthPlace: savedForm.birthPlace || prev.birthPlace,
+        specificQuestion: savedForm.specificQuestion || prev.specificQuestion,
+        objective: savedForm.objective || prev.objective,
+        facePhoto: prev.facePhoto,
+        palmPhoto: prev.palmPhoto,
+      }));
+      if ([0, 1, 2, 3].includes(savedStep)) {
+        setCurrentStep(savedStep as 0 | 1 | 2 | 3);
+        setInitialStepSet(true);
+      }
+    } catch (e) {
+      console.warn('[OnboardingForm] Impossible de restaurer le brouillon:', e);
+    } finally {
+      setDraftLoaded(true);
+    }
+  }, [draftKey, draftLoaded]);
+
+  useEffect(() => {
+    if (!draftKey) return;
+    const payload = {
+      formData: {
+        birthDate: formData.birthDate,
+        birthTime: formData.birthTime,
+        birthPlace: formData.birthPlace,
+        specificQuestion: formData.specificQuestion,
+        objective: formData.objective,
+      },
+      currentStep,
+    };
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify(payload));
+    } catch (err) {
+      console.warn('[OnboardingForm] Sauvegarde brouillon impossible:', err);
+    }
+  }, [
+    draftKey,
+    currentStep,
+    formData.birthDate,
+    formData.birthTime,
+    formData.birthPlace,
+    formData.specificQuestion,
+    formData.objective,
+  ]);
   
   useEffect(() => {
     const loadUserData = async () => {
@@ -528,6 +591,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       // ✅ CORRECTIF : Nettoyer IMMÉDIATEMENT les flags pour éviter réaffichage
       sessionStorage.removeItem('first_visit');
       localStorage.removeItem('oraclelumira_last_payment_intent_id');
+      if (draftKey) sessionStorage.removeItem(draftKey);
       console.log('🧹 [OnboardingForm] Flags nettoyés (first_visit + paymentIntentId)');
       
       // PASSAGE 20 - DEVOPS : Laisser le useEffect de Sanctuaire.tsx gérer la fermeture
@@ -681,6 +745,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       // ✅ CORRECTIF : Nettoyer IMMÉDIATEMENT les flags pour éviter réaffichage
       sessionStorage.removeItem('first_visit');
       localStorage.removeItem('oraclelumira_last_payment_intent_id');
+      if (draftKey) sessionStorage.removeItem(draftKey);
       console.log('🧹 [OnboardingForm] Flags nettoyés (first_visit + paymentIntentId)');
       
       // PASSAGE 20 - DEVOPS : Laisser le useEffect de Sanctuaire.tsx gérer la fermeture
