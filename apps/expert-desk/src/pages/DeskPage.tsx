@@ -10,14 +10,18 @@ import {
   TrendingUp,
   AlertCircle,
   Eye,
-  History
+  History,
+  UserCircle
 } from 'lucide-react';
 import type { Order, Stats } from '../types/Order';
+import type { Client, ClientStats } from '../types/Client';
 import { useAuth } from '../hooks/useAuth';
 import LoadingSpinner from '../components/LoadingSpinner';
 import OrdersQueue from '../components/OrdersQueue';
 import ValidationQueue from '../components/ValidationQueue';
 import HistoryQueue from '../components/HistoryQueue';
+import ClientsList from '../components/ClientsList';
+import ClientDetails from '../components/ClientDetails';
 import ContentGenerator from '../components/ContentGenerator';
 import ContentValidator from '../components/ContentValidator';
 import HistoryViewer from '../components/HistoryViewer';
@@ -30,10 +34,12 @@ const DeskPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [validationOrders, setValidationOrders] = useState<Order[]>([]);
   const [historyOrders, setHistoryOrders] = useState<Order[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedValidationOrder, setSelectedValidationOrder] = useState<Order | null>(null);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<Order | null>(null);
-  const [activeTab, setActiveTab] = useState<'orders' | 'validation' | 'history'>('orders');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [activeTab, setActiveTab] = useState<'orders' | 'validation' | 'history' | 'clients'>('orders');
   const [stats, setStats] = useState<Stats>({
     pending: 0,
     paid: 0,
@@ -50,6 +56,8 @@ const DeskPage: React.FC = () => {
   const [validatingOrderId, setValidatingOrderId] = useState<string | null>(null);
   const [regeneratingOrderId, setRegeneratingOrderId] = useState<string | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [clientStats, setClientStats] = useState<Map<string, ClientStats>>(new Map());
+  const [clientOrders, setClientOrders] = useState<Order[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -62,7 +70,8 @@ const DeskPage: React.FC = () => {
         fetchOrders(),
         fetchValidationOrders(),
         fetchHistoryOrders(),
-        fetchStats()
+        fetchStats(),
+        fetchClients()
       ]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -141,6 +150,59 @@ const DeskPage: React.FC = () => {
       if (error.response?.status !== 401) {
         toast.error('Erreur lors du chargement des statistiques');
       }
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const response = await api.get(endpoints.expert.clients);
+      console.log('📋 Fetched clients:', response.data);
+      
+      if (response.data && response.data.clients) {
+        setClients(response.data.clients);
+        console.log(`✅ Loaded ${response.data.clients.length} clients`);
+        
+        // Charger les stats pour chaque client (optimisé avec Promise.all)
+        const statsMap = new Map<string, ClientStats>();
+        await Promise.all(
+          response.data.clients.slice(0, 20).map(async (client: Client) => {
+            try {
+              const statsResponse = await api.get(endpoints.expert.clientStats(client._id));
+              statsMap.set(client._id, statsResponse.data);
+            } catch (err) {
+              console.error(`Error fetching stats for client ${client._id}:`, err);
+            }
+          })
+        );
+        setClientStats(statsMap);
+      } else {
+        setClients([]);
+        console.log('⚠️ No clients in response');
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching clients:', error);
+      const errorMessage = error.response?.data?.error || 'Erreur lors du chargement des clients';
+      toast.error(errorMessage);
+      setClients([]);
+    }
+  };
+
+  const handleSelectClient = async (client: Client) => {
+    try {
+      setSelectedClient(client);
+      
+      // Charger les commandes du client
+      const ordersResponse = await api.get(endpoints.expert.clientOrders(client._id));
+      setClientOrders(ordersResponse.data.orders || []);
+      
+      // Charger ou mettre à jour les stats si nécessaire
+      if (!clientStats.has(client._id)) {
+        const statsResponse = await api.get(endpoints.expert.clientStats(client._id));
+        setClientStats(new Map(clientStats).set(client._id, statsResponse.data));
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading client details:', error);
+      toast.error('Erreur lors du chargement des détails du client');
     }
   };
 
@@ -431,6 +493,7 @@ const DeskPage: React.FC = () => {
               setActiveTab('orders');
               setSelectedValidationOrder(null);
               setSelectedHistoryOrder(null);
+              setSelectedClient(null);
             }}
             className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'orders'
@@ -446,6 +509,7 @@ const DeskPage: React.FC = () => {
               setActiveTab('validation');
               setSelectedOrder(null);
               setSelectedHistoryOrder(null);
+              setSelectedClient(null);
             }}
             className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'validation'
@@ -461,6 +525,7 @@ const DeskPage: React.FC = () => {
               setActiveTab('history');
               setSelectedOrder(null);
               setSelectedValidationOrder(null);
+              setSelectedClient(null);
             }}
             className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'history'
@@ -470,6 +535,22 @@ const DeskPage: React.FC = () => {
           >
             <History className="w-5 h-5" />
             Historique ({historyOrders.length})
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('clients');
+              setSelectedOrder(null);
+              setSelectedValidationOrder(null);
+              setSelectedHistoryOrder(null);
+            }}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'clients'
+                ? 'bg-amber-400 text-slate-900'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
+          >
+            <UserCircle className="w-5 h-5" />
+            Clients ({clients.length})
           </button>
         </div>
 
@@ -503,7 +584,7 @@ const DeskPage: React.FC = () => {
                 refreshing={refreshing}
                 validatingOrder={validatingOrderId || undefined}
               />
-            ) : (
+            ) : activeTab === 'history' ? (
               <HistoryQueue
                 orders={historyOrders}
                 selectedOrder={selectedHistoryOrder}
@@ -514,6 +595,15 @@ const DeskPage: React.FC = () => {
                 refreshing={refreshing}
                 regeneratingOrder={regeneratingOrderId || undefined}
                 deletingOrder={deletingOrderId || undefined}
+              />
+            ) : (
+              <ClientsList
+                clients={clients}
+                selectedClient={selectedClient}
+                onSelectClient={handleSelectClient}
+                onRefresh={fetchClients}
+                refreshing={refreshing}
+                clientStats={clientStats}
               />
             )}
           </motion.div>
@@ -541,11 +631,17 @@ const DeskPage: React.FC = () => {
                 }}
                 isProcessing={false}
               />
-            ) : (
+            ) : activeTab === 'history' ? (
               <HistoryViewer
                 order={selectedHistoryOrder}
                 onRegenerate={handleRegenerateLecture}
                 isProcessing={regeneratingOrderId === selectedHistoryOrder?._id}
+              />
+            ) : (
+              <ClientDetails
+                client={selectedClient}
+                stats={selectedClient ? clientStats.get(selectedClient._id) : undefined}
+                orders={clientOrders}
               />
             )}
           </motion.div>

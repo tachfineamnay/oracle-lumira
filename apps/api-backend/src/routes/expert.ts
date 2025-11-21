@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Expert } from '../models/Expert';
 import { Order } from '../models/Order';
+import { User } from '../models/User';
 import rateLimit from 'express-rate-limit';
 import Joi from 'joi';
 import axios from 'axios';
@@ -1482,6 +1483,188 @@ async function calculateAverageRevisions(): Promise<number> {
     return 0;
   }
 }
+
+// ========================================
+// ROUTES DE GESTION DES CLIENTS
+// ========================================
+
+// Récupérer tous les clients avec pagination et filtres
+router.get('/clients', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+    const status = req.query.status || 'all';
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+
+    // Construction des filtres
+    const filters: any = {};
+    
+    if (search) {
+      filters.$or = [
+        { email: new RegExp(search, 'i') },
+        { firstName: new RegExp(search, 'i') },
+        { lastName: new RegExp(search, 'i') }
+      ];
+    }
+    
+    if (status !== 'all') {
+      filters.subscriptionStatus = status;
+    }
+
+    // Récupération des clients
+    const clients = await User.find(filters)
+      .select('-__v')
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await User.countDocuments(filters);
+
+    console.log(`📋 ${clients.length} clients récupérés pour l'expert ${req.expert.email}`);
+
+    res.json({
+      clients,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: total,
+        limit
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get clients error:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement des clients' });
+  }
+});
+
+// Récupérer les statistiques d'un client spécifique
+router.get('/clients/:id/stats', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const clientId = req.params.id;
+    
+    // Récupérer toutes les commandes du client
+    const orders = await Order.find({ userId: clientId });
+    
+    const completedOrders = orders.filter(o => o.status === 'completed');
+    const pendingOrders = orders.filter(o => ['pending', 'paid', 'processing', 'awaiting_validation'].includes(o.status));
+    
+    const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.amount || 0), 0);
+    const averageOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
+    
+    // Trouver le level favori (le plus commandé)
+    const levelCounts = orders.reduce((acc: any, order) => {
+      acc[order.level] = (acc[order.level] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const favoriteLevel = Object.keys(levelCounts).length > 0 
+      ? parseInt(Object.entries(levelCounts).sort((a: any, b: any) => b[1] - a[1])[0][0])
+      : undefined;
+    
+    const lastOrder = orders.length > 0 
+      ? orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+      : null;
+
+    const stats = {
+      totalRevenue,
+      completedOrders: completedOrders.length,
+      pendingOrders: pendingOrders.length,
+      averageOrderValue,
+      lastOrderDate: lastOrder ? lastOrder.createdAt : undefined,
+      favoriteLevel
+    };
+
+    res.json(stats);
+
+  } catch (error) {
+    console.error('❌ Get client stats error:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement des statistiques client' });
+  }
+});
+
+// Récupérer les commandes d'un client spécifique
+router.get('/clients/:id/orders', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const clientId = req.params.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
+    const orders = await Order.find({ userId: clientId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    
+    const total = await Order.countDocuments({ userId: clientId });
+    
+    res.json({
+      orders,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: total,
+        limit
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get client orders error:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement des commandes du client' });
+  }
+});
+
+// Mettre à jour les informations d'un client
+router.patch('/clients/:id', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const clientId = req.params.id;
+    const updates = req.body;
+    
+    // Retirer les champs non modifiables
+    delete updates._id;
+    delete updates.__v;
+    delete updates.createdAt;
+    delete updates.stripeCustomerId;
+    
+    const client = await User.findByIdAndUpdate(
+      clientId,
+      { ...updates, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    ).select('-__v');
+    
+    if (!client) {
+      return res.status(404).json({ error: 'Client non trouvé' });
+    }
+    
+    console.log(`✅ Client ${clientId} mis à jour par expert ${req.expert.email}`);
+    
+    res.json(client);
+
+  } catch (error) {
+    console.error('❌ Update client error:', error);
+    res.status(400).json({ error: 'Erreur lors de la mise à jour du client' });
+  }
+});
+
+// Récupérer les détails d'un client spécifique
+router.get('/clients/:id', authenticateExpert, async (req: any, res: any) => {
+  try {
+    const client = await User.findById(req.params.id).select('-__v');
+    
+    if (!client) {
+      return res.status(404).json({ error: 'Client non trouvé' });
+    }
+    
+    res.json(client);
+
+  } catch (error) {
+    console.error('❌ Get client details error:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement du client' });
+  }
+});
 
 export { router as expertRoutes };
 

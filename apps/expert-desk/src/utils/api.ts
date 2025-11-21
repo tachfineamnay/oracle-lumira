@@ -62,7 +62,13 @@ export const endpoints = {
     orderDetails: (id: string) => `/expert/orders/${id}`,
     assignOrder: (id: string) => `/expert/orders/${id}/assign`,
     processOrder: '/expert/process-order',
-    presignFile: '/expert/files/presign'
+    presignFile: '/expert/files/presign',
+    // Routes de gestion des clients
+    clients: '/expert/clients',
+    clientDetails: (id: string) => `/expert/clients/${id}`,
+    clientStats: (id: string) => `/expert/clients/${id}/stats`,
+    clientOrders: (id: string) => `/expert/clients/${id}/orders`,
+    updateClient: (id: string) => `/expert/clients/${id}`
   }
 };
 
