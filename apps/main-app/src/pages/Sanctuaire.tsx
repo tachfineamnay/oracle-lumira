@@ -128,8 +128,8 @@ const ContextualHint: React.FC = () => {
       profile.palmPhotoUrl
     );
     
-    // Si le profil manque de données essentielles, afficher le formulaire
-    // Cela garantit que TOUS les niveaux (Initié/Mystique/Profond/Intégrale) voient le formulaire
+    // Si le profil manque de données essentielles, afficher un écran d'accueil guidant vers l'onboarding
+    // Le formulaire d'onboarding lui-même est géré par l'overlay global (showOnboarding) dans Sanctuaire.tsx
     if (!hasEssentialData) {
       return (
         <motion.div
@@ -151,9 +151,6 @@ const ContextualHint: React.FC = () => {
           <div className="mb-12">
             <MandalaNav progress={[0, 0, 0, 0, 0]} effects="minimal" />
           </div>
-
-          {/* Formulaire d'onboarding refonte 2025 */}
-          <OnboardingForm />
         </motion.div>
       );
     }
