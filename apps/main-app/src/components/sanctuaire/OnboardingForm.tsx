@@ -503,6 +503,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       console.log('✅ [OnboardingForm] Soumission réussie');
       
       // ✨ CRITIQUE : Marquer le profil comme complété dans SanctuaireContext
+      console.log('📝 [OnboardingForm] Mise à jour du profil avec profileCompleted=true...');
       await updateProfile({
         birthDate: formData.birthDate,
         birthTime: formData.birthTime,
@@ -513,10 +514,14 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
         submittedAt: new Date(),
       });
       
-      console.log('✨ [OnboardingForm] profileCompleted marqué à true dans SanctuaireContext');
+      console.log('✅ [OnboardingForm] Profil local mis à jour avec profileCompleted=true');
+      
+      // ✅ CORRECTIF CRITIQUE : Attendre que le backend ait bien sauvegardé avant refresh
+      // Sans ce délai, refresh() peut récupérer l'ancien profil depuis l'API
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // PASSAGE 11 - P0 CRITIQUE : Forcer rafraîchissement pour afficher dashboard
-      console.log('🔄 [OnboardingForm] Rafraîchissement du profil...');
+      console.log('🔄 [OnboardingForm] Rafraîchissement du profil depuis l\'API...');
       await refresh(); // ✅ Recharger profile depuis l'API
       console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
@@ -653,6 +658,7 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       console.log('✅ [OnboardingForm] Flux complet terminé avec succès !');
 
       // Success path : marquer le profil comme complété
+      console.log('📝 [OnboardingForm] Mise à jour du profil avec profileCompleted=true...');
       await updateProfile({
         birthDate: formData.birthDate,
         birthTime: formData.birthTime,
@@ -663,8 +669,14 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
         submittedAt: new Date(),
       });
       
+      console.log('✅ [OnboardingForm] Profil local mis à jour avec profileCompleted=true');
+      
+      // ✅ CORRECTIF CRITIQUE : Attendre que le backend ait bien sauvegardé avant refresh
+      // Sans ce délai, refresh() peut récupérer l'ancien profil depuis l'API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // PASSAGE 11 - P0 CRITIQUE : Forcer rafraîchissement pour afficher dashboard
-      console.log('🔄 [OnboardingForm] Rafraîchissement du profil...');
+      console.log('🔄 [OnboardingForm] Rafraîchissement du profil depuis l\'API...');
       await refresh(); // ✅ Recharger profile depuis l'API
       console.log('✅ [OnboardingForm] Profil rafraîchi avec succès');
       
