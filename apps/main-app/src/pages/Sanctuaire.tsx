@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, Download, Play, Calendar, Home, Clock, User, FileText, Settings, CreditCard, Eye, Lock, Crown } from 'lucide-react';
@@ -15,6 +15,7 @@ import MiniAudioPlayer from '../components/sanctuaire/MiniAudioPlayer';
 import { useSanctuaire } from '../contexts/SanctuaireContext';
 import { CapabilityGuard, LockedCard } from '../components/auth/CapabilityGuard';
 import LoadingScreen from '../components/ui/LoadingScreen';
+import toast from 'react-hot-toast';
 
 const ProfileIcon: React.FC = () => {
   const navigate = useNavigate();
@@ -649,6 +650,27 @@ const Sanctuaire: React.FC = () => {
     }
   }, [isAuthenticated, isLoading, navigate, searchParams, retryCount]);
 
+  // =================== GARDE DE RECONNEXION P0 ===================
+  // Détection token expiré : toast + redirection
+  React.useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      const sessionEmail = sessionStorage.getItem('sanctuaire_email');
+      const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
+      const hasEmailInUrl = searchParams.get('email');
+      
+      // Éviter le toast pendant les tentatives de retry ou first visit
+      if (sessionEmail && !isFirstVisit && !hasEmailInUrl && retryCount > MAX_RETRIES) {
+        console.log('[Sanctuaire] Session expirée détectée, notification + redirection');
+        toast.error('Session expirée. Veuillez vous reconnecter.', {
+          duration: 4000,
+          position: 'top-center',
+        });
+        const t = setTimeout(() => navigate('/sanctuaire/login', { replace: true }), 1500);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [isLoading, isAuthenticated, navigate, searchParams, retryCount, MAX_RETRIES]);
+
   // =================== PROTECTION CRITIQUE : ATTENTE DU CONTEXTE ===================
   // Éviter le crash "useSanctuaire doit être utilisé à l'intérieur de SanctuaireProvider"
   // en attendant que le contexte soit complètement initialisé avant de rendre les enfants
@@ -718,7 +740,7 @@ const Sanctuaire: React.FC = () => {
                       <p className="text-sm text-red-200 font-medium">{lastAuthError}</p>
                       {cooldownActive && (
                         <p className="text-xs text-red-200/80 mt-1">
-                          Reessayez dans {cooldownSeconds}s.
+                          Réessayez dans {cooldownSeconds}s.
                         </p>
                       )}
                     </div>
@@ -726,9 +748,13 @@ const Sanctuaire: React.FC = () => {
                       <button
                         onClick={handleRetryAuth}
                         disabled={cooldownActive}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${cooldownActive ? 'bg-white/10 text-white/40 cursor-not-allowed' : 'bg-red-400/20 text-red-200 hover:bg-red-400/30'}`}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          cooldownActive 
+                            ? 'bg-white/10 text-white/40 cursor-not-allowed' 
+                            : 'bg-red-400/20 text-red-200 hover:bg-red-400/30'
+                        }`}
                       >
-                        Reessayer
+                        Réessayer
                       </button>
                       <button
                         onClick={clearAuthError}

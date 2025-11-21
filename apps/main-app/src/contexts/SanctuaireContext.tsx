@@ -14,6 +14,7 @@ import { sanctuaireService, CompletedOrder, SanctuaireStats, SanctuaireUser, Ord
 import axios from 'axios';
 import { getApiBaseUrl } from '../lib/apiBase';
 import { ApiError } from '../utils/api';
+import toast from 'react-hot-toast';
 
 const API_BASE = getApiBaseUrl();
 const AUTH_COOLDOWN_MS = 60 * 1000; // 1 minute between auth attempts by default
@@ -192,10 +193,16 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     } catch (err: any) {
       console.error('[SanctuaireProvider] Erreur profile:', err.response?.data || err.message);
       
-      // En cas d'erreur 401, on ne throw pas mais on nettoie
+      // =================== GESTION ERREUR 401 P0 : Toast + Notification ===================
       if (err.response?.status === 401) {
+        console.log('[SanctuaireProvider] Erreur 401 détectée sur profile - Token expiré');
+        toast.error('Session expirée. Reconnexion requise.', {
+          duration: 4000,
+          position: 'top-center',
+        });
         localStorage.removeItem('sanctuaire_token');
         setIsAuthenticated(false);
+        setLastAuthError('Session expirée. Veuillez vous reconnecter.');
       }
     }
   }, []);
@@ -222,10 +229,16 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     } catch (err: any) {
       console.error('[SanctuaireProvider] Erreur entitlements:', err.response?.data || err.message);
       
-      // En cas d'erreur 401, on ne throw pas mais on nettoie
+      // =================== GESTION ERREUR 401 P0 : Toast + Notification ===================
       if (err.response?.status === 401) {
+        console.log('[SanctuaireProvider] Erreur 401 détectée sur entitlements - Token expiré');
+        toast.error('Session expirée. Reconnexion requise.', {
+          duration: 4000,
+          position: 'top-center',
+        });
         localStorage.removeItem('sanctuaire_token');
         setIsAuthenticated(false);
+        setLastAuthError('Session expirée. Veuillez vous reconnecter.');
       }
     }
   }, []);
@@ -299,7 +312,7 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
 
     if (!force && authCooldownUntil && authCooldownUntil > now) {
       const remainingSeconds = Math.ceil((authCooldownUntil - now) / 1000);
-      const message = `Trop de tentatives d'authentification. Patientez ${remainingSeconds}s avant de reessayer.`;
+      const message = `Trop de tentatives d'authentification. Patientez ${remainingSeconds}s avant de réessayer.`;
       setLastAuthError(message);
       setError(message);
       throw new Error(message);
@@ -325,7 +338,7 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
         if (err.status === 429) {
           const nextRetry = Date.now() + AUTH_COOLDOWN_MS;
           updateAuthCooldown(nextRetry);
-          const message = "Trop de tentatives d'authentification. Merci de reessayer dans une minute.";
+          const message = "Trop de tentatives d'authentification. Merci de réessayer dans une minute.";
           setLastAuthError(message);
           setError(message);
         } else if (err.status === 401) {

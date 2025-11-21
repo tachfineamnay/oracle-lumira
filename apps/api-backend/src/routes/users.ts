@@ -1039,5 +1039,41 @@ router.get('/files/presign', async (req: any, res: any) => {
   }
 });
 
+// =================== ENDPOINT SANCTUAIRE: GET ORDER CONTENT P0 ===================
+// Récupération du contenu d'une commande pour le Sanctuaire
+router.get('/orders/:id/content', authenticateToken, async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    console.log('[Users] GET /orders/:id/content - Ordre ID:', id, '| User ID:', userId);
+
+    // Vérifier que la commande appartient à l'utilisateur
+    const order = await Order.findOne({
+      _id: id,
+      userId: userId,
+      status: { $in: ['completed', 'paid'] }
+    });
+
+    if (!order) {
+      console.error('[Users] Commande non trouvée ou non accessible:', { id, userId });
+      return res.status(404).json({ error: 'Commande non trouvée ou non accessible' });
+    }
+
+    // Retourner le contenu généré
+    res.json({
+      orderId: order._id,
+      generatedContent: order.generatedContent || {},
+      status: order.status,
+      createdAt: order.createdAt,
+      metadata: (order as any).metadata
+    });
+
+  } catch (error) {
+    console.error('[Users] Erreur récupération contenu commande:', error);
+    res.status(500).json({ error: 'Erreur récupération du contenu' });
+  }
+});
+
 // EXPORT CRITIQUE : Sans cet export, le routeur n'est jamais monté dans server.ts
 export { router as userRoutes };
