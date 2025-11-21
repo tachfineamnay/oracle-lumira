@@ -90,7 +90,7 @@ const ClientsList: React.FC<ClientsListProps> = ({
   };
 
   return (
-    <div className="glass rounded-xl p-6 h-full flex flex-col">
+    <div className="glass rounded-xl p-6 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -167,7 +167,7 @@ const ClientsList: React.FC<ClientsListProps> = ({
       </div>
 
       {/* Clients List */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-2 -mr-2">
+      <div className="overflow-y-auto space-y-3 pr-2 -mr-2 max-h-[calc(100vh-20rem)]">
         {filteredClients.length === 0 ? (
           <div className="text-center py-12">
             <User className="w-12 h-12 text-slate-600 mx-auto mb-3" />
