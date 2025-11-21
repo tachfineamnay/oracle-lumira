@@ -81,6 +81,22 @@ const publicRoutesLimiter = rateLimit({
   },
 });
 
+// Expert routes limiter - More permissive for development/debugging
+const expertRoutesLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 2000, // Much higher limit for expert routes (dev/testing)
+  message: 'Too many requests from this IP to expert routes, please try again after 15 minutes',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor && typeof forwardedFor === 'string') {
+      return forwardedFor.split(',')[0].trim();
+    }
+    return req.ip || 'unknown';
+  },
+});
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -201,7 +217,7 @@ app.use('/api/stripe', apiLimiter, stripeRoutes);
 app.use('/api/payments', apiLimiter, paymentRoutes);
 app.use('/api/orders', apiLimiter, orderRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
-app.use('/api/expert', apiLimiter, expertRoutes);
+app.use('/api/expert', expertRoutesLimiter, expertRoutes); // More permissive for expert routes
 app.use('/api/uploads', apiLimiter, uploadsRoutes);
 app.use('/api/admin', apiLimiter, adminRoutes); // Diagnostic routes (protected by expert auth)
 // =================== END SELECTIVE RATE LIMITING ===================
