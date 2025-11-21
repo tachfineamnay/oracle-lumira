@@ -20,7 +20,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Headphones, Image as ImageIcon, Lock, Unlock, Download, 
   Play, Eye, Calendar, Sparkles, Star, ArrowRight, Check,
-  Clock, AlertCircle, Crown, Zap, Award, Home, Menu, ChevronRight, User
+  Clock, AlertCircle, Crown, Zap, Award, Home, Menu, ChevronRight, User,
+  Heart
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
@@ -268,8 +269,43 @@ const DrawsContent: React.FC = () => {
 
   // =================== RENDU PRINCIPAL ===================
 
+  // 8. Effet pluie d'étoiles au chargement
+  const [showStars, setShowStars] = React.useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setShowStars(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
+    <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950 relative overflow-hidden">
+      {/* 8. Pluie d'étoiles au chargement */}
+      <AnimatePresence>
+        {showStars && (
+          <div className="fixed inset-0 pointer-events-none z-50">
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: -20, x: Math.random() * window.innerWidth }}
+                animate={{ 
+                  opacity: [0, 1, 0],
+                  y: window.innerHeight + 20,
+                  rotate: 360
+                }}
+                transition={{
+                  duration: 2 + Math.random() * 1,
+                  delay: Math.random() * 0.5,
+                  ease: "easeOut"
+                }}
+                className="absolute"
+                style={{ left: Math.random() * 100 + '%' }}
+              >
+                <Sparkles className="w-4 h-4 text-amber-400" />
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </AnimatePresence>
       {/* Bouton Menu Mobile */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -387,21 +423,142 @@ const DrawsContent: React.FC = () => {
       <div className="lg:ml-64 p-4 sm:p-6 lg:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
 
-          {/* Header aligné Profil */}
-          <div className="text-center space-y-3">
-            <div className="flex items-center justify-center gap-3">
-              <Sparkles className={`w-6 h-6 text-${levelColor}-400`} />
-              <h1 className="text-3xl font-bold text-white">Mes Lectures</h1>
+          {/* 1. Hero avec bienvenue + mandala tournant */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-900/30 via-purple-900/30 to-indigo-900/30 backdrop-blur-xl border border-white/10 p-8"
+          >
+            {/* Mandala tournant en arrière-plan */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+              className="absolute -right-20 -top-20 w-64 h-64 opacity-10"
+            >
+              <svg viewBox="0 0 200 200" className="w-full h-full">
+                <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-amber-400" />
+                <circle cx="100" cy="100" r="60" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-purple-400" />
+                <circle cx="100" cy="100" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-blue-400" />
+                {[...Array(12)].map((_, i) => {
+                  const angle = (i * 30 * Math.PI) / 180;
+                  const x1 = 100 + 40 * Math.cos(angle);
+                  const y1 = 100 + 40 * Math.sin(angle);
+                  const x2 = 100 + 80 * Math.cos(angle);
+                  const y2 = 100 + 80 * Math.sin(angle);
+                  return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="0.3" className="text-amber-400" />;
+                })}
+              </svg>
+            </motion.div>
+
+            <div className="relative z-10 text-center space-y-3">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="inline-block"
+              >
+                <Sparkles className="w-8 h-8 text-amber-400 mx-auto" />
+              </motion.div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white">
+                ✨ Bienvenue dans ton Sanctuaire, {user?.firstName || 'Âme Lumineuse'}
+              </h1>
+              <p className="text-white/70 text-lg">
+                Tes lectures sacrées t'attendent
+              </p>
+              
+              {/* 4. Ligne de progression cosmique */}
+              <div className="mt-6 flex items-center justify-center gap-3 pt-4">
+                {[1, 2, 3, 4].map((lvl) => {
+                  const isUnlocked = lvl <= (selectedLecture?.level || 1);
+                  const levelNames = ['Initié', 'Mystique', 'Profond', 'Intégral'];
+                  return (
+                    <div key={lvl} className="flex items-center">
+                      <div className="text-center">
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.3 + lvl * 0.1 }}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                            isUnlocked
+                              ? 'bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400 shadow-lg shadow-amber-400/50'
+                              : 'bg-gray-600/20 border-gray-600/50'
+                          }`}
+                        >
+                          {isUnlocked ? (
+                            <Star className="w-5 h-5 text-white fill-white" />
+                          ) : (
+                            <span className="text-gray-500 text-sm font-bold">{lvl}</span>
+                          )}
+                        </motion.div>
+                        <p className={`text-xs mt-1 ${
+                          isUnlocked ? 'text-amber-400' : 'text-gray-500'
+                        }`}>
+                          {levelNames[lvl - 1]}
+                        </p>
+                      </div>
+                      {lvl < 4 && (
+                        <div className={`w-8 h-0.5 ${
+                          lvl < (selectedLecture?.level || 1) ? 'bg-amber-400' : 'bg-gray-600/50'
+                        }`} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <p className="text-white/60">
-              Niveau actuel : <span className={`text-${levelColor}-400 font-medium`}>{levelName}</span>
-            </p>
-          </div>
+          </motion.div>
 
           {/* Layout principal - Changement: une seule colonne car sidebar gère la liste */}
           <div className="space-y-6">
+            {/* 2. Lecture la plus récente en grande carte mise en avant */}
+            {selectedLecture && lectures.length > 0 && selectedLecture.id === lectures[0].id && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <FeaturedLecture
+                  lecture={selectedLecture}
+                  availableFormats={orderContent.availableFormats}
+                  onOpenPdf={async (pdfUrl: string, title: string) => {
+                    try {
+                      const signed = await sanctuaireService.getPresignedUrl(pdfUrl);
+                      const filename = `${selectedLecture?.orderNumber || 'lecture'}_${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+                      setModal({ 
+                        open: true, 
+                        pdfUrl: signed, 
+                        title,
+                        downloadUrl: signed,
+                        downloadFilename: filename
+                      });
+                    } catch (err) {
+                      console.error('[Draws] Erreur PDF:', err);
+                    }
+                  }}
+                  onPlayAudio={async (audioUrl: string, title: string) => {
+                    try {
+                      const signed = await sanctuaireService.getPresignedUrl(audioUrl);
+                      setTrack({ url: signed, title });
+                      play({ url: signed, title });
+                    } catch (err) {
+                      console.error('[Draws] Erreur Audio:', err);
+                    }
+                  }}
+                  onOpenMandala={async (mandalaSvg: string, title: string) => {
+                    try {
+                      const signed = await sanctuaireService.getPresignedUrl(mandalaSvg);
+                      setModal({ open: true, mandalaSvg: signed, title });
+                    } catch (err) {
+                      console.error('[Draws] Erreur Mandala:', err);
+                    }
+                  }}
+                />
+              </motion.div>
+            )}
+
             {/* Assets de la lecture sélectionnée - Maintenant en pleine largeur */}
-            {selectedLecture && (
+            {selectedLecture && (lectures.length === 0 || selectedLecture.id !== lectures[0].id) && (
             <LectureAssets
               lecture={selectedLecture}
               availableFormats={orderContent.availableFormats}
@@ -469,6 +626,129 @@ const DrawsContent: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// =================== COMPOSANT: LECTURE MISE EN AVANT (RÉCENTE) ===================
+
+const FeaturedLecture: React.FC<LectureAssetsPropsEnhanced> = ({
+  lecture,
+  onOpenPdf,
+  onPlayAudio,
+  onOpenMandala,
+  availableFormats
+}) => {
+  const levelConfig = LEVEL_CONFIG[lecture.level as keyof typeof LEVEL_CONFIG] || LEVEL_CONFIG[1];
+
+  const isPdfAvailable = availableFormats?.hasPdf ?? !!lecture.pdfUrl;
+  const isAudioAvailable = availableFormats?.hasAudio ?? !!lecture.audioUrl;
+  const isMandalaAvailable = availableFormats?.hasMandala ?? !!lecture.mandalaSvg;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3 }}
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl border border-white/20 p-8 shadow-2xl"
+    >
+      {/* Badge "Nouvelle" */}
+      <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold rounded-full shadow-lg">
+        ✨ Nouvelle
+      </div>
+
+      {/* En-tête */}
+      <div className="mb-6">
+        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${levelConfig.color.bg} border ${levelConfig.color.border} mb-3`}>
+          <Star className={`w-4 h-4 ${levelConfig.color.text}`} />
+          <span className={`text-sm font-medium ${levelConfig.color.text}`}>
+            {levelConfig.name}
+          </span>
+        </div>
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+          {lecture.title}
+        </h2>
+        <div className="flex items-center gap-4 text-sm text-white/60">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </div>
+          <div className="text-xs text-white/40">
+            #{lecture.orderNumber}
+          </div>
+        </div>
+      </div>
+
+      {/* Gros boutons d'action */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* PDF */}
+        {isPdfAvailable && lecture.pdfUrl && (
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(251, 191, 36, 0.3)' }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onOpenPdf(lecture.pdfUrl!, lecture.title)}
+            className="flex flex-col items-center justify-center gap-3 p-6 bg-gradient-to-br from-amber-400/20 to-amber-500/10 border border-amber-400/30 rounded-xl text-center group transition-all"
+          >
+            <div className="p-3 bg-amber-400/20 rounded-full group-hover:bg-amber-400/30 transition-all">
+              <FileText className="w-8 h-8 text-amber-400" />
+            </div>
+            <div>
+              <div className="font-semibold text-white text-lg">Lecture PDF</div>
+              <div className="text-xs text-white/60 mt-1">Consulter maintenant</div>
+            </div>
+          </motion.button>
+        )}
+
+        {/* Audio */}
+        {isAudioAvailable && lecture.audioUrl && (
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(168, 85, 247, 0.3)' }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onPlayAudio(lecture.audioUrl!, lecture.title)}
+            className="flex flex-col items-center justify-center gap-3 p-6 bg-gradient-to-br from-purple-400/20 to-purple-500/10 border border-purple-400/30 rounded-xl text-center group transition-all"
+          >
+            <div className="p-3 bg-purple-400/20 rounded-full group-hover:bg-purple-400/30 transition-all">
+              <Headphones className="w-8 h-8 text-purple-400" />
+            </div>
+            <div>
+              <div className="font-semibold text-white text-lg">Lecture Audio</div>
+              <div className="text-xs text-white/60 mt-1">Écouter maintenant</div>
+            </div>
+          </motion.button>
+        )}
+
+        {/* Mandala */}
+        {isMandalaAvailable && lecture.mandalaSvg && (
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(59, 130, 246, 0.3)' }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onOpenMandala(lecture.mandalaSvg!, lecture.title)}
+            className="flex flex-col items-center justify-center gap-3 p-6 bg-gradient-to-br from-blue-400/20 to-blue-500/10 border border-blue-400/30 rounded-xl text-center group transition-all"
+          >
+            <div className="p-3 bg-blue-400/20 rounded-full group-hover:bg-blue-400/30 transition-all">
+              <ImageIcon className="w-8 h-8 text-blue-400" />
+            </div>
+            <div>
+              <div className="font-semibold text-white text-lg">Mandala HD</div>
+              <div className="text-xs text-white/60 mt-1">Visualiser maintenant</div>
+            </div>
+          </motion.button>
+        )}
+      </div>
+
+      {/* Statut */}
+      {lecture.deliveredAt && (
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-green-400">
+          <Check className="w-4 h-4" />
+          <span>Lecture livrée et prête</span>
+        </div>
+      )}
+    </motion.div>
   );
 };
 
@@ -714,8 +994,10 @@ const UpgradeSection: React.FC<UpgradeSectionProps> = ({ level }) => {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-white/80">Débloquez plus de ressources</h3>
+      <h3 className="text-lg font-semibold text-white/90 mb-4">Débloquez plus de ressources</h3>
       
+      {/* 3. Blocs en cartes glassmorphism + 7. Mobile responsive */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {upgradeOptions.map((upgradeLevel) => {
         const option = UPGRADE_OPTIONS[upgradeLevel];
         if (!option) return null;
@@ -728,71 +1010,80 @@ const UpgradeSection: React.FC<UpgradeSectionProps> = ({ level }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: upgradeLevel * 0.1 }}
+            whileHover={!isComingSoon ? { y: -8, scale: 1.02 } : {}} // 8. Hover lift
           >
-            <GlassCard className={`${
+            {/* 3. Carte glassmorphism avec blur + border subtil */}
+            <div className={`relative overflow-hidden rounded-xl backdrop-blur-xl border transition-all ${
               isComingSoon 
                 ? 'bg-gray-600/20 border-gray-600/30' 
-                : 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-amber-400/30 transition-all'
+                : 'bg-white/5 border-white/10 hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-400/20' // 8. Hover glow
             }`}>
-              <div className="p-4 space-y-3">
+              <div className="p-6 space-y-4">
                 
                 {/* En-tête */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* 6. Icônes bénéfices : gris → jaune-or quand débloqué */}
                     {isComingSoon ? (
-                      <div className="p-2 rounded-lg bg-gray-600/20">
-                        <Crown className="w-4 h-4 text-gray-400" />
+                      <div className="p-3 rounded-lg bg-gray-600/20">
+                        <Crown className="w-6 h-6 text-gray-400" />
                       </div>
                     ) : (
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-amber-400/20 to-amber-500/10">
-                        <Zap className="w-4 h-4 text-amber-400" />
+                      <div className="p-3 rounded-lg bg-gradient-to-br from-amber-400/20 to-yellow-600/10">
+                        <Zap className="w-6 h-6 text-amber-400" />
                       </div>
                     )}
                     <div>
-                      <div className={`font-semibold ${isComingSoon ? 'text-gray-400' : 'text-white'}`}>
+                      <div className={`font-bold text-lg ${isComingSoon ? 'text-gray-400' : 'text-white'}`}>
                         {option.name}
                       </div>
-                      <div className={`text-xs ${isComingSoon ? 'text-gray-500' : 'text-white/60'}`}>
+                      <div className={`text-sm font-semibold ${isComingSoon ? 'text-gray-500' : 'text-amber-400'}`}>
                         {option.price}
                       </div>
                     </div>
                   </div>
 
                   {isComingSoon && (
-                    <div className="px-2 py-1 rounded-full bg-gray-600/30 border border-gray-600/50">
-                      <span className="text-xs text-gray-400">Bientôt</span>
+                    <div className="px-3 py-1 rounded-full bg-gray-600/30 border border-gray-600/50">
+                      <span className="text-xs font-medium text-gray-400">Bientôt</span>
                     </div>
                   )}
                 </div>
 
-                {/* Features */}
-                <ul className="space-y-1">
+                {/* Features avec icônes améliorées */}
+                <ul className="space-y-2">
                   {option.features.slice(0, 3).map((feature, index) => (
-                    <li key={index} className={`text-xs flex items-start gap-2 ${isComingSoon ? 'text-gray-500' : 'text-white/70'}`}>
-                      <Check className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <li key={index} className={`text-sm flex items-start gap-2 ${isComingSoon ? 'text-gray-500' : 'text-white/80'}`}>
+                      {/* 6. Icône check : gris → jaune-or */}
+                      <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                        isComingSoon ? 'text-gray-500' : 'text-amber-400'
+                      }`} />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA */}
-                <button
+                {/* 5. Bouton avec gradient jaune-or et hover glow + 7. Mobile pleine largeur */}
+                <motion.button
                   onClick={() => !isComingSoon && navigate('/commande')}
                   disabled={isComingSoon}
-                  className={`w-full py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  whileHover={!isComingSoon ? { scale: 1.05 } : {}}
+                  whileTap={!isComingSoon ? { scale: 0.95 } : {}}
+                  className={`w-full py-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                     isComingSoon
                       ? 'bg-gray-600/30 text-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-amber-400/20 to-amber-500/10 text-amber-400 border border-amber-400/30 hover:from-amber-400/30 hover:to-amber-500/20'
+                      : 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-white shadow-lg hover:shadow-xl hover:shadow-amber-400/50' // 5. Gradient jaune-or + 8. Hover glow
                   }`}
                 >
-                  {option.ctaText}
-                  {!isComingSoon && <ArrowRight className="w-4 h-4" />}
-                </button>
+                  {isComingSoon ? option.ctaText : `Activer mon niveau ${option.name.split(' ')[1]} ☥`} {/* 5. Texte avec ☥ */}
+                  {!isComingSoon && <ArrowRight className="w-5 h-5" />}
+                </motion.button>
               </div>
-            </GlassCard>
+            </div>
           </motion.div>
         );
       })}
+      </div>
     </div>
   );
 };
