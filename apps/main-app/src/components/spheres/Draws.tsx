@@ -150,14 +150,6 @@ const DrawsContent: React.FC = () => {
     mandalaSvg?: string; 
     title?: string 
   }>({ open: false });
-  
-  // Effet pluie d'étoiles au chargement
-  const [showStars, setShowStars] = React.useState(true);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setShowStars(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Mapper les orders vers le format Lecture
   useEffect(() => {
@@ -238,47 +230,19 @@ const DrawsContent: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      
-      {/* Pluie d'étoiles au chargement */}
-      <AnimatePresence>
-        {showStars && (
-          <div className="fixed inset-0 pointer-events-none z-50">
-            {[...Array(20)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: -20, x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000) }}
-                animate={{ 
-                  opacity: [0, 1, 0],
-                  y: (typeof window !== 'undefined' ? window.innerHeight : 1000) + 20,
-                  rotate: 360
-                }}
-                transition={{
-                  duration: 2 + Math.random() * 1,
-                  delay: Math.random() * 0.5,
-                  ease: "easeOut"
-                }}
-                className="absolute"
-                style={{ left: Math.random() * 100 + '%' }}
-              >
-                <Sparkles className="w-4 h-4 text-amber-400" />
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Hero avec bienvenue + mandala tournant */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-900/30 via-purple-900/30 to-indigo-900/30 backdrop-blur-xl border border-white/10 p-8"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-950/80 via-purple-950/80 to-indigo-950/80 backdrop-blur-xl border border-white/20 p-8 shadow-2xl"
       >
         {/* Mandala tournant en arrière-plan */}
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-          className="absolute -right-20 -top-20 w-64 h-64 opacity-10"
+          className="absolute -right-20 -top-20 w-64 h-64 opacity-20"
         >
           <svg viewBox="0 0 200 200" className="w-full h-full">
             <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-amber-400" />
@@ -304,52 +268,12 @@ const DrawsContent: React.FC = () => {
           >
             <Sparkles className="w-8 h-8 text-amber-400 mx-auto" />
           </motion.div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white">
+          <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
             ✨ Bienvenue dans ton Sanctuaire, {user?.firstName || 'Âme Lumineuse'}
           </h1>
-          <p className="text-white/70 text-lg">
+          <p className="text-white/80 text-lg">
             Tes lectures sacrées t'attendent
           </p>
-          
-          {/* Ligne de progression cosmique (4 étoiles) */}
-          <div className="mt-6 flex items-center justify-center gap-3 pt-4">
-            {[1, 2, 3, 4].map((lvl) => {
-              const isUnlocked = lvl <= (selectedLecture?.level || 1);
-              const levelNames = ['Initié', 'Mystique', 'Profond', 'Intégral'];
-              return (
-                <div key={lvl} className="flex items-center">
-                  <div className="text-center">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.3 + lvl * 0.1 }}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                        isUnlocked
-                          ? 'bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400 shadow-lg shadow-amber-400/50'
-                          : 'bg-gray-600/20 border-gray-600/50'
-                      }`}
-                    >
-                      {isUnlocked ? (
-                        <Star className="w-5 h-5 text-white fill-white" />
-                      ) : (
-                        <span className="text-gray-500 text-sm font-bold">{lvl}</span>
-                      )}
-                    </motion.div>
-                    <p className={`text-xs mt-1 ${
-                      isUnlocked ? 'text-amber-400' : 'text-gray-500'
-                    }`}>
-                      {levelNames[lvl - 1]}
-                    </p>
-                  </div>
-                  {lvl < 4 && (
-                    <div className={`w-8 h-0.5 ${
-                      lvl < (selectedLecture?.level || 1) ? 'bg-amber-400' : 'bg-gray-600/50'
-                    }`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
         </div>
       </motion.div>
       
@@ -575,6 +499,48 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
               }}
             />
           ))}
+        </div>
+
+        {/* Ligne de progression cosmique (4 étoiles) */}
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="flex items-center justify-center gap-3">
+            {[1, 2, 3, 4].map((lvl) => {
+              const isUnlocked = lvl <= lecture.level;
+              const levelNames = ['Initié', 'Mystique', 'Profond', 'Intégral'];
+              return (
+                <div key={lvl} className="flex items-center">
+                  <div className="text-center">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.1 + lvl * 0.05 }}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                        isUnlocked
+                          ? 'bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400 shadow-lg shadow-amber-400/50'
+                          : 'bg-gray-600/20 border-gray-600/50'
+                      }`}
+                    >
+                      {isUnlocked ? (
+                        <Star className="w-5 h-5 text-white fill-white" />
+                      ) : (
+                        <span className="text-gray-500 text-sm font-bold">{lvl}</span>
+                      )}
+                    </motion.div>
+                    <p className={`text-xs mt-1 ${
+                      isUnlocked ? 'text-amber-400 font-medium' : 'text-gray-500'
+                    }`}>
+                      {levelNames[lvl - 1]}
+                    </p>
+                  </div>
+                  {lvl < 4 && (
+                    <div className={`w-6 h-0.5 ${
+                      lvl < lecture.level ? 'bg-amber-400' : 'bg-gray-600/50'
+                    }`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Statut de la lecture */}
