@@ -259,19 +259,19 @@ const DrawsContent: React.FC = () => {
           </svg>
         </motion.div>
 
-        <div className="relative z-10 text-center space-y-3">
+        <div className="relative z-10 text-center space-y-4">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="inline-block"
           >
-            <Sparkles className="w-8 h-8 text-amber-400 mx-auto" />
+            <Sparkles className="w-10 h-10 text-amber-300 mx-auto drop-shadow-xl" />
           </motion.div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
+          <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-2xl">
             ✨ Bienvenue dans ton Sanctuaire, {user?.firstName || 'Âme Lumineuse'}
           </h1>
-          <p className="text-white/80 text-lg">
+          <p className="text-white text-xl font-medium">
             Tes lectures sacrées t'attendent
           </p>
         </div>
@@ -284,11 +284,11 @@ const DrawsContent: React.FC = () => {
         className="flex items-center justify-between"
       >
         <div>
-          <h2 className="text-2xl font-playfair italic text-amber-400 flex items-center gap-3">
+          <h2 className="text-2xl font-playfair font-bold text-amber-300 flex items-center gap-3">
             <Sparkles className="w-6 h-6" />
             Mes Lectures Oracle
           </h2>
-          <p className="text-white/70 mt-1">
+          <p className="text-white/80 mt-1 font-medium">
             Accédez à vos ressources spirituelles personnalisées
           </p>
         </div>
@@ -297,7 +297,7 @@ const DrawsContent: React.FC = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/commande')}
-          className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-semibold rounded-lg hover:from-amber-500 hover:to-amber-600 transition-all shadow-lg"
+          className="px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-bold rounded-xl hover:from-amber-500 hover:to-amber-600 transition-all shadow-xl text-lg"
         >
           Nouvelle lecture
         </motion.button>
@@ -344,24 +344,24 @@ const DrawsContent: React.FC = () => {
         <div className="space-y-6">
           
           {/* Liste des lectures */}
-          <GlassCard className="p-4">
-            <h3 className="text-sm font-semibold text-white/80 mb-3">Mes lectures</h3>
-            <div className="space-y-2">
+          <GlassCard className="p-5 bg-white/10 border-white/30 backdrop-blur-xl">
+            <h3 className="text-lg font-bold text-white mb-4">Mes lectures</h3>
+            <div className="space-y-3">
               {lectures.map((lecture) => (
                 <button
                   key={lecture.id}
                   onClick={() => setSelectedLecture(lecture)}
-                  className={`w-full text-left p-3 rounded-lg transition-all ${
+                  className={`w-full text-left p-4 rounded-xl transition-all ${
                     selectedLecture?.id === lecture.id
-                      ? 'bg-amber-400/20 border border-amber-400/30'
-                      : 'bg-white/5 hover:bg-white/10 border border-transparent'
+                      ? 'bg-amber-400/30 border-2 border-amber-400/50 shadow-lg'
+                      : 'bg-white/15 hover:bg-white/25 border border-white/25'
                   }`}
                 >
-                  <div className="text-sm font-medium text-white line-clamp-1">
+                  <div className="text-base font-bold text-white line-clamp-1">
                     {lecture.title}
                   </div>
-                  <div className="text-xs text-white/60 mt-1 flex items-center gap-2">
-                    <Calendar className="w-3 h-3" />
+                  <div className="text-sm text-white/80 mt-2 flex items-center gap-2 font-medium">
+                    <Calendar className="w-4 h-4" />
                     {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR')}
                   </div>
                 </button>
@@ -459,25 +459,25 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
         {/* En-tête */}
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className={`text-xl font-semibold ${levelConfig.color.text} mb-2`}>
+            <h3 className={`text-3xl font-extrabold ${levelConfig.color.text} mb-3`}>
               {lecture.title}
             </h3>
-            <div className="flex items-center gap-4 text-sm text-white/60">
+            <div className="flex items-center gap-4 text-base text-white/80 font-bold">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
+                <Calendar className="w-5 h-5" />
                 {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR')}
               </div>
-              <div className="text-xs text-white/40">
+              <div className="text-sm text-white/60 font-bold">
                 #{lecture.orderNumber}
               </div>
             </div>
           </div>
 
           {/* Badge niveau */}
-          <div className={`px-3 py-1 rounded-full ${levelConfig.color.bg} border ${levelConfig.color.border}`}>
-            <div className="flex items-center gap-1">
-              <Star className={`w-4 h-4 ${levelConfig.color.text}`} />
-              <span className={`text-sm font-medium ${levelConfig.color.text}`}>
+          <div className={`px-5 py-3 rounded-full ${levelConfig.color.bg} border-2 ${levelConfig.color.border} shadow-xl`}>
+            <div className="flex items-center gap-2">
+              <Star className={`w-6 h-6 ${levelConfig.color.text}`} />
+              <span className={`text-xl font-extrabold ${levelConfig.color.text}`}>
                 {levelConfig.name}
               </span>
             </div>
@@ -592,34 +592,34 @@ const AssetTile: React.FC<AssetTileProps> = ({ asset, onOpen }) => {
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className={`p-2 rounded-lg ${
-          isReady ? 'bg-amber-400/20 text-amber-400' :
-          isLocked ? 'bg-gray-600/20 text-gray-400' :
-          'bg-amber-400/20 text-amber-400'
+        <div className={`p-3 rounded-xl ${
+          isReady ? 'bg-amber-400/30 text-amber-300' :
+          isLocked ? 'bg-gray-700/40 text-gray-300' :
+          'bg-amber-400/30 text-amber-300'
         }`}>
           {isLocked ? <Lock className="w-5 h-5" /> : asset.icon}
         </div>
 
         <div className="flex-1">
-          <div className={`font-medium ${isLocked ? 'text-gray-400' : 'text-white'}`}>
+          <div className={`font-bold ${isLocked ? 'text-gray-300' : 'text-white'} text-lg`}>
             {asset.name}
           </div>
           
           {isReady && (
-            <div className="text-xs text-green-400 flex items-center gap-1 mt-1">
+            <div className="text-xs text-green-300 flex items-center gap-1 mt-1 font-semibold">
               <Check className="w-3 h-3" />
               Disponible
             </div>
           )}
           
           {isLocked && (
-            <div className="text-xs text-gray-400 mt-1">
+            <div className="text-xs text-gray-300 mt-1 font-medium">
               {asset.lockedMessage}
             </div>
           )}
           
           {isInProgress && (
-            <div className="text-xs text-amber-400 flex items-center gap-1 mt-1">
+            <div className="text-xs text-amber-300 flex items-center gap-1 mt-1 font-semibold">
               <Clock className="w-3 h-3 animate-spin" />
               En cours...
             </div>
@@ -682,21 +682,21 @@ const UpgradeSection: React.FC<UpgradeSectionProps> = ({ level }) => {
                 
                 {/* En-tête */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {isComingSoon ? (
-                      <div className="p-2 rounded-lg bg-gray-600/20">
-                        <Crown className="w-4 h-4 text-gray-400" />
+                      <div className="p-2 rounded-lg bg-gray-700/40">
+                        <Crown className="w-5 h-5 text-gray-300" />
                       </div>
                     ) : (
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-amber-400/20 to-amber-500/10">
-                        <Zap className="w-4 h-4 text-amber-400" />
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-amber-400/30 to-amber-500/20">
+                        <Zap className="w-5 h-5 text-amber-300" />
                       </div>
                     )}
                     <div>
-                      <div className={`font-semibold ${isComingSoon ? 'text-gray-400' : 'text-white'}`}>
+                      <div className={`font-bold ${isComingSoon ? 'text-gray-300' : 'text-white'} text-lg`}>
                         {option.name}
                       </div>
-                      <div className={`text-xs ${isComingSoon ? 'text-gray-500' : 'text-white/60'}`}>
+                      <div className={`text-sm ${isComingSoon ? 'text-gray-400' : 'text-white/80'} font-semibold`}>
                         {option.price}
                       </div>
                     </div>
@@ -712,8 +712,8 @@ const UpgradeSection: React.FC<UpgradeSectionProps> = ({ level }) => {
                 {/* Features */}
                 <ul className="space-y-1">
                   {option.features.slice(0, 3).map((feature, index) => (
-                    <li key={index} className={`text-xs flex items-start gap-2 ${isComingSoon ? 'text-gray-500' : 'text-white/70'}`}>
-                      <Check className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <li key={index} className={`text-sm flex items-start gap-2 ${isComingSoon ? 'text-gray-400' : 'text-white/80'} font-medium`}>
+                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
                       <span>{feature}</span>
                     </li>
                   ))}
