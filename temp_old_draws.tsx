@@ -20,8 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Headphones, Image as ImageIcon, Lock, Unlock, Download, 
   Play, Eye, Calendar, Sparkles, Star, ArrowRight, Check,
-  Clock, AlertCircle, Crown, Zap, Award, Home, Menu, ChevronRight, User,
-  Heart
+  Clock, AlertCircle, Crown, Zap, Award, Home, Menu, ChevronRight, User
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
@@ -154,14 +153,6 @@ const DrawsContent: React.FC = () => {
     downloadUrl?: string;
     downloadFilename?: string;
   }>({ open: false });
-  
-  // Effet pluie d'étoiles au chargement
-  const [showStars, setShowStars] = React.useState(true);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setShowStars(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
   
   // PHASE 2 - P2 : Récupération dynamique des formats disponibles depuis le backend
   const [orderContent, setOrderContent] = useState<{
@@ -392,123 +383,20 @@ const DrawsContent: React.FC = () => {
         />
       )}
 
-      {/* Pluie d'étoiles au chargement */}
-      <AnimatePresence>
-        {showStars && (
-          <div className="fixed inset-0 pointer-events-none z-50">
-            {[...Array(20)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: -20, x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000) }}
-                animate={{ 
-                  opacity: [0, 1, 0],
-                  y: (typeof window !== 'undefined' ? window.innerHeight : 1000) + 20,
-                  rotate: 360
-                }}
-                transition={{
-                  duration: 2 + Math.random() * 1,
-                  delay: Math.random() * 0.5,
-                  ease: "easeOut"
-                }}
-                className="absolute"
-                style={{ left: Math.random() * 100 + '%' }}
-              >
-                <Sparkles className="w-4 h-4 text-amber-400" />
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* Contenu Principal */}
       <div className="lg:ml-64 p-4 sm:p-6 lg:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
 
-          {/* Hero avec bienvenue + mandala tournant */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-900/30 via-purple-900/30 to-indigo-900/30 backdrop-blur-xl border border-white/10 p-8"
-          >
-            {/* Mandala tournant en arrière-plan */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-              className="absolute -right-20 -top-20 w-64 h-64 opacity-10"
-            >
-              <svg viewBox="0 0 200 200" className="w-full h-full">
-                <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-amber-400" />
-                <circle cx="100" cy="100" r="60" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-purple-400" />
-                <circle cx="100" cy="100" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-blue-400" />
-                {[...Array(12)].map((_, i) => {
-                  const angle = (i * 30 * Math.PI) / 180;
-                  const x1 = 100 + 40 * Math.cos(angle);
-                  const y1 = 100 + 40 * Math.sin(angle);
-                  const x2 = 100 + 80 * Math.cos(angle);
-                  const y2 = 100 + 80 * Math.sin(angle);
-                  return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="0.3" className="text-amber-400" />;
-                })}
-              </svg>
-            </motion.div>
-
-            <div className="relative z-10 text-center space-y-3">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="inline-block"
-              >
-                <Sparkles className="w-8 h-8 text-amber-400 mx-auto" />
-              </motion.div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">
-                ✨ Bienvenue dans ton Sanctuaire, {user?.firstName || 'Âme Lumineuse'}
-              </h1>
-              <p className="text-white/70 text-lg">
-                Tes lectures sacrées t'attendent
-              </p>
-              
-              {/* Ligne de progression cosmique (4 étoiles) */}
-              <div className="mt-6 flex items-center justify-center gap-3 pt-4">
-                {[1, 2, 3, 4].map((lvl) => {
-                  const isUnlocked = lvl <= (selectedLecture?.level || 1);
-                  const levelNames = ['Initié', 'Mystique', 'Profond', 'Intégral'];
-                  return (
-                    <div key={lvl} className="flex items-center">
-                      <div className="text-center">
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ delay: 0.3 + lvl * 0.1 }}
-                          className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                            isUnlocked
-                              ? 'bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400 shadow-lg shadow-amber-400/50'
-                              : 'bg-gray-600/20 border-gray-600/50'
-                          }`}
-                        >
-                          {isUnlocked ? (
-                            <Star className="w-5 h-5 text-white fill-white" />
-                          ) : (
-                            <span className="text-gray-500 text-sm font-bold">{lvl}</span>
-                          )}
-                        </motion.div>
-                        <p className={`text-xs mt-1 ${
-                          isUnlocked ? 'text-amber-400' : 'text-gray-500'
-                        }`}>
-                          {levelNames[lvl - 1]}
-                        </p>
-                      </div>
-                      {lvl < 4 && (
-                        <div className={`w-8 h-0.5 ${
-                          lvl < (selectedLecture?.level || 1) ? 'bg-amber-400' : 'bg-gray-600/50'
-                        }`} />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Header aligné Profil */}
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <Sparkles className={`w-6 h-6 text-${levelColor}-400`} />
+              <h1 className="text-3xl font-bold text-white">Mes Lectures</h1>
             </div>
-          </motion.div>
+            <p className="text-white/60">
+              Niveau actuel : <span className={`text-${levelColor}-400 font-medium`}>{levelName}</span>
+            </p>
+          </div>
 
           {/* Layout principal - Changement: une seule colonne car sidebar gère la liste */}
           <div className="space-y-6">
