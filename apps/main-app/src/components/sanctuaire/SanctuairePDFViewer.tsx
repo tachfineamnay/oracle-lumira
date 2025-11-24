@@ -28,8 +28,11 @@ import {
   X,
 } from 'lucide-react';
 
-// Configuration PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Configuration PDF.js worker (utiliser le worker local npm au lieu du CDN)
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 interface SanctuairePDFViewerProps {
   pdfUrl: string;
