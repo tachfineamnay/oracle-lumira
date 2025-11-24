@@ -60,7 +60,13 @@ const SanctuairePDFViewer: React.FC<SanctuairePDFViewerProps> = ({
   const pageContainerRef = useRef<HTMLDivElement>(null);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    console.log('[PDFViewer] ✅ Document chargé avec succès:', numPages, 'pages');
     setNumPages(numPages);
+    setLoading(false);
+  };
+
+  const onDocumentLoadError = (error: Error) => {
+    console.error('[PDFViewer] ❌ Erreur chargement document:', error);
     setLoading(false);
   };
 
@@ -310,14 +316,21 @@ const SanctuairePDFViewer: React.FC<SanctuairePDFViewerProps> = ({
           <Document
             file={pdfUrl}
             onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
             loading={null}
             error={
               <div className="text-red-400 p-4 bg-red-500/10 border border-red-500/30 rounded-lg" role="alert">
                 <p className="font-semibold">Erreur de chargement</p>
-                <p className="text-sm mt-1">Impossible de charger le PDF. Vérifiez votre connexion.</p>
+                <p className="text-sm mt-1">Impossible de charger le PDF. Vérifiez l'URL signée ou les autorisations CORS.</p>
+                <p className="text-xs mt-2 text-red-300/70">URL: {pdfUrl?.substring(0, 50)}...</p>
               </div>
             }
             className="shadow-2xl"
+            options={{
+              cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+              cMapPacked: true,
+              standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/',
+            }}
           >
             <Page
               pageNumber={pageNumber}

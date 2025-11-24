@@ -369,10 +369,13 @@ const DrawsContent: React.FC = () => {
                 lecture={selectedLecture}
                 onOpenPdf={async (pdfUrl: string, title: string) => {
                   try {
+                    console.log('[Draws] Tentative ouverture PDF:', { pdfUrl, title });
                     const signed = await sanctuaireService.getPresignedUrl(pdfUrl);
+                    console.log('[Draws] URL signée reçue:', signed);
                     setModal({ open: true, pdfUrl: signed, title });
                   } catch (err) {
-                    console.error('[Draws] Erreur PDF:', err);
+                    console.error('[Draws] ❌ Erreur PDF:', err);
+                    alert(`Erreur lors du chargement du PDF: ${err instanceof Error ? err.message : 'Erreur inconnue'}`);
                   }
                 }}
                 onPlayAudio={async (audioUrl: string, title: string) => {

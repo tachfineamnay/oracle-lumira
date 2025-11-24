@@ -219,13 +219,21 @@ class SanctuaireService {
       throw new Error('Token d\'authentification requis');
     }
 
-    const response = await apiRequest<{ signedUrl: string; expiresIn: number }>(`/users/files/presign?url=${encodeURIComponent(url)}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    console.log('[SanctuaireService] Demande URL signée pour:', url);
+    
+    try {
+      const response = await apiRequest<{ signedUrl: string; expiresIn: number }>(`/users/files/presign?url=${encodeURIComponent(url)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-    return response.signedUrl;
+      console.log('[SanctuaireService] ✅ URL signée reçue, expire dans:', response.expiresIn, 's');
+      return response.signedUrl;
+    } catch (error) {
+      console.error('[SanctuaireService] ❌ Erreur génération URL signée:', error);
+      throw error;
+    }
   }
 
   /**
