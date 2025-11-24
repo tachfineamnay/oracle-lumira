@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
-import DrawsWaiting from '../sanctuaire/DrawsWaiting';
 import { AudioPlayerProvider, useAudioPlayer } from '../../contexts/AudioPlayerContext';
 import { sanctuaireService } from '../../services/sanctuaire';
 import AssetsModal from '../sanctuaire/AssetsModal';
@@ -232,11 +231,25 @@ const DrawsContent: React.FC = () => {
 
   if (!lectures || lectures.length === 0) {
     return (
-      <DrawsWaiting
-        userEmail={user?.email}
-        userPhone={user?.phone}
-        estimatedTime="24 heures"
-      />
+      <div className="max-w-2xl mx-auto py-12 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-400/20 to-purple-400/20 rounded-full flex items-center justify-center">
+            <Clock className="w-12 h-12 text-amber-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white">Votre lecture est en préparation</h2>
+          <p className="text-white/70">Vous serez notifié par email dès qu'elle sera prête</p>
+          <button
+            onClick={() => navigate('/sanctuaire')}
+            className="px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-bold rounded-xl hover:from-amber-500 hover:to-amber-600 transition-all shadow-xl"
+          >
+            Retour au Sanctuaire
+          </button>
+        </motion.div>
+      </div>
     );
   }
 
