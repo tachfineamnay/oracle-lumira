@@ -159,6 +159,8 @@ const DrawsContent: React.FC = () => {
 
   // Mapper les orders vers le format Lecture
   useEffect(() => {
+    console.log('[Draws] useEffect orders:', { hasOrders: !!orders, ordersLength: orders?.length });
+    
     if (orders && orders.length > 0) {
       const mapped: Lecture[] = orders.map((order: any) => ({
         id: order.id,
@@ -188,18 +190,26 @@ const DrawsContent: React.FC = () => {
         return dateB - dateA;
       });
       
+      console.log('[Draws] Lectures triées:', sorted.length);
       setLectures(sorted);
       
-      // Sélectionner la première lecture par défaut
-      if (sorted.length > 0 && !selectedLecture) {
+      // Toujours sélectionner la première lecture (navigation fraîche)
+      if (sorted.length > 0) {
+        console.log('[Draws] Sélection automatique lecture:', sorted[0].title);
         setSelectedLecture(sorted[0]);
       }
+    } else if (orders && orders.length === 0) {
+      // Aucune commande : reset
+      console.log('[Draws] Aucune commande, reset lectures');
+      setLectures([]);
+      setSelectedLecture(null);
     }
   }, [orders]);
 
   // =================== SKELETON LOADING ===================
 
   if (isLoading) {
+    console.log('[Draws] 🔄 Mode loading activé');
     return (
       <div className="space-y-6">
         <div className="h-8 w-48 bg-amber-400/20 rounded-lg animate-pulse" />
@@ -230,6 +240,7 @@ const DrawsContent: React.FC = () => {
   // =================== EMPTY STATE ===================
 
   if (!lectures || lectures.length === 0) {
+    console.log('[Draws] ⚠️ Empty state - aucune lecture');
     return (
       <div className="max-w-2xl mx-auto py-12 text-center">
         <motion.div
@@ -254,6 +265,8 @@ const DrawsContent: React.FC = () => {
   }
 
   // =================== RENDU PRINCIPAL ===================
+
+  console.log('[Draws] ✅ Rendu principal avec', lectures.length, 'lectures, sélectionnée:', selectedLecture?.title);
 
   return (
     <div className="space-y-8">
