@@ -157,16 +157,20 @@ const DeskPage: React.FC = () => {
   const fetchClients = async () => {
     try {
       const response = await api.get(endpoints.expert.clients);
-      console.log('📋 Fetched clients:', response.data);
+      console.log('📋 Fetched clients response:', response.data);
       
       if (response.data && response.data.clients) {
-        setClients(response.data.clients);
-        console.log(`✅ Loaded ${response.data.clients.length} clients`);
+        const clientsData = response.data.clients;
+        const totalCount = response.data.pagination?.count || clientsData.length;
         
-        // Charger les stats pour chaque client (optimisé avec Promise.all)
+        setClients(clientsData);
+        console.log(`✅ Loaded ${clientsData.length} clients (total: ${totalCount})`);
+        
+        // Charger les stats pour les 50 premiers clients (optimisé avec Promise.all)
         const statsMap = new Map<string, ClientStats>();
+        const clientsToLoad = clientsData.slice(0, 50);
         await Promise.all(
-          response.data.clients.slice(0, 20).map(async (client: Client) => {
+          clientsToLoad.map(async (client: Client) => {
             try {
               const statsResponse = await api.get(endpoints.expert.clientStats(client._id));
               statsMap.set(client._id, statsResponse.data);
@@ -176,6 +180,7 @@ const DeskPage: React.FC = () => {
           })
         );
         setClientStats(statsMap);
+        console.log(`✅ Loaded stats for ${statsMap.size} clients`);
       } else {
         setClients([]);
         console.log('⚠️ No clients in response');

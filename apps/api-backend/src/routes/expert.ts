@@ -1352,15 +1352,19 @@ router.get('/orders/validated-history', authenticateExpert, async (req: any, res
   try {
     console.log('📚 Fetching validated history for expert:', req.expert?.id);
 
-    // Récupérer toutes les commandes validées ou rejetées
+    // Récupérer toutes les commandes qui ont été validées (approved ou rejected)
+    // OU qui sont completed (pour afficher l'historique complet)
     const orders = await Order.find({
-      'expertValidation.validationStatus': { $in: ['approved', 'rejected'] }
+      $or: [
+        { 'expertValidation.validationStatus': { $in: ['approved', 'rejected'] } },
+        { status: 'completed' }
+      ]
     })
     .populate('userId', 'firstName lastName email phone')
-    .sort({ 'expertValidation.validatedAt': -1 })
-    .limit(100); // Limiter à 100 résultats récents
+    .sort({ updatedAt: -1 })
+    .limit(200); // Augmenté pour voir plus d'historique
 
-    console.log(`✅ Found ${orders.length} validated orders`);
+    console.log(`✅ Found ${orders.length} orders in history`);
     res.json({ orders });
   } catch (error) {
     console.error('❌ Error fetching validated history:', error);
@@ -1492,7 +1496,7 @@ async function calculateAverageRevisions(): Promise<number> {
 router.get('/clients', authenticateExpert, async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit) || 1000; // Augmenté pour afficher tous les clients
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
     const status = req.query.status || 'all';
@@ -1523,7 +1527,7 @@ router.get('/clients', authenticateExpert, async (req: any, res: any) => {
 
     const total = await User.countDocuments(filters);
 
-    console.log(`📋 ${clients.length} clients récupérés pour l'expert ${req.expert.email}`);
+    console.log(`📋 ${clients.length}/${total} clients récupérés pour l'expert ${req.expert.email}`);
 
     res.json({
       clients,
