@@ -3,7 +3,7 @@ import EmptyState from '../ui/EmptyState';
 import { useNavigate } from 'react-router-dom';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
-import { Loader2, Home, Award, Compass } from 'lucide-react';
+import { Loader2, Compass } from 'lucide-react';
 
 type Props = {
   level?: 1 | 2 | 3 | 4;
@@ -26,54 +26,19 @@ const SpiritualPath: React.FC<Props> = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
+      <div className="flex items-center justify-center p-8">
         <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
       </div>
     );
   }
 
-  const levelName = (levelMetadata?.name as string) || 'Initié';
   const levelColor = (levelMetadata?.color as string) || 'amber';
+  const levelName = (levelMetadata?.name as string) || 'Initié';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
-      {/* Sidebar minimal avec retour Sanctuaire */}
-      <aside className="fixed left-0 top-0 h-screen w-56 bg-white/5 backdrop-blur-xl border-r border-white/10 z-40 hidden lg:block">
-        <div className="p-6 border-b border-white/10">
-          <button
-            onClick={() => navigate('/sanctuaire')}
-            className="flex items-center gap-3 text-white/80 hover:text-white transition-all group w-full"
-          >
-            <div className="p-2 bg-amber-400/10 rounded-lg group-hover:bg-amber-400/20 transition-all">
-              <Home className="w-5 h-5 text-amber-400" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-medium">Retour au</p>
-              <p className="text-xs text-white/60">Sanctuaire</p>
-            </div>
-          </button>
-        </div>
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-gradient-to-br from-amber-400/20 to-purple-400/20 rounded-full">
-              <Award className="w-5 h-5 text-amber-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-medium truncate">
-                {user?.firstName || 'Client'} {user?.lastName || 'Oracle'}
-              </p>
-              <p className="text-xs text-white/60 truncate">{user?.email}</p>
-            </div>
-          </div>
-          <div className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-${levelColor}-400/10 to-purple-400/10 rounded-lg border border-${levelColor}-400/20`}>
-            <Award className={`w-4 h-4 text-${levelColor}-400`} />
-            <span className="text-sm text-white/80">{levelName}</span>
-          </div>
-        </div>
-      </aside>
-
+    <div className="space-y-6">
       {/* Contenu principal */}
-      <div className="lg:ml-56 p-4 sm:p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
           <div className="text-center space-y-3">

@@ -4,7 +4,7 @@ import EmptyState from '../ui/EmptyState';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PrimaryButton, TertiaryButton } from '../ui/Buttons';
-import { X, Award, Home, Menu, ChevronRight, User } from 'lucide-react';
+import { X, Award } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,7 +46,6 @@ const Synthesis: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Insight | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('spirituel');
   const { levelMetadata, user } = useSanctuaire();
   const levelName = (levelMetadata?.name as string) || 'Initié';
@@ -171,7 +170,7 @@ const Synthesis: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
+      <div className="space-y-6">
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="max-w-5xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -196,118 +195,9 @@ const Synthesis: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
-      {/* Bouton Menu Mobile */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white hover:bg-white/20 transition-all shadow-xl"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
-
-      {/* Sidebar Navigation */}
-      <AnimatePresence>
-        {(sidebarOpen || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
-          <motion.aside
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed left-0 top-0 h-screen w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 z-40 overflow-y-auto"
-          >
-            {/* Header Sidebar */}
-            <div className="p-6 border-b border-white/10">
-              <button
-                onClick={() => navigate('/sanctuaire')}
-                className="flex items-center gap-3 text-white/80 hover:text-white transition-all group w-full"
-              >
-                <div className="p-2 bg-amber-400/10 rounded-lg group-hover:bg-amber-400/20 transition-all">
-                  <Home className="w-5 h-5 text-amber-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">Retour au</p>
-                  <p className="text-xs text-white/60">Sanctuaire</p>
-                </div>
-              </button>
-            </div>
-
-            {/* Profil Résumé */}
-            <div className="p-6 border-b border-white/10">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-gradient-to-br from-amber-400/20 to-purple-400/20 rounded-full">
-                  <User className="w-5 h-5 text-amber-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">
-                    {user?.firstName || 'Client'} {user?.lastName || 'Oracle'}
-                  </p>
-                  <p className="text-xs text-white/60 truncate">{user?.email}</p>
-                </div>
-              </div>
-              <div className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-${levelColor}-400/10 to-purple-400/10 rounded-lg border border-${levelColor}-400/20`}>
-                <Award className={`w-4 h-4 text-${levelColor}-400`} />
-                <span className="text-sm text-white/80">{levelName}</span>
-              </div>
-            </div>
-
-            {/* Navigation Sections */}
-            <div className="p-4 space-y-1">
-              <p className="px-3 py-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
-                Catégories
-              </p>
-              {categoriesInOrder.map((cat) => {
-                const sectionId = cat.toLowerCase().replace(/é/g, 'e');
-                const insight = insights[cat];
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => {
-                      if (insight) {
-                        setSelected(insight);
-                        markSeen(cat, insight.updatedAt);
-                        setSidebarOpen(false);
-                      }
-                      // Si pas d'insight, ne rien faire
-                    }}
-                    className={`w-full flex flex-col gap-2 px-3 py-2.5 rounded-lg transition-all group ${
-                      activeSection === sectionId
-                        ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20'
-                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                    } ${!insight ? 'cursor-default' : 'cursor-pointer'}`}
-                  >
-                    <div className="flex items-center gap-3 w-full">
-                      <span className="flex-1 text-left text-sm font-medium">{cat}</span>
-                      {insight && activeSection === sectionId && (
-                        <ChevronRight className="w-4 h-4" />
-                      )}
-                    </div>
-                    {insight ? (
-                      <p className="text-xs text-white/50 line-clamp-2 text-left">
-                        {insight.short}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-white/40 italic text-left">
-                        En cours de génération...
-                      </p>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* Overlay Mobile */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
-        />
-      )}
-
+    <div className="space-y-6">
       {/* Contenu Principal */}
-      <div className="lg:ml-64 p-4 sm:p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
 
           {/* Header aligné Profil */}
