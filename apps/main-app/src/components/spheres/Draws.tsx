@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Headphones, Image as ImageIcon, Lock, Download, 
   Play, Eye, Calendar, Sparkles, Star, ArrowRight, Check,
-  Clock, AlertCircle, Crown, Zap
+  Clock, AlertCircle, Crown, Zap, MapPin, Target, HelpCircle
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import GlassCard from '../ui/GlassCard';
@@ -44,6 +44,13 @@ interface Lecture {
   audioUrl?: string;
   mandalaSvg?: string;
   reading?: string;
+  // Contexte onboarding
+  question?: string;
+  objective?: string;
+  dateOfBirth?: string;
+  birthTime?: string;
+  birthPlace?: string;
+  status?: string;
 }
 
 interface Asset {
@@ -139,7 +146,7 @@ const UPGRADE_OPTIONS: Record<number, UpgradeOption> = {
 
 const DrawsContent: React.FC = () => {
   const navigate = useNavigate();
-  const { orders, isLoading, user } = useSanctuaire();
+  const { orders, isLoading, user, profile } = useSanctuaire();
   const { play, setTrack } = useAudioPlayer();
   
   const [lectures, setLectures] = useState<Lecture[]>([]);
@@ -166,6 +173,13 @@ const DrawsContent: React.FC = () => {
         audioUrl: order.generatedContent?.audioUrl,
         mandalaSvg: order.generatedContent?.mandalaSvg,
         reading: order.generatedContent?.reading,
+        // Contexte onboarding (formData + clientInputs)
+        question: order.formData?.specificQuestion || order.clientInputs?.lifeQuestion,
+        objective: order.formData?.objective || order.clientInputs?.specificContext,
+        dateOfBirth: order.formData?.dateOfBirth,
+        birthTime: order.clientInputs?.birthTime,
+        birthPlace: order.clientInputs?.birthPlace,
+        status: order.status,
       }));
       
       // Trier par date de livraison (plus récent en premier)
@@ -330,37 +344,46 @@ const DrawsContent: React.FC = () => {
           </GlassCard>
         </div>
 
-        {/* Colonne centrale: Assets de la lecture sélectionnée */}
-        <div className="xl:col-span-6">
+        {/* Colonne centrale: Contexte + Assets (pile verticale) */}
+        <div className="xl:col-span-6 space-y-4">
           {selectedLecture && (
-            <LectureAssets
-              lecture={selectedLecture}
-              onOpenPdf={async (pdfUrl: string, title: string) => {
-                try {
-                  const signed = await sanctuaireService.getPresignedUrl(pdfUrl);
-                  setModal({ open: true, pdfUrl: signed, title });
-                } catch (err) {
-                  console.error('[Draws] Erreur PDF:', err);
-                }
-              }}
-              onPlayAudio={async (audioUrl: string, title: string) => {
-                try {
-                  const signed = await sanctuaireService.getPresignedUrl(audioUrl);
-                  setTrack({ url: signed, title });
-                  play({ url: signed, title });
-                } catch (err) {
-                  console.error('[Draws] Erreur Audio:', err);
-                }
-              }}
-              onOpenMandala={async (mandalaSvg: string, title: string) => {
-                try {
-                  const signed = await sanctuaireService.getPresignedUrl(mandalaSvg);
-                  setModal({ open: true, mandalaSvg: signed, title });
-                } catch (err) {
-                  console.error('[Draws] Erreur Mandala:', err);
-                }
-              }}
-            />
+            <>
+              {/* 1. CONTEXTE DE LA LECTURE (en premier) */}
+              <LectureContext lecture={selectedLecture} profile={profile} />
+
+              {/* 2. ASSETS DE LA LECTURE */}
+              <LectureAssets
+                lecture={selectedLecture}
+                onOpenPdf={async (pdfUrl: string, title: string) => {
+                  try {
+                    const signed = await sanctuaireService.getPresignedUrl(pdfUrl);
+                    setModal({ open: true, pdfUrl: signed, title });
+                  } catch (err) {
+                    console.error('[Draws] Erreur PDF:', err);
+                  }
+                }}
+                onPlayAudio={async (audioUrl: string, title: string) => {
+                  try {
+                    const signed = await sanctuaireService.getPresignedUrl(audioUrl);
+                    setTrack({ url: signed, title });
+                    play({ url: signed, title });
+                  } catch (err) {
+                    console.error('[Draws] Erreur Audio:', err);
+                  }
+                }}
+                onOpenMandala={async (mandalaSvg: string, title: string) => {
+                  try {
+                    const signed = await sanctuaireService.getPresignedUrl(mandalaSvg);
+                    setModal({ open: true, mandalaSvg: signed, title });
+                  } catch (err) {
+                    console.error('[Draws] Erreur Mandala:', err);
+                  }
+                }}
+              />
+
+              {/* 3. TIMELINE DE STATUT */}
+              <OrderStatusTimeline status={selectedLecture.status} deliveredAt={selectedLecture.deliveredAt} />
+            </>
           )}
         </div>
 
@@ -388,6 +411,168 @@ const DrawsContent: React.FC = () => {
   );
 };
 
+// =================== COMPOSANT: CONTEXTE DE LA LECTURE ===================
+
+interface LectureContextProps {
+  lecture: Lecture;
+  profile: any | null;
+}
+
+const LectureContext: React.FC<LectureContextProps> = ({ lecture, profile }) => {
+  const question = lecture.question || profile?.specificQuestion;
+  const objective = lecture.objective || profile?.spiritualObjective;
+  const dateOfBirth = lecture.dateOfBirth || profile?.birthDate;
+  const birthTime = lecture.birthTime || profile?.birthTime;
+  const birthPlace = lecture.birthPlace || profile?.birthPlace;
+
+  const hasAny = !!question || !!objective || !!dateOfBirth || !!birthTime || !!birthPlace;
+
+  if (!hasAny) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <GlassCard className="p-4 bg-white/10 border-white/20 backdrop-blur-xl">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            Contexte de la lecture
+          </h3>
+          <span className="text-[10px] text-white/50 font-medium">
+            Préparé à partir de vos informations
+          </span>
+        </div>
+
+        <div className="space-y-2.5">
+          {question && (
+            <div className="flex items-start gap-2.5">
+              <div className="p-1.5 rounded-lg bg-amber-400/10 flex-shrink-0">
+                <HelpCircle className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] text-white/60 font-bold uppercase tracking-wide mb-0.5">Question</div>
+                <div className="text-sm text-white/90 leading-snug">{question}</div>
+              </div>
+            </div>
+          )}
+
+          {objective && (
+            <div className="flex items-start gap-2.5">
+              <div className="p-1.5 rounded-lg bg-purple-400/10 flex-shrink-0">
+                <Target className="w-4 h-4 text-purple-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] text-white/60 font-bold uppercase tracking-wide mb-0.5">Objectif</div>
+                <div className="text-sm text-white/90 leading-snug">{objective}</div>
+              </div>
+            </div>
+          )}
+
+          {(dateOfBirth || birthTime || birthPlace) && (
+            <div className="flex items-start gap-2.5">
+              <div className="p-1.5 rounded-lg bg-blue-400/10 flex-shrink-0">
+                <Calendar className="w-4 h-4 text-blue-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] text-white/60 font-bold uppercase tracking-wide mb-0.5">Naissance</div>
+                <div className="text-sm text-white/90 flex flex-wrap items-center gap-2">
+                  {dateOfBirth && <span>{new Date(dateOfBirth).toLocaleDateString('fr-FR')}</span>}
+                  {birthTime && (
+                    <span className="flex items-center gap-1 text-white/70 text-xs">
+                      <Clock className="w-3 h-3" />
+                      {birthTime}
+                    </span>
+                  )}
+                  {birthPlace && (
+                    <span className="flex items-center gap-1 text-white/70 text-xs">
+                      <MapPin className="w-3 h-3" />
+                      {birthPlace}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </GlassCard>
+    </motion.div>
+  );
+};
+
+// =================== COMPOSANT: TIMELINE DE STATUT ===================
+
+interface OrderStatusTimelineProps {
+  status?: string;
+  deliveredAt?: string;
+}
+
+const OrderStatusTimeline: React.FC<OrderStatusTimelineProps> = ({ status, deliveredAt }) => {
+  const statuses = [
+    { key: 'paid', label: 'Payé', icon: Check },
+    { key: 'processing', label: 'En cours', icon: Clock },
+    { key: 'awaiting_validation', label: 'Validation', icon: AlertCircle },
+    { key: 'completed', label: 'Livré', icon: Check },
+  ];
+
+  const currentIndex = status === 'completed' ? 3 : status === 'awaiting_validation' ? 2 : status === 'processing' ? 1 : 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.1 }}
+    >
+      <GlassCard className="p-4 bg-white/5 border-white/10 backdrop-blur-xl">
+        <h3 className="text-xs font-bold text-white/80 mb-3 flex items-center gap-2">
+          <Clock className="w-3.5 h-3.5 text-amber-400" />
+          Suivi de votre lecture
+        </h3>
+        <div className="flex items-center justify-between">
+          {statuses.map((s, idx) => {
+            const isActive = idx <= currentIndex;
+            const Icon = s.icon;
+            return (
+              <React.Fragment key={s.key}>
+                <div className="flex flex-col items-center gap-1.5 flex-1">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400 shadow-lg shadow-amber-400/30'
+                      : 'bg-gray-700/30 border-gray-600/50'
+                  }`}>
+                    <Icon className={`w-3.5 h-3.5 ${
+                      isActive ? 'text-white' : 'text-gray-500'
+                    }`} />
+                  </div>
+                  <p className={`text-[10px] font-medium text-center ${
+                    isActive ? 'text-amber-400' : 'text-gray-500'
+                  }`}>
+                    {s.label}
+                  </p>
+                </div>
+                {idx < statuses.length - 1 && (
+                  <div className={`h-0.5 flex-1 ${
+                    idx < currentIndex ? 'bg-amber-400' : 'bg-gray-600/50'
+                  }`} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+        {deliveredAt && (
+          <div className="mt-3 pt-3 border-t border-white/10 text-center">
+            <p className="text-xs text-green-400 font-medium">
+              ✓ Livrée le {new Date(deliveredAt).toLocaleDateString('fr-FR')}
+            </p>
+          </div>
+        )}
+      </GlassCard>
+    </motion.div>
+  );
+};
+
 // =================== COMPOSANT: ASSETS D'UNE LECTURE ===================
 
 interface LectureAssetsProps {
@@ -403,6 +588,7 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
   onPlayAudio,
   onOpenMandala
 }) => {
+  const [activeTab, setActiveTab] = useState<'pdf' | 'audio' | 'mandala'>('pdf');
   const levelConfig = LEVEL_CONFIG[lecture.level as keyof typeof LEVEL_CONFIG] || LEVEL_CONFIG[1];
   const availableAssets = levelConfig.assets;
 
@@ -451,8 +637,13 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
   ];
 
   return (
-    <GlassCard className={`bg-gradient-to-br ${levelConfig.color.bg} border ${levelConfig.color.border}`}>
-      <div className="p-5 space-y-5">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.05 }}
+    >
+      <GlassCard className={`bg-gradient-to-br ${levelConfig.color.bg} border ${levelConfig.color.border}`}>
+        <div className="p-5 space-y-4">
         
         {/* En-tête COMPACT */}
         <div className="space-y-3">
@@ -482,8 +673,40 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
             </div>
           </div>
 
+          {/* Segmented Control - Tabs pour basculer entre assets */}
+          <div className="flex items-center gap-1 p-1 bg-white/5 rounded-lg border border-white/10">
+            {[
+              { id: 'pdf' as const, label: 'PDF', icon: FileText },
+              { id: 'audio' as const, label: 'Audio', icon: Headphones },
+              { id: 'mandala' as const, label: 'Mandala', icon: ImageIcon },
+            ].map((tab) => {
+              const asset = assets.find(a => a.type === tab.id);
+              const isAvailable = asset?.available;
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => isAvailable && setActiveTab(tab.id)}
+                  disabled={!isAvailable}
+                  className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    isActive && isAvailable
+                      ? 'bg-amber-400/25 text-amber-300 shadow-lg border border-amber-400/30'
+                      : isAvailable
+                      ? 'text-white/70 hover:text-white hover:bg-white/10'
+                      : 'text-gray-500 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                  {!isAvailable && <Lock className="w-3 h-3" />}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Ligne de progression cosmique (4 étoiles) - COMPACT */}
-          <div className="flex items-center justify-center gap-2 py-3 border-y border-white/10">
+          <div className="flex items-center justify-center gap-2 py-2.5 border-y border-white/10">
             {[1, 2, 3, 4].map((lvl) => {
               const isUnlocked = lvl <= lecture.level;
               const levelNames = ['Initié', 'Mystique', 'Profond', 'Intégral'];
@@ -523,114 +746,118 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
           </div>
         </div>
 
-        {/* Grille d'assets COMPACT */}
-        <div className="grid grid-cols-2 gap-3">
-          {assets.map((asset) => (
-            <AssetTile
-              key={asset.id}
-              asset={asset}
-              onOpen={() => {
-                if (!asset.available || !asset.url) return;
-                
-                if (asset.type === 'pdf') onOpenPdf(asset.url, lecture.title);
-                if (asset.type === 'audio') onPlayAudio(asset.url, lecture.title);
-                if (asset.type === 'mandala') onOpenMandala(asset.url, lecture.title);
-              }}
-            />
-          ))}
-        </div>
+        {/* Asset actif (basé sur le tab sélectionné) */}
+        <AnimatePresence mode="wait">
+          {assets
+            .filter((asset) => asset.type === activeTab)
+            .map((asset) => (
+              <motion.div
+                key={asset.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25 }}
+              >
+                <AssetTileLarge
+                  asset={asset}
+                  onOpen={() => {
+                    if (!asset.available || !asset.url) return;
+                    if (asset.type === 'pdf') onOpenPdf(asset.url, lecture.title);
+                    if (asset.type === 'audio') onPlayAudio(asset.url, lecture.title);
+                    if (asset.type === 'mandala') onOpenMandala(asset.url, lecture.title);
+                  }}
+                />
+              </motion.div>
+            ))}
+        </AnimatePresence>
 
-        {/* Statut de la lecture COMPACT */}
-        {lecture.deliveredAt ? (
-          <div className="flex items-center gap-2 text-xs text-green-400 bg-green-400/10 border border-green-400/30 rounded-lg p-2.5">
-            <Check className="w-3.5 h-3.5" />
-            <span>Livrée le {new Date(lecture.deliveredAt).toLocaleDateString('fr-FR')}</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/30 rounded-lg p-2.5">
-            <Clock className="w-3.5 h-3.5 animate-spin" />
-            <div>
-              <div className="font-medium">En préparation</div>
-            </div>
-          </div>
-        )}
       </div>
     </GlassCard>
+    </motion.div>
   );
 };
 
-// =================== COMPOSANT: TUILE ASSET ===================
+// =================== COMPOSANT: TUILE ASSET LARGE ===================
 
-interface AssetTileProps {
+interface AssetTileLargeProps {
   asset: Asset;
   onOpen: () => void;
 }
 
-const AssetTile: React.FC<AssetTileProps> = ({ asset, onOpen }) => {
+const AssetTileLarge: React.FC<AssetTileLargeProps> = ({ asset, onOpen }) => {
   const isReady = asset.available && asset.url;
   const isLocked = !asset.available;
   const isInProgress = asset.available && !asset.url;
 
   return (
-    <motion.button
-      whileHover={isReady ? { scale: 1.02 } : {}}
-      whileTap={isReady ? { scale: 0.98 } : {}}
-      onClick={isReady ? onOpen : undefined}
-      disabled={!isReady}
-      className={`p-3 rounded-xl border transition-all text-left ${
-        isReady
-          ? 'bg-white/10 border-white/20 hover:bg-white/20 cursor-pointer shadow-lg hover:shadow-xl'
-          : isLocked
-          ? 'bg-gray-600/10 border-gray-600/25 cursor-not-allowed'
-          : 'bg-amber-400/10 border-amber-400/25 cursor-wait'
-      }`}
-    >
-      <div className="flex items-start gap-2.5">
-        <div className={`p-2 rounded-lg flex-shrink-0 ${
+    <div className={`p-4 rounded-xl border transition-all ${
+      isReady
+        ? 'bg-white/10 border-white/20'
+        : isLocked
+        ? 'bg-gray-600/10 border-gray-600/25'
+        : 'bg-amber-400/10 border-amber-400/25'
+    }`}>
+      <div className="flex items-start gap-3 mb-3">
+        <div className={`p-2.5 rounded-lg flex-shrink-0 ${
           isReady ? 'bg-amber-400/25 text-amber-300' :
           isLocked ? 'bg-gray-700/30 text-gray-400' :
           'bg-amber-400/25 text-amber-300'
         }`}>
-          {isLocked ? <Lock className="w-4 h-4" /> : asset.icon}
+          {isLocked ? <Lock className="w-6 h-6" /> : React.cloneElement(asset.icon as React.ReactElement, { className: 'w-6 h-6' })}
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className={`font-bold text-sm ${
+          <div className={`font-bold text-base ${
             isLocked ? 'text-gray-300' : 'text-white'
-          } line-clamp-1`}>
+          }`}>
             {asset.name}
           </div>
           
           {isReady && (
-            <div className="text-xs text-green-300 flex items-center gap-1 mt-0.5 font-medium">
-              <Check className="w-3 h-3" />
-              Disponible
+            <div className="text-xs text-green-300 flex items-center gap-1 mt-1 font-medium">
+              <Check className="w-3.5 h-3.5" />
+              Prêt à consulter
             </div>
           )}
           
           {isLocked && (
-            <div className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
+            <div className="text-xs text-gray-400 mt-1">
               {asset.lockedMessage}
             </div>
           )}
           
           {isInProgress && (
-            <div className="text-xs text-amber-300 flex items-center gap-1 mt-0.5 font-medium">
-              <Clock className="w-3 h-3 animate-spin" />
-              En cours...
+            <div className="text-xs text-amber-300 flex items-center gap-1 mt-1 font-medium">
+              <Clock className="w-3.5 h-3.5 animate-spin" />
+              Génération en cours...
             </div>
           )}
         </div>
-
-        {isReady && (
-          <div className="text-amber-400 flex-shrink-0">
-            {asset.type === 'pdf' && <Eye className="w-4 h-4" />}
-            {asset.type === 'audio' && <Play className="w-4 h-4" />}
-            {asset.type === 'mandala' && <Eye className="w-4 h-4" />}
-          </div>
-        )}
       </div>
-    </motion.button>
+
+      {isReady && (
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onOpen}
+          className="w-full py-2.5 rounded-lg bg-gradient-to-r from-amber-400/20 to-amber-500/10 text-amber-300 border border-amber-400/30 hover:from-amber-400/30 hover:to-amber-500/20 transition-all font-bold text-sm flex items-center justify-center gap-2"
+        >
+          {asset.type === 'pdf' && <><Eye className="w-4 h-4" /> Voir le PDF</>
+          }
+          {asset.type === 'audio' && <><Play className="w-4 h-4" /> Écouter l'audio</>
+          }
+          {asset.type === 'mandala' && <><Eye className="w-4 h-4" /> Voir le Mandala</>
+          }
+        </motion.button>
+      )}
+
+      {isLocked && (
+        <div className="w-full py-2.5 rounded-lg bg-gray-600/25 text-gray-400 border border-gray-600/40 font-medium text-sm flex items-center justify-center gap-2 cursor-not-allowed">
+          <Lock className="w-4 h-4" />
+          Niveau {asset.requiredLevel} requis
+        </div>
+      )}
+    </div>
   );
 };
 
