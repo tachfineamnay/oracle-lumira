@@ -229,20 +229,20 @@ const DrawsContent: React.FC = () => {
   // =================== RENDU PRINCIPAL ===================
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
-      {/* Hero avec bienvenue + mandala tournant */}
+      {/* Hero avec bienvenue + mandala tournant - COMPACT */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-950/80 via-purple-950/80 to-indigo-950/80 backdrop-blur-xl border border-white/20 p-8 shadow-2xl"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-950/80 via-purple-950/80 to-indigo-950/80 backdrop-blur-xl border border-white/20 p-6 shadow-2xl"
       >
         {/* Mandala tournant en arrière-plan */}
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-          className="absolute -right-20 -top-20 w-64 h-64 opacity-20"
+          className="absolute -right-16 -top-16 w-48 h-48 opacity-15"
         >
           <svg viewBox="0 0 200 200" className="w-full h-full">
             <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-amber-400" />
@@ -259,55 +259,79 @@ const DrawsContent: React.FC = () => {
           </svg>
         </motion.div>
 
-        <div className="relative z-10 text-center space-y-4">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-block"
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            >
+              <Sparkles className="w-8 h-8 text-amber-300 drop-shadow-xl" />
+            </motion.div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-2xl">
+                Bienvenue, {user?.firstName || 'Âme Lumineuse'}
+              </h1>
+              <p className="text-white/80 text-sm font-medium">
+                Tes lectures sacrées t'attendent
+              </p>
+            </div>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/commande')}
+            className="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-bold rounded-xl hover:from-amber-500 hover:to-amber-600 transition-all shadow-xl text-sm"
           >
-            <Sparkles className="w-10 h-10 text-amber-300 mx-auto drop-shadow-xl" />
-          </motion.div>
-          <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-2xl">
-            ✨ Bienvenue dans ton Sanctuaire, {user?.firstName || 'Âme Lumineuse'}
-          </h1>
-          <p className="text-white text-xl font-medium">
-            Tes lectures sacrées t'attendent
-          </p>
+            Nouvelle lecture
+          </motion.button>
         </div>
       </motion.div>
-      
-      {/* En-tête */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
-      >
-        <div>
-          <h2 className="text-2xl font-playfair font-bold text-amber-300 flex items-center gap-3">
-            <Sparkles className="w-6 h-6" />
-            Mes Lectures Oracle
-          </h2>
-          <p className="text-white/80 mt-1 font-medium">
-            Accédez à vos ressources spirituelles personnalisées
-          </p>
-        </div>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/commande')}
-          className="px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-mystical-900 font-bold rounded-xl hover:from-amber-500 hover:to-amber-600 transition-all shadow-xl text-lg"
-        >
-          Nouvelle lecture
-        </motion.button>
-      </motion.div>
-
-      {/* Layout principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Layout principal - RÉORGANISÉ */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         
-        {/* Colonne gauche: Assets de la lecture sélectionnée */}
-        <div className="lg:col-span-2">
+        {/* Colonne gauche: Liste des lectures (sidebar secondaire) */}
+        <div className="xl:col-span-3">
+          <GlassCard className="p-4 bg-white/5 border-white/20 backdrop-blur-xl sticky top-6">
+            <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-amber-400" />
+              Mes lectures
+            </h3>
+            <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 -mr-2">
+              {lectures.map((lecture) => (
+                <button
+                  key={lecture.id}
+                  onClick={() => setSelectedLecture(lecture)}
+                  className={`w-full text-left p-3 rounded-lg transition-all ${
+                    selectedLecture?.id === lecture.id
+                      ? 'bg-amber-400/25 border-2 border-amber-400/50 shadow-lg'
+                      : 'bg-white/10 hover:bg-white/15 border border-white/20'
+                  }`}
+                >
+                  <div className="text-sm font-bold text-white line-clamp-2 mb-2">
+                    {lecture.title}
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/60 font-medium">
+                      {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                      lecture.level === 1 ? 'bg-blue-400/20 text-blue-300' :
+                      lecture.level === 2 ? 'bg-purple-400/20 text-purple-300' :
+                      'bg-amber-400/20 text-amber-300'
+                    }`}>
+                      {lecture.levelName}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* Colonne centrale: Assets de la lecture sélectionnée */}
+        <div className="xl:col-span-6">
           {selectedLecture && (
             <LectureAssets
               lecture={selectedLecture}
@@ -340,38 +364,12 @@ const DrawsContent: React.FC = () => {
           )}
         </div>
 
-        {/* Colonne droite: Liste des lectures + Upgrades */}
-        <div className="space-y-6">
-          
-          {/* Liste des lectures */}
-          <GlassCard className="p-5 bg-white/10 border-white/30 backdrop-blur-xl">
-            <h3 className="text-lg font-bold text-white mb-4">Mes lectures</h3>
-            <div className="space-y-3">
-              {lectures.map((lecture) => (
-                <button
-                  key={lecture.id}
-                  onClick={() => setSelectedLecture(lecture)}
-                  className={`w-full text-left p-4 rounded-xl transition-all ${
-                    selectedLecture?.id === lecture.id
-                      ? 'bg-amber-400/30 border-2 border-amber-400/50 shadow-lg'
-                      : 'bg-white/15 hover:bg-white/25 border border-white/25'
-                  }`}
-                >
-                  <div className="text-base font-bold text-white line-clamp-1">
-                    {lecture.title}
-                  </div>
-                  <div className="text-sm text-white/80 mt-2 flex items-center gap-2 font-medium">
-                    <Calendar className="w-4 h-4" />
-                    {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR')}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </GlassCard>
-
-          {/* Section Upgrades */}
+        {/* Colonne droite: Upgrades */}
+        <div className="xl:col-span-3">
           {selectedLecture && (
-            <UpgradeSection level={selectedLecture.level} />
+            <div className="sticky top-6">
+              <UpgradeSection level={selectedLecture.level} />
+            </div>
           )}
         </div>
       </div>
@@ -454,38 +452,79 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
 
   return (
     <GlassCard className={`bg-gradient-to-br ${levelConfig.color.bg} border ${levelConfig.color.border}`}>
-      <div className="p-6 space-y-6">
+      <div className="p-5 space-y-5">
         
-        {/* En-tête */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h3 className={`text-3xl font-extrabold ${levelConfig.color.text} mb-3`}>
-              {lecture.title}
-            </h3>
-            <div className="flex items-center gap-4 text-base text-white/80 font-bold">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR')}
+        {/* En-tête COMPACT */}
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h3 className={`text-xl font-bold ${levelConfig.color.text} line-clamp-2 mb-2`}>
+                {lecture.title}
+              </h3>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-white/70">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR')}
+                </div>
+                <span className="text-white/40">•</span>
+                <span className="text-white/50 font-mono text-xs">#{lecture.orderNumber}</span>
               </div>
-              <div className="text-sm text-white/60 font-bold">
-                #{lecture.orderNumber}
+            </div>
+
+            {/* Badge niveau COMPACT */}
+            <div className={`px-3 py-1.5 rounded-full ${levelConfig.color.bg} border ${levelConfig.color.border} shadow-lg flex-shrink-0`}>
+              <div className="flex items-center gap-1.5">
+                <Star className={`w-4 h-4 ${levelConfig.color.text}`} />
+                <span className={`text-sm font-bold ${levelConfig.color.text}`}>
+                  {levelConfig.name}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Badge niveau */}
-          <div className={`px-5 py-3 rounded-full ${levelConfig.color.bg} border-2 ${levelConfig.color.border} shadow-xl`}>
-            <div className="flex items-center gap-2">
-              <Star className={`w-6 h-6 ${levelConfig.color.text}`} />
-              <span className={`text-xl font-extrabold ${levelConfig.color.text}`}>
-                {levelConfig.name}
-              </span>
-            </div>
+          {/* Ligne de progression cosmique (4 étoiles) - COMPACT */}
+          <div className="flex items-center justify-center gap-2 py-3 border-y border-white/10">
+            {[1, 2, 3, 4].map((lvl) => {
+              const isUnlocked = lvl <= lecture.level;
+              const levelNames = ['Initié', 'Mystique', 'Profond', 'Intégral'];
+              return (
+                <div key={lvl} className="flex items-center">
+                  <div className="text-center">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.1 + lvl * 0.05 }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                        isUnlocked
+                          ? 'bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400 shadow-lg shadow-amber-400/30'
+                          : 'bg-gray-700/30 border-gray-600/50'
+                      }`}
+                    >
+                      {isUnlocked ? (
+                        <Star className="w-4 h-4 text-white fill-white" />
+                      ) : (
+                        <span className="text-gray-500 text-xs font-bold">{lvl}</span>
+                      )}
+                    </motion.div>
+                    <p className={`text-[10px] mt-1 ${
+                      isUnlocked ? 'text-amber-400 font-medium' : 'text-gray-500'
+                    }`}>
+                      {levelNames[lvl - 1]}
+                    </p>
+                  </div>
+                  {lvl < 4 && (
+                    <div className={`w-4 h-0.5 ${
+                      lvl < lecture.level ? 'bg-amber-400' : 'bg-gray-600/50'
+                    }`} />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Grille d'assets */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Grille d'assets COMPACT */}
+        <div className="grid grid-cols-2 gap-3">
           {assets.map((asset) => (
             <AssetTile
               key={asset.id}
@@ -501,62 +540,17 @@ const LectureAssets: React.FC<LectureAssetsProps> = ({
           ))}
         </div>
 
-        {/* Ligne de progression cosmique (4 étoiles) */}
-        <div className="mt-4 pt-4 border-t border-white/10">
-          <div className="flex items-center justify-center gap-3">
-            {[1, 2, 3, 4].map((lvl) => {
-              const isUnlocked = lvl <= lecture.level;
-              const levelNames = ['Initié', 'Mystique', 'Profond', 'Intégral'];
-              return (
-                <div key={lvl} className="flex items-center">
-                  <div className="text-center">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.1 + lvl * 0.05 }}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                        isUnlocked
-                          ? 'bg-gradient-to-br from-amber-400 to-yellow-600 border-amber-400 shadow-lg shadow-amber-400/50'
-                          : 'bg-gray-600/20 border-gray-600/50'
-                      }`}
-                    >
-                      {isUnlocked ? (
-                        <Star className="w-5 h-5 text-white fill-white" />
-                      ) : (
-                        <span className="text-gray-500 text-sm font-bold">{lvl}</span>
-                      )}
-                    </motion.div>
-                    <p className={`text-xs mt-1 ${
-                      isUnlocked ? 'text-amber-400 font-medium' : 'text-gray-500'
-                    }`}>
-                      {levelNames[lvl - 1]}
-                    </p>
-                  </div>
-                  {lvl < 4 && (
-                    <div className={`w-6 h-0.5 ${
-                      lvl < lecture.level ? 'bg-amber-400' : 'bg-gray-600/50'
-                    }`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Statut de la lecture */}
+        {/* Statut de la lecture COMPACT */}
         {lecture.deliveredAt ? (
-          <div className="flex items-center gap-2 text-sm text-green-400 bg-green-400/10 border border-green-400/30 rounded-lg p-3">
-            <Check className="w-4 h-4" />
-            <span>Lecture livrée le {new Date(lecture.deliveredAt).toLocaleDateString('fr-FR')}</span>
+          <div className="flex items-center gap-2 text-xs text-green-400 bg-green-400/10 border border-green-400/30 rounded-lg p-2.5">
+            <Check className="w-3.5 h-3.5" />
+            <span>Livrée le {new Date(lecture.deliveredAt).toLocaleDateString('fr-FR')}</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-sm text-amber-400 bg-amber-400/10 border border-amber-400/30 rounded-lg p-3">
-            <Clock className="w-4 h-4 animate-spin" />
+          <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-400/10 border border-amber-400/30 rounded-lg p-2.5">
+            <Clock className="w-3.5 h-3.5 animate-spin" />
             <div>
-              <div>Lecture en cours de préparation</div>
-              <div className="text-xs text-white/60 mt-1">
-                Vous serez notifié par email dès qu'elle sera prête
-              </div>
+              <div className="font-medium">En préparation</div>
             </div>
           </div>
         )}
@@ -583,43 +577,45 @@ const AssetTile: React.FC<AssetTileProps> = ({ asset, onOpen }) => {
       whileTap={isReady ? { scale: 0.98 } : {}}
       onClick={isReady ? onOpen : undefined}
       disabled={!isReady}
-      className={`p-4 rounded-xl border transition-all text-left ${
+      className={`p-3 rounded-xl border transition-all text-left ${
         isReady
-          ? 'bg-white/10 border-white/20 hover:bg-white/20 cursor-pointer'
+          ? 'bg-white/10 border-white/20 hover:bg-white/20 cursor-pointer shadow-lg hover:shadow-xl'
           : isLocked
-          ? 'bg-gray-600/20 border-gray-600/30 cursor-not-allowed'
-          : 'bg-amber-400/10 border-amber-400/30 cursor-wait'
+          ? 'bg-gray-600/10 border-gray-600/25 cursor-not-allowed'
+          : 'bg-amber-400/10 border-amber-400/25 cursor-wait'
       }`}
     >
-      <div className="flex items-start gap-3">
-        <div className={`p-3 rounded-xl ${
-          isReady ? 'bg-amber-400/30 text-amber-300' :
-          isLocked ? 'bg-gray-700/40 text-gray-300' :
-          'bg-amber-400/30 text-amber-300'
+      <div className="flex items-start gap-2.5">
+        <div className={`p-2 rounded-lg flex-shrink-0 ${
+          isReady ? 'bg-amber-400/25 text-amber-300' :
+          isLocked ? 'bg-gray-700/30 text-gray-400' :
+          'bg-amber-400/25 text-amber-300'
         }`}>
-          {isLocked ? <Lock className="w-5 h-5" /> : asset.icon}
+          {isLocked ? <Lock className="w-4 h-4" /> : asset.icon}
         </div>
 
-        <div className="flex-1">
-          <div className={`font-bold ${isLocked ? 'text-gray-300' : 'text-white'} text-lg`}>
+        <div className="flex-1 min-w-0">
+          <div className={`font-bold text-sm ${
+            isLocked ? 'text-gray-300' : 'text-white'
+          } line-clamp-1`}>
             {asset.name}
           </div>
           
           {isReady && (
-            <div className="text-xs text-green-300 flex items-center gap-1 mt-1 font-semibold">
+            <div className="text-xs text-green-300 flex items-center gap-1 mt-0.5 font-medium">
               <Check className="w-3 h-3" />
               Disponible
             </div>
           )}
           
           {isLocked && (
-            <div className="text-xs text-gray-300 mt-1 font-medium">
+            <div className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
               {asset.lockedMessage}
             </div>
           )}
           
           {isInProgress && (
-            <div className="text-xs text-amber-300 flex items-center gap-1 mt-1 font-semibold">
+            <div className="text-xs text-amber-300 flex items-center gap-1 mt-0.5 font-medium">
               <Clock className="w-3 h-3 animate-spin" />
               En cours...
             </div>
@@ -627,10 +623,10 @@ const AssetTile: React.FC<AssetTileProps> = ({ asset, onOpen }) => {
         </div>
 
         {isReady && (
-          <div className="text-amber-400">
-            {asset.type === 'pdf' && <Eye className="w-5 h-5" />}
-            {asset.type === 'audio' && <Play className="w-5 h-5" />}
-            {asset.type === 'mandala' && <Eye className="w-5 h-5" />}
+          <div className="text-amber-400 flex-shrink-0">
+            {asset.type === 'pdf' && <Eye className="w-4 h-4" />}
+            {asset.type === 'audio' && <Play className="w-4 h-4" />}
+            {asset.type === 'mandala' && <Eye className="w-4 h-4" />}
           </div>
         )}
       </div>
@@ -657,8 +653,11 @@ const UpgradeSection: React.FC<UpgradeSectionProps> = ({ level }) => {
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-white/80">Débloquez plus de ressources</h3>
+    <div className="space-y-3">
+      <h3 className="text-sm font-bold text-white/90 flex items-center gap-2">
+        <Zap className="w-4 h-4 text-amber-400" />
+        Débloquer plus
+      </h3>
       
       {upgradeOptions.map((upgradeLevel) => {
         const option = UPGRADE_OPTIONS[upgradeLevel];
@@ -675,62 +674,68 @@ const UpgradeSection: React.FC<UpgradeSectionProps> = ({ level }) => {
           >
             <GlassCard className={`${
               isComingSoon 
-                ? 'bg-gray-600/20 border-gray-600/30' 
-                : 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-amber-400/30 transition-all'
+                ? 'bg-gray-600/15 border-gray-600/25' 
+                : 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-amber-400/30 transition-all cursor-pointer'
             }`}>
-              <div className="p-4 space-y-3">
+              <div className="p-3 space-y-2.5">
                 
-                {/* En-tête */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                {/* En-tête COMPACT */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
                     {isComingSoon ? (
-                      <div className="p-2 rounded-lg bg-gray-700/40">
-                        <Crown className="w-5 h-5 text-gray-300" />
+                      <div className="p-1.5 rounded-lg bg-gray-700/30 flex-shrink-0">
+                        <Crown className="w-4 h-4 text-gray-400" />
                       </div>
                     ) : (
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-amber-400/30 to-amber-500/20">
-                        <Zap className="w-5 h-5 text-amber-300" />
+                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-400/25 to-amber-500/15 flex-shrink-0">
+                        <Zap className="w-4 h-4 text-amber-300" />
                       </div>
                     )}
-                    <div>
-                      <div className={`font-bold ${isComingSoon ? 'text-gray-300' : 'text-white'} text-lg`}>
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-bold text-sm ${
+                        isComingSoon ? 'text-gray-300' : 'text-white'
+                      } line-clamp-1`}>
                         {option.name}
                       </div>
-                      <div className={`text-sm ${isComingSoon ? 'text-gray-400' : 'text-white/80'} font-semibold`}>
+                      <div className={`text-xs font-bold ${
+                        isComingSoon ? 'text-gray-400' : 'text-amber-300'
+                      }`}>
                         {option.price}
                       </div>
                     </div>
                   </div>
 
                   {isComingSoon && (
-                    <div className="px-2 py-1 rounded-full bg-gray-600/30 border border-gray-600/50">
-                      <span className="text-xs text-gray-400">Bientôt</span>
+                    <div className="px-1.5 py-0.5 rounded-full bg-gray-600/25 border border-gray-600/40 flex-shrink-0">
+                      <span className="text-[10px] text-gray-400 font-medium">Bientôt</span>
                     </div>
                   )}
                 </div>
 
-                {/* Features */}
-                <ul className="space-y-1">
-                  {option.features.slice(0, 3).map((feature, index) => (
-                    <li key={index} className={`text-sm flex items-start gap-2 ${isComingSoon ? 'text-gray-400' : 'text-white/80'} font-medium`}>
-                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
-                      <span>{feature}</span>
+                {/* Features COMPACT */}
+                <ul className="space-y-0.5">
+                  {option.features.slice(0, 2).map((feature, index) => (
+                    <li key={index} className={`text-xs flex items-start gap-1.5 ${
+                      isComingSoon ? 'text-gray-400' : 'text-white/70'
+                    }`}>
+                      <Check className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-400" />
+                      <span className="line-clamp-1">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA */}
+                {/* CTA COMPACT */}
                 <button
                   onClick={() => !isComingSoon && navigate('/commande')}
                   disabled={isComingSoon}
-                  className={`w-full py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  className={`w-full py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
                     isComingSoon
-                      ? 'bg-gray-600/30 text-gray-400 cursor-not-allowed'
+                      ? 'bg-gray-600/25 text-gray-400 cursor-not-allowed'
                       : 'bg-gradient-to-r from-amber-400/20 to-amber-500/10 text-amber-400 border border-amber-400/30 hover:from-amber-400/30 hover:to-amber-500/20'
                   }`}
                 >
+                  {!isComingSoon && <ArrowRight className="w-3 h-3" />}
                   {option.ctaText}
-                  {!isComingSoon && <ArrowRight className="w-4 h-4" />}
                 </button>
               </div>
             </GlassCard>
