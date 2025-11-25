@@ -1,7 +1,6 @@
 import React from 'react';
 import { Clock, Sparkles, Shield, LogIn } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 
 /**
  * HeroRefonte - Hero section modernisée avec glassmorphisme
@@ -14,8 +13,6 @@ import { useNavigate } from 'react-router-dom';
  * ✅ Bouton flottant "Déjà client ?" en haut à droite
  */
 const HeroRefonte: React.FC = () => {
-  const navigate = useNavigate();
-
   return (
     <section className="min-h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
       {/* Bouton Flottant "Déjà client ?" - Discret et élégant */}
@@ -25,8 +22,8 @@ const HeroRefonte: React.FC = () => {
         transition={{ delay: 1.2, duration: 0.5 }}
         className="absolute top-6 right-6 z-50"
       >
-        <motion.button
-          onClick={() => navigate('/sanctuaire/login')}
+        <motion.a
+          href="/sanctuaire/login"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="group flex items-center gap-2 px-4 py-2.5 bg-white/5 backdrop-blur-md border border-white/10 hover:border-cosmic-gold/40 rounded-full transition-all duration-300 hover:bg-white/10"
@@ -48,7 +45,7 @@ const HeroRefonte: React.FC = () => {
             }}
             className="w-1.5 h-1.5 bg-cosmic-gold rounded-full"
           />
-        </motion.button>
+        </motion.a>
       </motion.div>
 
       {/* Mandala cosmique premium en arrière-plan */}
