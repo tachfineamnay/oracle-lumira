@@ -15,10 +15,7 @@ import {
   X,
   Loader2,
   Award,
-  Eye,
-  Menu,
-  ChevronRight,
-  Home
+  Eye
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
 import { useNavigate } from 'react-router-dom';
@@ -38,12 +35,7 @@ interface EditData {
   objective: string;
 }
 
-interface NavigationItem {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-}
+// NavigationItem supprimé - sidebar retirée
 
 // =================== COMPOSANT PRINCIPAL ===================
 
@@ -64,10 +56,9 @@ const Profile: React.FC = () => {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [uploadingFace, setUploadingFace] = useState(false);
   const [uploadingPalm, setUploadingPalm] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>('photos');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // activeSection supprimé - sidebar retirée
 
-  // Références pour le scroll
+  // Références pour le scroll (simplifiées)
   const photosRef = useRef<HTMLDivElement>(null);
   const personalRef = useRef<HTMLDivElement>(null);
   const spiritualRef = useRef<HTMLDivElement>(null);
@@ -102,13 +93,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  // Navigation items
-  const navigationItems: NavigationItem[] = [
-    { id: 'photos', label: 'Photos', icon: <Camera className="w-4 h-4" />, color: 'amber' },
-    { id: 'personal', label: 'Informations', icon: <User className="w-4 h-4" />, color: 'amber' },
-    { id: 'spiritual', label: 'Spirituel', icon: <Calendar className="w-4 h-4" />, color: 'purple' }
-  ];
-
   // Synchroniser editData quand les données arrivent
   useEffect(() => {
     if (user || profile) {
@@ -134,47 +118,8 @@ const Profile: React.FC = () => {
     }
   }, [user, profile]);
 
-  // Observer les sections pour mettre à jour la navigation active
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      { threshold: 0.3, rootMargin: '-100px 0px -50% 0px' }
-    );
-
-    const sections = [photosRef.current, personalRef.current, spiritualRef.current];
-    sections.forEach((section) => {
-      if (section) observer.observe(section);
-    });
-
-    return () => {
-      sections.forEach((section) => {
-        if (section) observer.unobserve(section);
-      });
-    };
-  }, [profile]);
-
-  // Scroll vers une section
-  const scrollToSection = (sectionId: string) => {
-    const refs: Record<string, React.RefObject<HTMLDivElement>> = {
-      photos: photosRef,
-      personal: personalRef,
-      spiritual: spiritualRef
-    };
-    
-    const ref = refs[sectionId];
-    if (ref?.current) {
-      const yOffset = -100;
-      const y = ref.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-      setSidebarOpen(false);
-    }
-  };
+  // Observer les sections pour mettre à jour la navigation active (supprimé car sidebar retirée)
+  // Fonction scrollToSection supprimée car sidebar de navigation retirée
 
   // =================== HANDLERS ===================
 
@@ -310,138 +255,8 @@ const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-mystical-950 via-mystical-900 to-mystical-950">
-      {/* Bouton Menu Mobile */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white hover:bg-white/20 transition-all shadow-xl"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
-
-      {/* Sidebar Navigation */}
-      <AnimatePresence>
-        {(sidebarOpen || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
-          <motion.aside
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed left-0 top-0 h-screen w-64 bg-white/5 backdrop-blur-xl border-r border-white/10 z-40 overflow-y-auto"
-          >
-            {/* Header Sidebar */}
-            <div className="p-6 border-b border-white/10">
-              <button
-                onClick={() => navigate('/sanctuaire')}
-                className="flex items-center gap-3 text-white/80 hover:text-white transition-all group w-full"
-              >
-                <div className="p-2 bg-amber-400/10 rounded-lg group-hover:bg-amber-400/20 transition-all">
-                  <Home className="w-5 h-5 text-amber-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium">Retour au</p>
-                  <p className="text-xs text-white/60">Sanctuaire</p>
-                </div>
-              </button>
-            </div>
-
-            {/* Profil Résumé */}
-            <div className="p-6 border-b border-white/10">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-gradient-to-br from-amber-400/20 to-purple-400/20 rounded-full">
-                  <User className="w-5 h-5 text-amber-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">
-                    {user?.firstName || 'Client'} {user?.lastName || 'Oracle'}
-                  </p>
-                  <p className="text-xs text-white/60 truncate">{user?.email}</p>
-                </div>
-              </div>
-              <div className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-${levelColor}-400/10 to-purple-400/10 rounded-lg border border-${levelColor}-400/20`}>
-                <Award className={`w-4 h-4 text-${levelColor}-400`} />
-                <span className="text-sm text-white/80">{levelName}</span>
-              </div>
-            </div>
-
-            {/* Navigation Sections */}
-            <div className="p-4 space-y-1">
-              <p className="px-3 py-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
-                Navigation
-              </p>
-              {navigationItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => scrollToSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${
-                    activeSection === item.id
-                      ? `bg-${item.color}-400/10 text-${item.color}-400 border border-${item.color}-400/20`
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <div className={`p-1.5 rounded-md ${
-                    activeSection === item.id
-                      ? `bg-${item.color}-400/20`
-                      : 'bg-white/5 group-hover:bg-white/10'
-                  }`}>
-                    {item.icon}
-                  </div>
-                  <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
-                  {activeSection === item.id && (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Actions Quick */}
-            <div className="p-4 mt-auto border-t border-white/10">
-              {!isEditing ? (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/30 rounded-lg transition-all"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  <span className="text-sm font-medium">Modifier le profil</span>
-                </button>
-              ) : (
-                <div className="space-y-2">
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-400/10 hover:bg-green-400/20 text-green-400 border border-green-400/30 rounded-lg transition-all disabled:opacity-50"
-                  >
-                    {isSaving ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    <span className="text-sm font-medium">Sauvegarder</span>
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    disabled={isSaving}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white/70 border border-white/10 rounded-lg transition-all disabled:opacity-50"
-                  >
-                    <X className="w-4 h-4" />
-                    <span className="text-sm font-medium">Annuler</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* Overlay Mobile */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
-        />
-      )}
-
-      {/* Contenu Principal */}
-      <div className="lg:ml-64 p-4 sm:p-6 lg:p-8">
+      {/* Contenu Principal - sidebar gauche supprimée */}
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header avec Niveau */}
           <motion.div

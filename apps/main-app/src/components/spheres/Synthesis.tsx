@@ -164,7 +164,6 @@ const Synthesis: React.FC = () => {
       const yOffset = -100;
       const y = ref.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
       window.scrollTo({ top: y, behavior: 'smooth' });
-      setSidebarOpen(false);
     }
   };
 

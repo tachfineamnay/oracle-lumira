@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Star, Download, Play, Calendar, Home, Clock, User, FileText, Settings, CreditCard, Eye, Lock, Crown } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
 import MandalaNav from '../components/mandala/MandalaNav';
-import SanctuaireSidebar from '../components/layout/SanctuaireSidebar';
+// SanctuaireSidebar retiré pour éviter double sidebar
 import GlassCard from '../components/ui/GlassCard';
 import SanctuaireWelcomeForm from '../components/sanctuaire/SanctuaireWelcomeForm';
 import { OnboardingForm } from '../components/sanctuaire/OnboardingForm';
@@ -720,12 +720,9 @@ const Sanctuaire: React.FC = () => {
       {/* Icône Profil - Toujours visible */}
       <ProfileIcon />
       
-      {/* Sidebar persistante */}
-      <SanctuaireSidebar progress={[progress, 0, 0, 0]} />
-      
-      {/* Contenu principal avec marge pour sidebar sur sous-pages */}
+      {/* Contenu principal sans marge gauche */}
       <AudioPlayerProvider>
-      <div className={'ml-64'}>
+      <div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="space-y-8 py-6 sm:py-8 lg:py-12"

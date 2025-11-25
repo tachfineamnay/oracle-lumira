@@ -328,50 +328,35 @@ const DrawsContent: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Layout principal - RÉORGANISÉ */}
+      {/* Layout principal - UNE SEULE COLONNE CENTRALE */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         
-        {/* Colonne gauche: Liste des lectures (sidebar secondaire) */}
-        <div className="xl:col-span-3">
-          <GlassCard className="p-4 bg-white/5 border-white/20 backdrop-blur-xl sticky top-6">
-            <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-amber-400" />
-              Mes lectures
-            </h3>
-            <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 -mr-2">
-              {lectures.map((lecture) => (
-                <button
-                  key={lecture.id}
-                  onClick={() => setSelectedLecture(lecture)}
-                  className={`w-full text-left p-3 rounded-lg transition-all ${
-                    selectedLecture?.id === lecture.id
-                      ? 'bg-amber-400/25 border-2 border-amber-400/50 shadow-lg'
-                      : 'bg-white/10 hover:bg-white/15 border border-white/20'
-                  }`}
-                >
-                  <div className="text-sm font-bold text-white line-clamp-2 mb-2">
-                    {lecture.title}
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/60 font-medium">
-                      {new Date(lecture.deliveredAt || lecture.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                      lecture.level === 1 ? 'bg-blue-400/20 text-blue-300' :
-                      lecture.level === 2 ? 'bg-purple-400/20 text-purple-300' :
-                      'bg-amber-400/20 text-amber-300'
-                    }`}>
-                      {lecture.levelName}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </GlassCard>
-        </div>
-
-        {/* Colonne centrale: Contexte + Assets (pile verticale) */}
-        <div className="xl:col-span-6 space-y-4">
+        {/* Colonne centrale: Sélecteur + Contexte + Assets (pile verticale) */}
+        <div className="xl:col-span-9 space-y-4">
+          {/* Sélecteur de lecture compact en haut */}
+          {lectures.length > 1 && (
+            <GlassCard className="p-3 bg-white/5 border-white/20 backdrop-blur-xl">
+              <div className="flex items-center gap-3 overflow-x-auto pb-2">
+                <span className="text-xs font-bold text-white/60 whitespace-nowrap flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  Lectures :
+                </span>
+                {lectures.map((lecture) => (
+                  <button
+                    key={lecture.id}
+                    onClick={() => setSelectedLecture(lecture)}
+                    className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap text-xs font-medium ${
+                      selectedLecture?.id === lecture.id
+                        ? 'bg-amber-400/25 border border-amber-400/50 text-amber-300'
+                        : 'bg-white/10 hover:bg-white/15 border border-white/20 text-white/70'
+                    }`}
+                  >
+                    {lecture.title.length > 30 ? lecture.title.substring(0, 30) + '...' : lecture.title}
+                  </button>
+                ))}
+              </div>
+            </GlassCard>
+          )}
           {selectedLecture && (
             <>
               {/* 1. CONTEXTE DE LA LECTURE (en premier) */}
@@ -416,7 +401,7 @@ const DrawsContent: React.FC = () => {
           )}
         </div>
 
-        {/* Colonne droite: Upgrades */}
+        {/* Colonne droite: Upgrades - SIDEBAR UNIQUE À DROITE */}
         <div className="xl:col-span-3">
           {selectedLecture && (
             <div className="sticky top-6">
