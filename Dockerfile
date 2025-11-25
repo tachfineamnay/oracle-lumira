@@ -25,7 +25,7 @@ ENV VITE_BUILD_TIMESTAMP=$BUILD_TIMESTAMP
 
 # Install dependencies and build
 COPY apps/main-app/package*.json ./apps/main-app/
-RUN cd apps/main-app && npm install && npm install framer-motion@11.11.17 --save-exact
+RUN cd apps/main-app && npm install
 COPY apps/main-app ./apps/main-app/
 # CACHE INVALIDATION: Clean ALL Vite caches + inject build version to bust Docker layer cache
 RUN cd apps/main-app && rm -rf dist .vite node_modules/.vite node_modules/.cache
