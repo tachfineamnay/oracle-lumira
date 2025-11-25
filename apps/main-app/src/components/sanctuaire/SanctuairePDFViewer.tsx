@@ -28,11 +28,8 @@ import {
   X,
 } from 'lucide-react';
 
-// Configuration PDF.js worker (utiliser le worker local npm au lieu du CDN)
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+// Configuration PDF.js worker (utiliser CDN unpkg pour éviter les problèmes MIME type)
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 interface SanctuairePDFViewerProps {
   pdfUrl: string;

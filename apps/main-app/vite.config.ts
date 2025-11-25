@@ -16,4 +16,16 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Séparer PDF.js worker dans son propre chunk
+          'pdf-worker': ['pdfjs-dist/build/pdf.worker.min.mjs'],
+        },
+      },
+    },
+  },
+  // Assurer que les .mjs sont servis avec le bon MIME type
+  assetsInclude: ['**/*.mjs'],
 });
