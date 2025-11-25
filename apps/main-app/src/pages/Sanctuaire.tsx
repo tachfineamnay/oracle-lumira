@@ -799,7 +799,7 @@ const Sanctuaire: React.FC = () => {
                 </GlassCard>
               </motion.div>
             )}
-            <ContextualHint />
+            {!location.pathname.includes('/draws') && <ContextualHint />}
 
             {/* Content Area - Uniquement pour les sous-pages */}
             {!isHome && (
