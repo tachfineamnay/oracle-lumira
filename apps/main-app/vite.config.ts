@@ -4,6 +4,11 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      'framer-motion': '/src/lib/motion-shim.tsx',
+    },
+  },
   server: {
     proxy: {
       '/api': {
@@ -27,5 +32,5 @@ export default defineConfig({
     },
   },
   // Assurer que les .mjs sont servis avec le bon MIME type
-  assetsInclude: ['**/*.mjs'],
+  // assetsInclude: ['**/*.mjs'],
 });

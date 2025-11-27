@@ -1,6 +1,5 @@
 import React from 'react';
 import { Loader, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
 import LevelCardRefonte from './LevelCardRefonte';
 import { useProducts } from '../hooks/useProductsSimple';
 
@@ -49,13 +48,7 @@ const LevelsSectionRefonte: React.FC = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <h2 className="text-4xl sm:text-5xl font-bold mb-6">
             <span className="bg-gradient-to-r from-cosmic-gold via-cosmic-aurora to-cosmic-violet bg-clip-text text-transparent">
               L'Ascension des Niveaux d'Éveil
@@ -67,7 +60,7 @@ const LevelsSectionRefonte: React.FC = () => {
           <p className="text-lg text-white/70 max-w-3xl mx-auto">
             Chaque niveau est une clef vibratoire pour franchir les couches profondes de ta conscience.
           </p>
-        </motion.div>
+        </div>
 
         {/* DESKTOP : Grille classique 4 colonnes */}
         <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -114,17 +107,11 @@ const LevelsSectionRefonte: React.FC = () => {
         </div>
 
         {/* Note en bas */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.6 }}
-          className="text-center mt-16"
-        >
+        <div className="text-center mt-16">
           <p className="text-white/60 text-sm">
             ✨ Accès immédiat à ta cartographie vibratoire personnalisée ✨
           </p>
-        </motion.div>
+        </div>
       </div>
 
       <style jsx>{`
