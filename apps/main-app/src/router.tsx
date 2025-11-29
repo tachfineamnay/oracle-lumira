@@ -24,7 +24,7 @@ const LazyProfile = React.lazy(() => import('./components/spheres/Profile'));
 const LazyRituals = React.lazy(() => import('./components/spheres/Rituals'));
 const LazyMandala = React.lazy(() => import('./components/spheres/Mandala'));
 
-const AppRoutes: React.FC = () => (
+const AppRoutesComponent: React.FC = () => (
   <Routes>
     <Route path="/" element={<LandingTempleRefonte />} />
     <Route path="/commande" element={<CommandeTempleSPA />} />
@@ -87,6 +87,9 @@ const AppRoutes: React.FC = () => (
     <Route path="/expert" element={<ExpertDeskPage />} />
   </Routes>
 );
+
+const AppRoutes = React.memo(AppRoutesComponent);
+AppRoutes.displayName = 'AppRoutes';
 
 export default AppRoutes;
 
