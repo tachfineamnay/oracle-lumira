@@ -13,6 +13,47 @@ import { getLevelNameSafely } from '../utils/orderUtils';
 
 const router = express.Router();
 
+// Lightweight in-memory replay protection for n8n callbacks (per-process)
+const n8nReplayCache = new Map<string, number>();
+const MAX_NONCE_CACHE = 5000;
+
+const purgeExpiredNonces = () => {
+  const now = Date.now();
+  for (const [nonce, expiresAt] of n8nReplayCache) {
+    if (expiresAt <= now) {
+      n8nReplayCache.delete(nonce);
+    }
+  }
+};
+
+const trimNonceCache = () => {
+  if (n8nReplayCache.size <= MAX_NONCE_CACHE) return;
+  const overflow = n8nReplayCache.size - MAX_NONCE_CACHE;
+  // Remove the oldest entries first
+  const sorted = [...n8nReplayCache.entries()].sort((a, b) => a[1] - b[1]);
+  for (let i = 0; i < overflow; i++) {
+    const [nonce] = sorted[i];
+    n8nReplayCache.delete(nonce);
+  }
+};
+
+const isNonceReplay = (nonce: string) => {
+  purgeExpiredNonces();
+  const expiresAt = n8nReplayCache.get(nonce);
+  if (!expiresAt) return false;
+  if (expiresAt <= Date.now()) {
+    n8nReplayCache.delete(nonce);
+    return false;
+  }
+  return true;
+};
+
+const rememberNonce = (nonce: string, ttlMs: number) => {
+  purgeExpiredNonces();
+  trimNonceCache();
+  n8nReplayCache.set(nonce, Date.now() + ttlMs);
+};
+
 // DEBUG: Check if expert exists in database
 router.get('/check', async (req, res) => {
   if (!(process.env.ENABLE_DEBUG_ROUTES === 'true' && process.env.NODE_ENV !== 'production')) {
@@ -517,9 +558,17 @@ router.get('/files/presign', authenticateExpert, async (req: any, res: any) => {
 
 // Add callback route for n8n (secured with HMAC signature)
 router.post('/n8n-callback', async (req: any, res: any) => {
+  let nonceHeader: string | undefined;
+  let hasReplayHeaders = false;
+  let nonceStored = false;
+
   try {
     const secret = (process.env.N8N_CALLBACK_SECRET || '').trim();
     const signatureHeader = (req.header('X-N8N-Signature') || req.header('x-n8n-signature') || '').trim();
+    const timestampHeader = req.header('X-Timestamp') || req.header('x-timestamp') || req.header('X-N8N-Timestamp') || req.header('x-n8n-timestamp');
+    nonceHeader = req.header('X-Nonce') || req.header('x-nonce') || req.header('X-N8N-Nonce') || req.header('x-n8n-nonce');
+    hasReplayHeaders = Boolean(timestampHeader && nonceHeader);
+    const requireReplayHeaders = process.env.N8N_CALLBACK_REQUIRE_REPLAY_PROTECTION === 'true';
 
     if (!secret) {
       return res.status(503).json({ error: 'Callback not configured (N8N_CALLBACK_SECRET missing)' });
@@ -527,6 +576,10 @@ router.post('/n8n-callback', async (req: any, res: any) => {
 
     if (!signatureHeader) {
       return res.status(401).json({ error: 'Missing signature' });
+    }
+
+    if (requireReplayHeaders && !hasReplayHeaders) {
+      return res.status(400).json({ error: 'Missing replay headers' });
     }
 
     const rawBody: Buffer = Buffer.isBuffer(req.body)
@@ -538,40 +591,82 @@ router.post('/n8n-callback', async (req: any, res: any) => {
     try {
       payload = JSON.parse(rawBody.toString('utf8'));
     } catch (e) {
-      console.error('❌ Invalid JSON payload:', e);
+      console.error('? Invalid JSON payload:', e);
       return res.status(400).json({ error: 'Invalid JSON payload' });
+    }
+
+    const timestampMs = hasReplayHeaders ? Number(timestampHeader) : undefined;
+    if (hasReplayHeaders) {
+      if (!Number.isFinite(timestampMs)) {
+        return res.status(400).json({ error: 'Invalid timestamp' });
+      }
+      const skewMs = Math.max(parseInt(process.env.N8N_CALLBACK_MAX_SKEW_MS || '300000', 10), 60000);
+      if (Math.abs(Date.now() - (timestampMs as number)) > skewMs) {
+        return res.status(400).json({ error: 'Stale callback' });
+      }
     }
 
     // Normalize optional prefix like 'sha256=' (case-insensitive)
     const lower = signatureHeader.toLowerCase();
     const providedRaw = lower.startsWith('sha256=') ? signatureHeader.slice(7) : signatureHeader;
 
-    // Strategy 1: Sign entire body (Standard)
-    const expectedBodyBuf = crypto.createHmac('sha256', secret).update(rawBody).digest();
-    const expectedBodyHex = expectedBodyBuf.toString('hex');
+    // Strategy 1: Sign entire body (Standard) with optional nonce+timestamp context
+    const canonicalBodySource = hasReplayHeaders
+      ? `${timestampHeader}.${nonceHeader}.${rawBody.toString('utf8')}`
+      : rawBody;
+    const expectedBodyBuf = crypto.createHmac('sha256', secret).update(canonicalBodySource).digest();
 
     // Strategy 2: Sign orderId:orderNumber (n8n specific)
     const orderIdStr = String(payload.orderId || '');
     const orderNumberStr = String(payload.orderNumber || '');
-    const expectedCustomBuf = crypto.createHmac('sha256', secret).update(`${orderIdStr}:${orderNumberStr}`).digest();
-    const expectedCustomHex = expectedCustomBuf.toString('hex');
+    const canonicalCustomSource = hasReplayHeaders
+      ? `${timestampHeader}.${nonceHeader}.${orderIdStr}:${orderNumberStr}`
+      : `${orderIdStr}:${orderNumberStr}`;
+    const expectedCustomBuf = crypto.createHmac('sha256', secret).update(canonicalCustomSource).digest();
+
+    // Legacy fallbacks (body + orderId/orderNumber without replay headers) kept for backward compatibility
+    const legacyBodyBuf = hasReplayHeaders
+      ? crypto.createHmac('sha256', secret).update(rawBody).digest()
+      : expectedBodyBuf;
+    const legacyCustomBuf = hasReplayHeaders
+      ? crypto.createHmac('sha256', secret).update(`${orderIdStr}:${orderNumberStr}`).digest()
+      : expectedCustomBuf;
 
     // Constant-time comparison with hex/base64 support
     const provided = providedRaw.trim();
     const isHex = /^[0-9a-f]+$/i.test(provided);
     const isB64 = /^[A-Za-z0-9+/]+={0,2}$/.test(provided);
 
-    const matchCustomHex = isHex && (() => { const a = Buffer.from(provided, 'hex'); const b = Buffer.from(expectedCustomHex, 'hex'); return a.length === b.length && crypto.timingSafeEqual(a, b); })();
-    const matchBodyHex = isHex && (() => { const a = Buffer.from(provided, 'hex'); const b = Buffer.from(expectedBodyHex, 'hex'); return a.length === b.length && crypto.timingSafeEqual(a, b); })();
-    const matchCustomB64 = isB64 && (() => { const a = Buffer.from(provided, 'base64'); const b = expectedCustomBuf; return a.length === b.length && crypto.timingSafeEqual(a, b); })();
-    const matchBodyB64 = isB64 && (() => { const a = Buffer.from(provided, 'base64'); const b = expectedBodyBuf; return a.length === b.length && crypto.timingSafeEqual(a, b); })();
+    const buffersToCheck = hasReplayHeaders
+      ? [expectedBodyBuf, expectedCustomBuf, legacyBodyBuf, legacyCustomBuf]
+      : [expectedBodyBuf, expectedCustomBuf];
 
-    if (!(matchCustomHex || matchBodyHex || matchCustomB64 || matchBodyB64)) {
-      console.error('❌ N8N callback signature mismatch', {
+    const safeCompare = (buf: Buffer) => {
+      try {
+        const providedBuf = Buffer.from(provided, isHex ? 'hex' : 'base64');
+        return providedBuf.length === buf.length && crypto.timingSafeEqual(providedBuf, buf);
+      } catch {
+        return false;
+      }
+    };
+
+    const isValidSignature = (isHex || isB64) && buffersToCheck.some(safeCompare);
+
+    if (!isValidSignature) {
+      console.error('? N8N callback signature mismatch', {
         orderIdPresent: !!orderIdStr,
         orderNumberPresent: !!orderNumberStr
       });
       return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    if (hasReplayHeaders && nonceHeader) {
+      const nonceTtlMs = Math.max(parseInt(process.env.N8N_CALLBACK_NONCE_TTL_MS || '600000', 10), 60000);
+      if (isNonceReplay(nonceHeader)) {
+        return res.status(409).json({ error: 'Replay detected' });
+      }
+      rememberNonce(nonceHeader, nonceTtlMs);
+      nonceStored = true;
     }
 
     const { orderId, success, generatedContent, files, error, isRevision, pdfUrl, status } = payload;
@@ -699,6 +794,9 @@ router.post('/n8n-callback', async (req: any, res: any) => {
     */
 
   } catch (error) {
+    if (nonceStored && nonceHeader) {
+      n8nReplayCache.delete(nonceHeader);
+    }
     console.error('❌ Erreur callback n8n:', error);
     res.status(500).json({ error: 'Erreur traitement callback' });
   }

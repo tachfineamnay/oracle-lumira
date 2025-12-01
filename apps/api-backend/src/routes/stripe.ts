@@ -4,6 +4,7 @@ import { Order } from '../models/Order';
 import { ProductOrder } from '../models/ProductOrder';
 import { User } from '../models/User';
 import { getLevelNameFromLevel } from '../utils/orderUtils';
+import { ProcessedEvent } from '../models/ProcessedEvent';
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -124,6 +125,25 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: a
     return res.status(400).json({ error: 'Webhook signature verification failed' });
   }
   
+  const eventId = event.id;
+  const now = new Date();
+
+  // Idempotence guard: reserve the event before processing, reply success if duplicate
+  try {
+    const alreadyHandled = await ProcessedEvent.findOneAndUpdate(
+      { eventId },
+      { $setOnInsert: { eventType: event.type, processedAt: now } },
+      { upsert: true, new: false }
+    );
+
+    if (alreadyHandled) {
+      return res.json({ received: true, duplicate: true });
+    }
+  } catch (err) {
+    console.error('[Stripe Webhook] Failed to reserve event for idempotence:', err);
+    // Continue without idempotence rather than blocking webhook delivery
+  }
+
   try {
     switch (event.type) {
       case 'payment_intent.succeeded':
@@ -152,6 +172,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: a
     
     res.json({ received: true });
   } catch (error) {
+    // If processing fails, release the idempotence lock so Stripe can retry
+    await ProcessedEvent.deleteOne({ eventId }).catch(() => undefined);
     console.error('Webhook processing error:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
   }
@@ -293,12 +315,15 @@ async function handlePaymentSuccess(paymentIntent: any) {
   try {
     const order = await Order.findOne({ paymentIntentId: paymentIntent.id });
     if (order) {
-      if (order.status !== 'paid') {
+      if (order.status === 'paid') {
+        console.log(`Order ${order.orderNumber} already marked as paid.`);
+      } else if (['awaiting_validation', 'completed', 'refunded'].includes(order.status)) {
+        console.log(`Order ${order.orderNumber} already in post-payment flow (${order.status}).`);
+      } else {
         order.status = 'paid';
+        order.paidAt = order.paidAt || new Date();
         await order.save();
         console.log(`Order ${order.orderNumber} updated to paid.`);
-      } else {
-        console.log(`Order ${order.orderNumber} already marked as paid.`);
       }
 
       // Update user stats
@@ -316,21 +341,19 @@ async function handlePaymentSuccess(paymentIntent: any) {
 async function handlePaymentFailed(paymentIntent: any) {
   console.log('Payment failed:', paymentIntent.id);
   
-  const order = await Order.findOne({ paymentIntentId: paymentIntent.id });
-  if (order) {
-    order.status = 'failed';
-    await order.save();
-  }
+  await Order.findOneAndUpdate(
+    { paymentIntentId: paymentIntent.id, status: { $in: ['pending', 'processing'] } },
+    { $set: { status: 'failed' } }
+  );
 }
 
 async function handlePaymentCanceled(paymentIntent: any) {
   console.log('Payment canceled:', paymentIntent.id);
   
-  const order = await Order.findOne({ paymentIntentId: paymentIntent.id });
-  if (order) {
-    order.status = 'failed';
-    await order.save();
-  }
+  await Order.findOneAndUpdate(
+    { paymentIntentId: paymentIntent.id, status: { $in: ['pending', 'processing'] } },
+    { $set: { status: 'failed' } }
+  );
 }
 
 export { router as stripeRoutes };
