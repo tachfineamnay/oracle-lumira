@@ -1,0 +1,906 @@
+================================================================================
+                    RAPPORT D'AUDIT COMPLET - LUMIRA V1 MVP
+                        Oracle Lumira - Plateforme Spirituelle
+                           Date d'audit : 22 Décembre 2025
+================================================================================
+
+================================================================================
+                           PROMPT POUR ASSISTANT IA
+================================================================================
+
+Tu es un expert en développement fullstack spécialisé dans les applications 
+React/TypeScript avec backend Node.js/Express. Tu vas m'aider à finaliser 
+l'application Oracle Lumira, une plateforme de lectures spirituelles 
+personnalisées avec intégration de paiement Stripe et automatisations n8n.
+
+CONTEXTE DU PROJET:
+- Application SaaS de lectures spirituelles (tarot, astrologie, numérologie)
+- 4 niveaux de produits: Simple (gratuit), Intuitive (14€), Alchimique (29€), Intégrale (49€)
+- Workflow: Client commande → Paiement Stripe → Expert rédige prompt → IA génère contenu → Expert valide → Client reçoit dans son Sanctuaire
+- Automatisation n8n pour la génération de contenu IA (PDF, audio, mandala)
+- Déploiement prévu sur Coolify (Docker)
+
+TES RESPONSABILITÉS:
+1. ANALYSE & BRAINSTORMING: Identifier les améliorations architecturales et UX
+2. DEBUGGING: Résoudre les défaillances identifiées dans ce rapport
+3. PROMPTS: Proposer des prompts IA optimisés pour la génération de contenu spirituel
+4. N8N AUTOMATISATION: Me guider pour créer les workflows n8n complets
+5. FINALISATION: M'accompagner jusqu'au déploiement en production
+
+RÈGLES À SUIVRE:
+- Modifications chirurgicales sans casser l'existant
+- Pas de noir dans l'UI: utiliser la palette cosmique (bleu/violet/indigo)
+- Commit & push après chaque modification validée
+- Ton décontracté et motivant
+
+CE RAPPORT CONTIENT:
+- Architecture technique complète
+- Stack technologique détaillée
+- Modèles de données
+- Routes API
+- Flux de données
+- Défaillances identifiées
+- Points d'amélioration
+- Schéma d'automatisation n8n à implémenter
+
+================================================================================
+                           1. VUE D'ENSEMBLE DU SYSTÈME
+================================================================================
+
+DESCRIPTION:
+Oracle Lumira est une plateforme de lectures spirituelles personnalisées 
+combinant astrologie, numérologie et tarologie. Le système permet aux clients
+de commander des lectures à différents niveaux de profondeur, traitées par 
+des experts humains assistés par l'IA.
+
+ARCHITECTURE MONOREPO:
+lumira-v1-mvp/
+├── apps/
+│   ├── api-backend/     → API Node.js/Express
+│   ├── main-app/        → Frontend client React/Vite
+│   ├── expert-desk/     → Interface Expert React/Vite
+│   └── shared/          → Styles partagés
+├── infrastructure/      → Docker Compose
+├── qa-tests/           → Tests E2E et QA
+├── security/           → Scripts de sécurité
+└── docs/               → Documentation architecture
+
+================================================================================
+                           2. STACK TECHNIQUE
+================================================================================
+
+BACKEND (apps/api-backend):
+├── Runtime: Node.js v18+
+├── Framework: Express.js 4.18
+├── Language: TypeScript 5.3
+├── Base de données: MongoDB 8.x (Mongoose 8.0.3)
+├── Authentification: JWT (jsonwebtoken 9.0.2)
+├── Paiement: Stripe 16.0
+├── Stockage fichiers: AWS S3 (@aws-sdk/client-s3)
+├── Upload: Multer 2.0
+├── Validation: Joi 17.11, express-validator 7.0
+├── Logging: Winston 3.11
+├── Sécurité: Helmet 7.1, express-rate-limit 7.1
+├── Tests: Jest 29.7, Supertest 6.3
+└── Scheduling: node-cron 4.2
+
+FRONTEND MAIN-APP (apps/main-app):
+├── Framework: React 18.3
+├── Build: Vite 5.4
+├── Language: TypeScript 5.5
+├── Routing: React Router DOM 6.30
+├── Styling: TailwindCSS 3.4
+├── Animations: Framer Motion 10.18
+├── Icônes: Lucide React 0.344
+├── Paiement: @stripe/react-stripe-js 4.0
+├── PDF: react-pdf 10.2, pdfjs-dist 5.4
+├── HTTP: Axios 1.6
+└── Tests: Vitest 3.2, Testing Library React 16.3
+
+FRONTEND EXPERT-DESK (apps/expert-desk):
+├── Framework: React 18.2
+├── Build: Vite 5.2
+├── Language: TypeScript 5.2
+├── Routing: React Router DOM 6.26
+├── Styling: TailwindCSS 3.4, @tailwindcss/forms
+├── Animations: Framer Motion 10.12
+├── Notifications: react-hot-toast 2.6
+├── Sécurité XSS: DOMPurify 3.3
+└── Icônes: Lucide React 0.263
+
+INFRASTRUCTURE:
+├── Orchestration: Docker Compose 3.8
+├── Reverse Proxy: Nginx (via Traefik labels)
+├── Hébergement prévu: Coolify
+├── CI/CD: Scripts de déploiement manuels
+└── CRM: Dolibarr 17 (optionnel)
+
+================================================================================
+                           3. MODÈLES DE DONNÉES
+================================================================================
+
+3.1 USER MODEL (apps/api-backend/src/models/User.ts)
+---------------------------------------------------------
+Interface IUser:
+- _id: ObjectId
+- email: string (unique, lowercase, regex validé)
+- firstName: string (max 50)
+- lastName: string (max 50)
+- phone?: string (E.164 ou national 0XXXXXXXXX)
+- dateOfBirth?: Date
+- stripeCustomerId?: string (unique, sparse)
+- dolibarrCustomerId?: number (unique, sparse)
+- subscriptionStatus: 'active' | 'inactive' | 'trial'
+- totalOrders: number (default 0)
+- lastOrderAt?: Date
+- profile?: IUserProfile {
+    birthDate?: string
+    birthTime?: string
+    birthPlace?: string
+    specificQuestion?: string
+    objective?: string
+    facePhotoUrl?: string
+    palmPhotoUrl?: string
+    profileCompleted?: boolean
+    submittedAt?: Date
+  }
+- createdAt: Date
+- updatedAt: Date
+
+Index: createdAt DESC
+
+3.2 ORDER MODEL (apps/api-backend/src/models/Order.ts)
+---------------------------------------------------------
+Interface IOrder:
+- _id: ObjectId
+- orderNumber: string (unique, format LUYYMMDDnnn)
+- userId: ObjectId (ref User)
+- userEmail: string (lowercase)
+- userName?: string
+- level: 1 | 2 | 3 | 4
+- levelName: 'Simple' | 'Intuitive' | 'Alchimique' | 'Intégrale' (virtual)
+- amount: number (cents)
+- currency: string (default 'eur')
+- status: 'pending' | 'paid' | 'processing' | 'awaiting_validation' | 'completed' | 'failed' | 'refunded'
+- paymentIntentId?: string
+- stripeSessionId?: string
+- service?: string
+- duration?: number (minutes)
+- expertId?: string
+- paidAt?: Date
+- formData: {
+    firstName: string
+    lastName: string
+    email: string
+    phone?: string
+    dateOfBirth?: Date
+    specificQuestion?: string
+    preferences?: {
+      audioVoice?: 'masculine' | 'feminine'
+      deliveryFormat?: 'email' | 'whatsapp'
+    }
+  }
+- files?: [{
+    name: string
+    url: string
+    key: string (S3)
+    contentType: string
+    size: number
+    type: 'face_photo' | 'palm_photo'
+    uploadedAt: Date
+  }]
+- clientInputs?: {
+    birthTime?: string
+    birthPlace?: string
+    specificContext?: string
+    lifeQuestion?: string
+  }
+- expertPrompt?: string
+- expertInstructions?: string
+- generatedContent?: {
+    archetype?: string
+    reading?: string
+    audioUrl?: string
+    pdfUrl?: string
+    mandalaSvg?: string
+    ritual?: string
+    blockagesAnalysis?: string
+    soulProfile?: string
+  }
+- errorLog?: string
+- expertReview?: {
+    expertId?: string
+    expertName?: string
+    assignedAt?: Date
+    status: 'pending' | 'approved' | 'rejected' | 'revision_needed'
+    notes?: string
+    reviewedAt?: Date
+  }
+- expertValidation?: {
+    validatorId?: string
+    validatorName?: string
+    validationStatus: 'pending' | 'approved' | 'rejected'
+    validationNotes?: string
+    validatedAt?: Date
+    rejectionReason?: string
+  }
+- revisionCount?: number
+- deliveredAt?: Date
+- deliveryMethod?: 'email' | 'whatsapp'
+- createdAt: Date
+- updatedAt: Date
+
+Index: userId, userEmail, status, level, createdAt DESC, expertReview.status
+
+3.3 EXPERT MODEL (apps/api-backend/src/models/Expert.ts)
+---------------------------------------------------------
+Interface IExpert:
+- email: string (unique)
+- password: string (bcrypt hashed, pre-save hook)
+- name: string
+- role?: string
+- expertise?: string[]
+- isActive: boolean
+- lastLogin?: Date
+- createdAt: Date
+- updatedAt: Date
+
+Methods: comparePassword(candidatePassword)
+
+3.4 PRODUCTORDER MODEL (apps/api-backend/src/models/ProductOrder.ts)
+--------------------------------------------------------------------
+(Modèle simplifié pour les commandes produit via catalog)
+- productId: string
+- customerEmail?: string
+- amount: number
+- currency: string
+- status: 'pending' | 'completed' | 'failed'
+- paymentIntentId?: string
+- completedAt?: Date
+- metadata?: object
+
+3.5 PROCESSEDEVENT MODEL (apps/api-backend/src/models/ProcessedEvent.ts)
+------------------------------------------------------------------------
+(Idempotence Stripe webhooks)
+- eventId: string (unique)
+- eventType: string
+- processedAt: Date
+
+================================================================================
+                           4. ROUTES API BACKEND
+================================================================================
+
+4.1 ROUTES SANTÉ (apps/api-backend/src/routes/health.ts)
+---------------------------------------------------------
+GET /api/healthz              → Health check simple
+GET /api/health               → Health routes détaillées
+GET /api/ready                → Readiness probe
+
+4.2 ROUTES UTILISATEURS (apps/api-backend/src/routes/users.ts)
+--------------------------------------------------------------
+POST /api/users/auth-email    → Authentification par email (sanctuaire)
+GET  /api/users/profile       → Récupérer profil utilisateur (auth)
+PATCH /api/users/profile      → Mettre à jour profil (auth)
+GET  /api/users/entitlements  → Récupérer capabilities/products (auth)
+GET  /api/users/orders        → Commandes du user (auth)
+GET  /api/users/orders/:id    → Détails commande (auth)
+GET  /api/users/orders/:id/content → Contenu généré (auth)
+GET  /api/users/stats         → Stats sanctuaire (auth)
+PATCH /api/users/me           → MAJ infos user (auth)
+
+4.3 ROUTES PRODUITS (apps/api-backend/src/routes/products.ts)
+-------------------------------------------------------------
+GET  /api/products/catalog    → Catalogue des produits
+POST /api/products/create-payment-intent → Créer PaymentIntent
+POST /api/products/client-submit → Soumission client (upload photos + données)
+POST /api/products/webhook    → Webhook Stripe produits
+
+4.4 ROUTES STRIPE (apps/api-backend/src/routes/stripe.ts)
+---------------------------------------------------------
+POST /api/stripe/create-payment-intent → Créer PaymentIntent (legacy)
+POST /api/stripe/webhook      → Webhook Stripe principal
+
+NIVEAUX DE PRIX:
+- Level 1 (Simple): 0€ - 1 carte + PDF 2p
+- Level 2 (Intuitive): 14€ - Profil âme + PDF 4p + audio 5min
+- Level 3 (Alchimique): 29€ - Blocages + rituel + PDF 6-8p + audio 12min
+- Level 4 (Intégrale): 49€ - Cartographie + mandala + PDF 15p + audio 25min
+
+4.5 ROUTES PAIEMENTS (apps/api-backend/src/routes/payments.ts)
+--------------------------------------------------------------
+POST /api/payments/create-payment-intent → Créer PaymentIntent
+POST /api/payments/webhook    → Webhook Stripe
+
+4.6 ROUTES COMMANDES (apps/api-backend/src/routes/orders.ts)
+------------------------------------------------------------
+GET  /api/orders              → Liste commandes (admin/expert)
+GET  /api/orders/:id          → Détails commande
+PATCH /api/orders/:id         → MAJ commande
+POST /api/orders              → Créer commande
+
+4.7 ROUTES EXPERT (apps/api-backend/src/routes/expert.ts)
+---------------------------------------------------------
+AUTHENTIFICATION:
+POST /api/expert/login        → Login expert (rate limited 10/15min)
+POST /api/expert/register     → Inscription expert
+GET  /api/expert/verify       → Vérifier token (auth)
+
+COMMANDES:
+GET  /api/expert/orders/pending → Commandes en attente (auth)
+GET  /api/expert/orders/assigned → Commandes assignées (auth)
+GET  /api/expert/orders/validation-queue → Queue validation (auth)
+GET  /api/expert/orders/:id   → Détails commande (auth)
+POST /api/expert/orders/:id/assign → Prendre commande (auth)
+POST /api/expert/process-order → Envoyer vers n8n (auth)
+DELETE /api/expert/orders/:id → Supprimer commande (auth)
+
+VALIDATION:
+POST /api/expert/validate-content → Valider/Rejeter contenu (auth)
+GET  /api/expert/orders/validated-history → Historique validations (auth)
+POST /api/expert/regenerate-lecture → Relancer génération (auth)
+
+CLIENTS:
+GET  /api/expert/clients      → Liste clients (auth)
+GET  /api/expert/clients/:id  → Détails client (auth)
+GET  /api/expert/clients/:id/stats → Stats client (auth)
+GET  /api/expert/clients/:id/orders → Commandes client (auth)
+PATCH /api/expert/clients/:id → MAJ client (auth)
+DELETE /api/expert/clients/:id → Supprimer client (auth)
+
+STATS & PROFIL:
+GET  /api/expert/stats        → Statistiques expert (auth)
+GET  /api/expert/profile      → Profil expert (auth)
+
+N8N CALLBACK:
+POST /api/expert/n8n-callback → Callback n8n (HMAC signé)
+GET  /api/expert/files/presign → URL signée S3 (auth)
+
+DEBUG (dev only):
+GET  /api/expert/check        → Vérifier expert
+POST /api/expert/create-debug → Créer expert debug
+POST /api/expert/debug-login  → Login debug
+
+4.8 ROUTES UPLOAD (apps/api-backend/src/routes/uploads.ts)
+----------------------------------------------------------
+POST /api/uploads/photo       → Upload photo vers S3
+GET  /api/uploads/presign     → URL pré-signée upload
+
+4.9 ROUTES ADMIN (apps/api-backend/src/routes/admin.ts)
+-------------------------------------------------------
+Routes de diagnostic protégées par auth expert
+
+================================================================================
+                           5. FLUX DE DONNÉES
+================================================================================
+
+5.1 PARCOURS CLIENT COMMANDE
+-----------------------------
+1. Client → /commande (CommandeTempleSPA.tsx)
+2. Sélection niveau (1-4)
+3. Formulaire multi-étapes:
+   - Étape 1: Identité (prénom, nom, email, tel)
+   - Étape 2: Naissance (date, heure, lieu)
+   - Étape 3: Question/Objectif spirituel
+   - Étape 4: Photos (visage, paume) via S3 presign
+4. Si payant → Stripe PaymentElement
+5. Paiement → Webhook Stripe → Order.status = 'paid'
+6. Redirection → /confirmation
+
+5.2 WORKFLOW EXPERT
+-------------------
+1. Expert → desk.oraclelumira.com/login
+2. Dashboard → Commandes payées/pending
+3. "Prendre commande" → Order.expertReview.expertId = expertId
+4. Rédiger prompt IA + instructions
+5. "Envoyer" → POST /api/expert/process-order
+6. Appel Webhook n8n avec payload complet
+7. Order.status = 'processing'
+
+5.3 WORKFLOW N8N (À IMPLÉMENTER)
+--------------------------------
+1. Réception webhook depuis backend
+2. Extraction données client (nom, date naissance, question, photos)
+3. Appel API IA (OpenAI/Claude/Mistral) avec prompt expert
+4. Génération contenu:
+   - Lecture textuelle (reading)
+   - Archétype
+   - PDF formaté
+   - Audio (TTS)
+   - Mandala SVG (optionnel)
+   - Rituel personnalisé
+5. Upload vers S3 (lectures bucket)
+6. Callback vers /api/expert/n8n-callback avec:
+   {
+     orderId: string,
+     orderNumber: string,
+     success: true,
+     generatedContent: { reading, pdfUrl, audioUrl, ... },
+     files: [{ type, url }]
+   }
+7. Order.status = 'awaiting_validation'
+
+5.4 VALIDATION EXPERT
+---------------------
+1. Expert → Queue validation
+2. Preview PDF/Audio/Texte
+3. "Approuver" → Order.status = 'completed', deliveredAt = now
+4. OU "Rejeter" → Callback n8n avec isRevision:true → Régénération
+
+5.5 ACCÈS SANCTUAIRE CLIENT
+---------------------------
+1. Client → /sanctuaire/login
+2. Auth par email → JWT token
+3. Vérification entitlements (capabilities, products)
+4. Affichage sphères selon niveau:
+   - Draws: Lectures reçues (PDF, audio)
+   - Profile: Infos personnelles
+   - Rituals: Rituels personnalisés (niveau 3+)
+   - Mandala: Mandala personnel (niveau 4)
+   - Synthesis: Synthèse chemin (niveau 4)
+5. Téléchargement via S3 presigned URLs
+
+================================================================================
+                           6. SERVICES EXTERNES
+================================================================================
+
+6.1 STRIPE INTEGRATION
+-----------------------
+Mode: Live (sk_live_...)
+Webhook secret: whsec_...
+Events gérés:
+- payment_intent.succeeded → Order.status = 'paid'
+- payment_intent.payment_failed → Order.status = 'failed'
+- payment_intent.canceled → Order.status = 'failed'
+
+Idempotence: ProcessedEvent model (eventId unique)
+
+6.2 AWS S3 STORAGE
+------------------
+Buckets:
+- oracle-lumira-uploads (photos clients)
+- oracle-lumira-lectures (PDF/audio générés)
+
+Configuration:
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_REGION
+- AWS_S3_BUCKET_NAME
+- S3_ENDPOINT (optionnel pour MinIO)
+- S3_FORCE_PATH_STYLE
+
+Features:
+- Upload direct via presigned PUT URLs
+- Téléchargement via presigned GET URLs
+- Mock mode pour tests (S3_MOCK_MODE=true)
+
+6.3 N8N AUTOMATION (À CONFIGURER)
+---------------------------------
+Configuration backend:
+- N8N_WEBHOOK_URL: URL du webhook n8n
+- N8N_WEBHOOK_TOKEN: Bearer token (optionnel)
+- N8N_TIMEOUT_MS: 10000 (défaut)
+- N8N_MAX_RETRIES: 3
+- N8N_RETRY_BASE_MS: 1000
+- N8N_CALLBACK_SECRET: HMAC secret pour callback
+
+Callback sécurisé:
+- Signature HMAC SHA256
+- Headers: X-N8N-Signature, X-Timestamp, X-Nonce
+- Protection anti-replay (nonce cache in-memory)
+
+================================================================================
+                           7. SÉCURITÉ
+================================================================================
+
+7.1 AUTHENTIFICATION
+--------------------
+- JWT tokens (8h expiration experts, 24h users)
+- bcrypt password hashing (Expert model)
+- Rate limiting login: 10 tentatives / 15 min
+
+7.2 PROTECTION API
+------------------
+- Helmet (CSP, XSS, etc.)
+- CORS whitelist (origines autorisées)
+- Rate limiting sélectif:
+  - Routes publiques: 1000/5min
+  - Routes sensibles: 500/15min
+  - Routes expert: 2000/15min
+
+7.3 VALIDATION DONNÉES
+----------------------
+- Joi schemas (login, register, process-order)
+- express-validator
+- Mongoose schema validation
+
+7.4 FICHIERS
+------------
+- Upload vers S3 uniquement (pas de stockage local)
+- Types MIME validés
+- Taille max configurée
+
+================================================================================
+                           8. DÉFAILLANCES IDENTIFIÉES
+================================================================================
+
+8.1 CRITIQUE - À RÉSOUDRE EN PRIORITÉ
+--------------------------------------
+
+[C1] MODÈLE ENHANCEDORDER INCOMPLET
+Fichier: apps/api-backend/src/models/EnhancedOrder.ts
+Problème: Le fichier contient un bloc de code orphelin (ligne 14-172) 
+sans déclaration de Schema ni export de modèle.
+Impact: Code mort, confusion potentielle.
+Solution: Supprimer le fichier ou compléter avec schema + export.
+
+[C2] N8N WORKFLOW NON IMPLÉMENTÉ
+Problème: Le backend est prêt (process-order, n8n-callback) mais 
+aucun workflow n8n n'existe.
+Impact: Pas de génération automatique de contenu IA.
+Solution: Créer le workflow n8n complet (voir section 10).
+
+[C3] STRIPE GRANTPRODUCTACCESS TODO
+Fichier: apps/api-backend/src/services/stripe.ts (lignes 143-165)
+Problème: grantProductAccess() ne fait que logger, pas d'implémentation réelle.
+Impact: Les utilisateurs ne sont pas automatiquement autorisés après paiement.
+Solution: Implémenter la mise à jour User.subscriptionStatus + envoi email.
+
+[C4] CLEANUP JOB DÉSACTIVÉ
+Fichier: apps/api-backend/src/server.ts (lignes 279-282)
+Problème: startCleanupJob() commenté.
+Impact: Pas de nettoyage automatique des fichiers temporaires.
+Solution: Décommenter après installation de node-cron.
+
+8.2 HAUTE PRIORITÉ
+------------------
+
+[H1] DUPLICATION ROUTES STRIPE/PAYMENTS/PRODUCTS
+Problème: 3 fichiers de routes pour paiements Stripe (stripe.ts, payments.ts, products.ts).
+Impact: Confusion, maintenance difficile, risque d'incohérence.
+Solution: Consolider en une seule route payments.ts.
+
+[H2] MOCK MODE EN PRODUCTION
+Fichier: .env.example
+Problème: STRIPE_MOCK_MODE et S3_MOCK_MODE existent.
+Impact: Risque d'activation accidentelle en production.
+Solution: Ajouter garde NODE_ENV !== 'production'.
+
+[H3] ROUTE ASSIGN DUPLIQUÉE
+Fichier: apps/api-backend/src/routes/expert.ts
+Problème: POST /orders/:id/assign défini 2 fois (ligne 902 et 1239).
+Impact: Comportement imprévisible.
+Solution: Supprimer la duplication.
+
+[H4] PHOTOS NON TRAITÉES PAR IA
+Problème: Les photos uploadées (face, palm) sont stockées mais pas 
+analysées par l'IA dans le workflow.
+Impact: Fonctionnalité incomplète.
+Solution: Intégrer analyse vision dans workflow n8n.
+
+8.3 MOYENNE PRIORITÉ
+--------------------
+
+[M1] MANQUE DE TESTS UNITAIRES
+Problème: Dossier __tests__ vide, Jest configuré mais pas utilisé.
+Impact: Régression potentielle, confiance code faible.
+Solution: Ajouter tests pour routes critiques (stripe, orders, expert).
+
+[M2] LOGGING INSUFFISANT EN PRODUCTION
+Problème: Console.log partout au lieu de winston structuré.
+Impact: Difficulté de debugging en production.
+Solution: Migrer vers logger winston avec niveaux appropriés.
+
+[M3] DOLIBARR NON INTÉGRÉ
+Problème: dolibarrCustomerId dans User mais aucune intégration.
+Impact: Pas de synchronisation CRM.
+Solution: Implémenter API Dolibarr ou retirer le champ.
+
+[M4] FRONTEND COMPONENTS LEGACY
+Problème: Composants *Refonte.tsx coexistent avec versions originales.
+Impact: Double maintenance, confusion.
+Solution: Supprimer les anciennes versions après validation.
+
+8.4 BASSE PRIORITÉ
+------------------
+
+[B1] FICHIERS DE DOCUMENTATION EXCESSIFS
+Problème: 50+ fichiers .md à la racine.
+Impact: Confusion, documentation fragmentée.
+Solution: Consolider dans docs/ et README principal.
+
+[B2] OLD/BACKUP FILES
+Problème: CommandeTempleSPA-OLD.tsx, temp_old_*.tsx
+Impact: Encombrement repo.
+Solution: Supprimer après validation.
+
+[B3] DEBUG ROUTES EN PRODUCTION
+Problème: Routes /debug, /check, /create-debug exposées.
+Impact: Risque sécurité si ENABLE_DEBUG_ROUTES=true en prod.
+Solution: Ajouter double vérification NODE_ENV.
+
+================================================================================
+                           9. POINTS D'AMÉLIORATION
+================================================================================
+
+9.1 ARCHITECTURE
+----------------
+- Implémenter pattern Repository pour MongoDB
+- Ajouter couche Service entre Routes et Models
+- Utiliser DTOs pour validation entrée/sortie
+- Configurer TypeScript strict mode
+- Ajouter OpenAPI/Swagger pour documentation API
+
+9.2 SÉCURITÉ
+------------
+- Rotation JWT avec refresh tokens
+- CSRF protection
+- Input sanitization systématique
+- Audit logging des actions sensibles
+- 2FA pour experts (optionnel)
+
+9.3 PERFORMANCE
+---------------
+- Redis pour session/cache
+- Pagination cursor-based
+- Compression gzip/brotli
+- CDN pour assets statiques
+- Database indexing optimization
+
+9.4 MONITORING
+--------------
+- Health checks approfondis (DB, S3, Stripe)
+- Métriques Prometheus/Grafana
+- Error tracking (Sentry)
+- Alerting (PagerDuty/Slack)
+
+9.5 UX FRONTEND
+---------------
+- Loading skeletons uniformisés
+- Error boundaries React
+- Offline support (PWA)
+- Internationalisation (i18n)
+- Tests E2E Playwright étendus
+
+================================================================================
+                           10. AUTOMATISATION N8N - GUIDE COMPLET
+================================================================================
+
+10.1 ARCHITECTURE WORKFLOW N8N
+------------------------------
+
+WORKFLOW PRINCIPAL: "Oracle Lumira - Content Generation"
+
+TRIGGER: Webhook Node
+├── URL: https://n8n.oraclelumira.com/webhook/oracle-lumira
+├── Method: POST
+├── Auth: Bearer Token (N8N_WEBHOOK_TOKEN)
+└── Response: Immediate OK
+
+NODES SÉQUENTIELS:
+
+[1] SET NODE - "Extract Data"
+    Extraction des données du payload:
+    - orderId, orderNumber, level, levelName
+    - client: firstName, lastName, email, birthDate
+    - formData, clientInputs
+    - expertPrompt, expertInstructions
+    - files[] (photos URLs)
+
+[2] FUNCTION NODE - "Build AI Prompt"
+    Construction du prompt système + user:
+    ```javascript
+    const systemPrompt = `Tu es Oracle Lumira, un guide spirituel expert 
+    en astrologie, numérologie et tarologie. Tu génères des lectures 
+    personnalisées profondes et bienveillantes.
+    
+    NIVEAU: ${items[0].json.levelName}
+    
+    INSTRUCTIONS EXPERT:
+    ${items[0].json.expertInstructions || 'Lecture standard'}`;
+    
+    const userPrompt = `Client: ${items[0].json.client.firstName}
+    Date de naissance: ${items[0].json.clientInputs.birthDate}
+    Lieu: ${items[0].json.clientInputs.birthPlace}
+    Question: ${items[0].json.formData.specificQuestion}
+    
+    PROMPT EXPERT:
+    ${items[0].json.expertPrompt}`;
+    
+    return [{ json: { systemPrompt, userPrompt, ...items[0].json } }];
+    ```
+
+[3] HTTP REQUEST NODE - "Call AI API"
+    OpenAI/Claude/Mistral API call
+    └── POST https://api.openai.com/v1/chat/completions
+    └── Headers: Authorization: Bearer sk-...
+    └── Body: {
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          max_tokens: 4000
+        }
+
+[4] FUNCTION NODE - "Parse AI Response"
+    Extraction et structuration du contenu:
+    - archetype
+    - reading
+    - ritual (niveau 3+)
+    - blockagesAnalysis (niveau 3+)
+    - soulProfile (niveau 2+)
+
+[5] HTTP REQUEST NODE - "Generate PDF"
+    (Service PDF externe ou librairie intégrée)
+    └── POST https://pdf-service/generate
+    └── Body: { template: 'lumira-reading', content }
+
+[6] HTTP REQUEST NODE - "Generate Audio TTS"
+    └── POST https://api.elevenlabs.io/v1/text-to-speech/{voice_id}
+    └── Body: { text: reading, model_id: 'eleven_multilingual_v2' }
+
+[7] HTTP REQUEST NODE - "Upload to S3"
+    Pour chaque fichier généré (PDF, audio):
+    └── PUT presigned URL
+    └── Récupérer URLs publiques
+
+[8] IF NODE - "Check Level for Mandala"
+    Si level >= 4 → Générer mandala SVG
+
+[9] HTTP REQUEST NODE - "Callback Backend"
+    └── POST https://api.oraclelumira.com/api/expert/n8n-callback
+    └── Headers: 
+        X-N8N-Signature: HMAC-SHA256(body, N8N_CALLBACK_SECRET)
+        X-Timestamp: Date.now()
+        X-Nonce: uuid()
+    └── Body: {
+          orderId,
+          orderNumber,
+          success: true,
+          generatedContent: {
+            archetype,
+            reading,
+            pdfUrl,
+            audioUrl,
+            mandalaSvg,
+            ritual,
+            blockagesAnalysis,
+            soulProfile
+          }
+        }
+
+ERROR HANDLING NODE - "Handle Failure"
+    En cas d'erreur dans le workflow:
+    └── Callback avec success: false, error: message
+
+10.2 VARIABLES D'ENVIRONNEMENT N8N
+----------------------------------
+- OPENAI_API_KEY
+- ELEVENLABS_API_KEY
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_S3_LECTURES_BUCKET
+- LUMIRA_CALLBACK_SECRET (= N8N_CALLBACK_SECRET côté backend)
+- LUMIRA_API_BASE (https://api.oraclelumira.com)
+
+10.3 WORKFLOW RÉVISION (isRevision = true)
+------------------------------------------
+Quand l'expert rejette:
+1. Réception payload avec isRevision: true, rejectionReason
+2. Modifier prompt système pour inclure feedback
+3. Régénérer contenu
+4. Callback avec nouveau contenu
+
+================================================================================
+                           11. CONFIGURATION DÉPLOIEMENT
+================================================================================
+
+11.1 VARIABLES D'ENVIRONNEMENT PRODUCTION
+-----------------------------------------
+# Backend (.env)
+NODE_ENV=production
+PORT=3000
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/lumira
+JWT_SECRET=<random-256-bit-secret>
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+AWS_ACCESS_KEY_ID=AKIA...
+AWS_SECRET_ACCESS_KEY=<secret>
+AWS_REGION=eu-west-3
+AWS_S3_BUCKET_NAME=oracle-lumira-uploads
+AWS_LECTURES_BUCKET_NAME=oracle-lumira-lectures
+CORS_ORIGIN=https://oraclelumira.com,https://desk.oraclelumira.com
+FRONTEND_URL=https://oraclelumira.com
+N8N_WEBHOOK_URL=https://n8n.oraclelumira.com/webhook/oracle-lumira
+N8N_CALLBACK_SECRET=<hmac-secret>
+
+# Frontend (.env)
+VITE_API_URL=https://api.oraclelumira.com
+VITE_STRIPE_PUBLIC_KEY=pk_live_...
+
+11.2 DOCKER COMPOSE PRODUCTION
+------------------------------
+services:
+  api:
+    build: ./apps/api-backend
+    ports: ["3000:3000"]
+    environment: [...]
+    depends_on: [mongodb]
+    
+  main-app:
+    build: ./apps/main-app
+    ports: ["80:80"]
+    
+  expert-desk:
+    build: ./apps/expert-desk
+    ports: ["81:80"]
+
+11.3 COOLIFY CONFIGURATION
+--------------------------
+- Source: GitHub repo
+- Build: Dockerfile
+- Health check: /api/healthz
+- Environment: Import depuis .env
+
+================================================================================
+                           12. TESTS QA
+================================================================================
+
+12.1 TESTS DISPONIBLES
+----------------------
+qa-tests/
+├── initie-backend-e2e.cjs    → Test Level 1 (gratuit)
+├── stripe-webhook-qa.cjs    → Test webhooks Stripe
+├── white-glove-e2e.cjs      → Test complet Level 2
+└── playwright/
+    └── payment-flow.spec.ts → Test E2E paiement
+
+12.2 COMMANDES DE TEST
+----------------------
+npm run test:e2e        → Playwright tests
+npm run test:webhook    → Webhook Stripe tests
+node qa-tests/white-glove-e2e.cjs → Test complet
+
+12.3 MOCK MODES
+---------------
+STRIPE_MOCK_MODE=true   → Simule Stripe (pas d'appels réseau)
+S3_MOCK_MODE=true       → Simule S3 (pas d'appels réseau)
+MONGODB: mongodb-memory-server pour tests
+
+================================================================================
+                           13. CHECKLIST FINALISATION
+================================================================================
+
+[ ] CRITIQUE
+    [ ] Supprimer/corriger EnhancedOrder.ts
+    [ ] Implémenter workflow n8n complet
+    [ ] Compléter grantProductAccess()
+    [ ] Activer cleanup job
+
+[ ] HAUTE PRIORITÉ
+    [ ] Consolider routes paiement
+    [ ] Supprimer routes dupliquées
+    [ ] Protéger mock modes
+    [ ] Intégrer analyse photos IA
+
+[ ] MOYENNE PRIORITÉ
+    [ ] Ajouter tests unitaires
+    [ ] Améliorer logging
+    [ ] Nettoyer fichiers legacy
+    
+[ ] DÉPLOIEMENT
+    [ ] Configurer variables env production
+    [ ] Setup n8n hébergé
+    [ ] Configurer webhooks Stripe production
+    [ ] Setup monitoring
+    [ ] Tests smoke production
+
+================================================================================
+                                    FIN DU RAPPORT
+================================================================================
+
+Pour toute question, n'hésite pas à me demander des clarifications.
+Ce rapport est destiné à être transmis à un assistant IA pour continuer 
+le développement et la finalisation de l'application Oracle Lumira.
+
+================================================================================
