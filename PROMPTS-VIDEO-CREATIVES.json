@@ -1,0 +1,340 @@
+{
+  "_meta": {
+    "title": "Oracle Lumira - Prompts Vidéo IA pour Creatives Marketing",
+    "version": "1.0.0",
+    "compatible_models": ["Sora", "Veo 3.1", "Qwen Video", "Runway Gen-3", "Pika Labs", "Kling AI"],
+    "author": "Oracle Lumira Creative Team",
+    "created": "2025-12-22",
+    "usage": "Copier le prompt complet (full_prompt) ou assembler les sections modulaires"
+  },
+
+  "brand_identity": {
+    "name": "Oracle Lumira",
+    "tagline": "Révélez votre destinée cosmique",
+    "visual_palette": {
+      "primary": "deep cosmic blue (#0B0B1A)",
+      "secondary": "mystical violet (#6B21A8)",
+      "accent": "celestial indigo (#312E81)",
+      "highlight": "divine gold (#FFD700)",
+      "aurora": "ethereal cyan-purple gradient"
+    },
+    "mood": ["serene", "mystical", "transcendent", "empowering", "cosmic"],
+    "forbidden": ["black backgrounds", "harsh contrasts", "horror elements", "fast chaotic movements"]
+  },
+
+  "prompt_structure": {
+    "format": "[STYLE] + [SUBJECT] + [ACTION] + [ENVIRONMENT] + [LIGHTING] + [CAMERA] + [ATMOSPHERE] + [TECHNICAL]",
+    "explanation": {
+      "STYLE": "Style cinématographique (cinematic, ethereal, dreamlike...)",
+      "SUBJECT": "Sujet principal (femme, mains, cartes, mandala...)",
+      "ACTION": "Ce que fait le sujet (médite, révèle, contemple...)",
+      "ENVIRONMENT": "Décor/lieu (temple cosmique, jardin céleste...)",
+      "LIGHTING": "Type d'éclairage (volumétrique, doré, aurore...)",
+      "CAMERA": "Mouvement caméra (slow dolly, orbit, crane up...)",
+      "ATMOSPHERE": "Particules, effets (stardust, mist, light rays...)",
+      "TECHNICAL": "Specs techniques (4K, 60fps, cinematic ratio...)"
+    }
+  },
+
+  "master_template": {
+    "description": "Template maître à personnaliser pour chaque scène",
+    "template": "Cinematic {style} shot of {subject} {action} in {environment}. {lighting_description}. Camera: {camera_movement}. Atmosphere: {atmosphere_effects}. Style: {artistic_style}. {technical_specs}",
+    "variables": {
+      "style": ["ethereal", "dreamlike", "mystical", "transcendent", "serene"],
+      "subject": "Le sujet principal de la scène",
+      "action": "L'action ou l'état du sujet",
+      "environment": "Le décor cosmique/spirituel",
+      "lighting_description": "Description détaillée de l'éclairage",
+      "camera_movement": "Mouvement de caméra lent et fluide",
+      "atmosphere_effects": "Effets atmosphériques (particules, brume...)",
+      "artistic_style": "Référence artistique ou esthétique",
+      "technical_specs": "Spécifications techniques vidéo"
+    }
+  },
+
+  "scenes": {
+    "scene_01_hero_awakening": {
+      "title": "L'Éveil Spirituel - Hero Video",
+      "duration": "15-30 seconds",
+      "purpose": "Landing page hero, Instagram Reel, TikTok",
+      "full_prompt": "Cinematic ethereal shot of a serene woman with closed eyes slowly opening them to reveal a cosmic universe reflected in her irises. She sits in a translucent glass sanctuary floating among nebulae and distant galaxies. Soft volumetric violet and deep blue light rays cascade through crystalline walls, creating prismatic reflections. Golden sacred geometry patterns materialize and orbit gently around her silhouette. Camera: Ultra slow dolly in from medium to close-up on face, 0.5x speed. Atmosphere: Delicate stardust particles drift upward, aurora borealis ribbons dance in background, subtle lens flares. Style: Ethereal fantasy meets astronomical photography, inspired by James Turrell light installations and NASA deep space imagery. 4K, 24fps cinematic, anamorphic lens flare, shallow depth of field, color grade: deep cosmic blues transitioning to mystical violets with divine gold highlights.",
+      "modular_components": {
+        "style": "ethereal",
+        "subject": "serene woman with closed eyes",
+        "action": "slowly opening eyes to reveal cosmic universe in irises",
+        "environment": "translucent glass sanctuary floating among nebulae and galaxies",
+        "lighting": "soft volumetric violet and deep blue light rays through crystalline walls",
+        "camera": "ultra slow dolly in from medium to close-up, 0.5x speed",
+        "atmosphere": "stardust particles drifting upward, aurora ribbons, subtle lens flares",
+        "fx": "golden sacred geometry patterns orbiting silhouette",
+        "technical": "4K, 24fps, anamorphic, shallow DOF, cosmic blue to violet grade"
+      },
+      "variations": [
+        "Replace woman with: mystical hands holding glowing tarot card",
+        "Replace sanctuary with: ancient temple floating in starfield",
+        "Add: third eye chakra glowing with indigo light"
+      ]
+    },
+
+    "scene_02_tarot_revelation": {
+      "title": "Révélation des Cartes - Product Showcase",
+      "duration": "10-20 seconds",
+      "purpose": "Product page, Ad creative, Story",
+      "full_prompt": "Cinematic mystical overhead shot of elegant feminine hands with subtle golden rings slowly turning over a luminescent tarot card on a surface of dark liquid obsidian that reflects infinite stars. As the card reveals, ethereal light emanates upward in spiraling sacred geometry patterns. The card artwork comes alive with gentle particle animations - tiny golden stars escaping the illustrated scene. Deep indigo and violet ambient lighting with concentrated warm golden light illuminating the card and hands. Camera: Smooth overhead crane descending into 45-degree angle, slow motion capture. Atmosphere: Wisps of lavender incense smoke curling through light beams, floating rose petals dissolving into stardust. Style: Luxury editorial meets mystical realism, inspired by Wong Kar-wai cinematography and Renaissance chiaroscuro. 4K HDR, 60fps slowed to 24fps for ultra-smooth motion, rich color depth, film grain texture.",
+      "modular_components": {
+        "style": "mystical luxury",
+        "subject": "elegant feminine hands with golden rings",
+        "action": "slowly turning over luminescent tarot card",
+        "environment": "dark liquid obsidian surface reflecting infinite stars",
+        "lighting": "deep indigo ambient with concentrated golden light on card",
+        "camera": "overhead crane descending to 45-degree, slow motion",
+        "atmosphere": "lavender incense wisps, floating rose petals to stardust",
+        "fx": "sacred geometry light spirals, card artwork particles animating",
+        "technical": "4K HDR, 60fps to 24fps, film grain, rich color depth"
+      },
+      "variations": [
+        "Replace tarot with: glowing crystal sphere with swirling galaxies inside",
+        "Add: multiple cards fanning out in golden ratio spiral",
+        "Change surface to: ancient marble altar with carved constellations"
+      ]
+    },
+
+    "scene_03_sanctuary_portal": {
+      "title": "Portail du Sanctuaire - App Experience",
+      "duration": "8-15 seconds",
+      "purpose": "App store preview, Feature showcase, Transition",
+      "full_prompt": "Cinematic dreamlike first-person perspective smoothly gliding through an ornate celestial gateway into a vast personal sanctuary space. The portal frame is adorned with flowing golden sacred geometry that pulses with soft light. Beyond the threshold reveals a serene cosmic meditation chamber with floating translucent platforms, gentle waterfalls of light, and a central mandala that rotates with hypnotic precision. Walls dissolve into deep space vistas of purple and blue nebulae. Bioluminescent flora lines the ethereal pathways. Camera: Steadicam forward glide through portal with subtle upward tilt upon entry, revealing the space. Atmosphere: Particles of light like fireflies guide the path, resonant harmonic vibrations visualized as gentle ripples in the air. Style: Avatar meets Blade Runner 2049 aesthetic, organic technology fusion. 4K, 30fps buttery smooth, wide dynamic range, lens breathing effect.",
+      "modular_components": {
+        "style": "dreamlike futuristic",
+        "subject": "ornate celestial gateway",
+        "action": "first-person gliding through into sanctuary",
+        "environment": "cosmic meditation chamber with floating platforms and central mandala",
+        "lighting": "bioluminescent flora, pulsing golden sacred geometry frame",
+        "camera": "steadicam forward glide with upward tilt reveal",
+        "atmosphere": "light particle fireflies, harmonic ripples in air",
+        "fx": "portal frame pulsing, mandala rotating, waterfalls of light",
+        "technical": "4K, 30fps smooth, wide dynamic range, lens breathing"
+      },
+      "variations": [
+        "Replace gateway with: ancient tree of life with glowing roots",
+        "Add: personal constellation map forming overhead upon entry",
+        "Include: ethereal guide figure made of starlight beckoning forward"
+      ]
+    },
+
+    "scene_04_mandala_creation": {
+      "title": "Création du Mandala Personnel - Premium Feature",
+      "duration": "20-30 seconds",
+      "purpose": "Premium tier showcase, YouTube ad, Landing section",
+      "full_prompt": "Cinematic transcendent top-down shot of an intricate personal mandala being created in real-time by invisible cosmic forces. Starting from a single point of brilliant white light at center, sacred geometric patterns bloom outward like a time-lapse flower, each layer adding violet, indigo, and gold luminescent lines. The mandala floats above a mirror-like cosmic pool that reflects an inverted universe. As the pattern completes, it rises and transforms into a three-dimensional sphere of interlocking light geometries. Zodiac symbols and birth chart elements subtly integrate into the design, personalizing the creation. Camera: Static overhead transitioning to slow 360-degree orbit as mandala rises, ending with dramatic low-angle looking up at completed sphere. Atmosphere: Constellation points connect with thin light threads, musical frequencies visualized as color waves emanating from mandala. Style: Sacred geometry art meets generative digital art, inspired by Android Jones and cosmic Buddhist thangka paintings. 4K 60fps, HDR peak brightness for light elements, deep blacks for contrast.",
+      "modular_components": {
+        "style": "transcendent sacred",
+        "subject": "personal mandala",
+        "action": "being created by cosmic forces, blooming from center point",
+        "environment": "floating above mirror-like cosmic pool reflecting inverted universe",
+        "lighting": "brilliant white center, violet-indigo-gold luminescent patterns",
+        "camera": "static overhead to 360 orbit to low-angle as mandala rises",
+        "atmosphere": "constellation threads connecting, musical frequencies as color waves",
+        "fx": "real-time sacred geometry bloom, zodiac integration, 3D sphere transformation",
+        "technical": "4K 60fps, HDR peak brightness, deep blacks contrast"
+      },
+      "variations": [
+        "Add: user's birth date numerology appearing as golden numbers",
+        "Include: the four elements (fire, water, earth, air) as corner anchors",
+        "Finish with: mandala gently descending into viewer's open palms"
+      ]
+    },
+
+    "scene_05_reading_delivery": {
+      "title": "Réception de la Lecture - Emotional Payoff",
+      "duration": "15-25 seconds",
+      "purpose": "Testimonial backdrop, Email campaign, Retargeting",
+      "full_prompt": "Cinematic intimate close-up of a person's face illuminated by the soft glow of a tablet/phone screen in a cozy evening setting. Their expression transitions from curiosity to profound recognition and gentle emotional tears of understanding. The screen's light casts an ethereal violet-blue glow on their features. We see reflected in their eyes: flowing text, a personal mandala rotating, glimpses of their unique reading. Soft bokeh of warm candles and fairy lights in background suggest a personal sacred space. A single tear catches the light like a diamond. Camera: Extreme slow motion capture of emotional micro-expressions, subtle push-in ending on reflection in eye. Atmosphere: Dust motes floating in screen light, barely visible aurora glow from device, sense of profound private moment. Style: Intimate documentary realism meets magical realism, inspired by Terrence Malick and Emmanuel Lubezki natural light cinematography. 4K, 120fps slowed dramatically, natural skin tones preserved, minimal color grading.",
+      "modular_components": {
+        "style": "intimate emotional",
+        "subject": "person's face illuminated by device screen",
+        "action": "expression transitioning from curiosity to recognition to gentle tears",
+        "environment": "cozy evening setting with candles and fairy lights",
+        "lighting": "ethereal violet-blue device glow, warm bokeh background",
+        "camera": "extreme slow motion micro-expressions, subtle push-in to eye reflection",
+        "atmosphere": "dust motes in light, private sacred moment feeling",
+        "fx": "mandala and text reflection in eyes, single tear catching light",
+        "technical": "4K 120fps slow motion, natural skin tones, minimal grading"
+      },
+      "variations": [
+        "Replace device with: beautifully designed physical PDF booklet",
+        "Add: headphones visible, suggesting audio reading experience",
+        "Include: hands gently touching heart in gratitude gesture"
+      ]
+    },
+
+    "scene_06_cosmic_journey": {
+      "title": "Voyage Cosmique - Brand Anthem",
+      "duration": "30-60 seconds",
+      "purpose": "Brand video, YouTube pre-roll, TV/CTV ad",
+      "full_prompt": "Cinematic epic seamless journey beginning with extreme close-up of a human eye, diving into the pupil which transforms into a portal to the cosmos. We travel through spectacular nebulae of violet and indigo, past golden spiral galaxies, through fields of crystalline asteroids that chime like bells. We approach a luminous sanctuary floating in space - an impossible architecture of light, glass, and sacred geometry. Inside, we glimpse souls represented as gentle orbs of unique-colored light, each receiving their cosmic truth. We exit through another eye, pulling back to reveal a diverse mosaic of human faces, each illuminated by their personal light, connected by thin golden threads of shared human experience. Final pull back reveals these faces form the shape of the Oracle Lumira mandala logo. Camera: Continuous single-take feel, seamless transitions between macro, cosmic travel, architecture, and portrait scales. Atmosphere: Each environment has distinct particle systems - neural sparks in eye, cosmic dust in space, light motes in sanctuary, warm human auras in faces. Style: Interstellar meets Tree of Life meets Apple commercial polish. 8K mastered to 4K, variable frame rates for impact, IMAX-inspired aspect ratio shifts.",
+      "modular_components": {
+        "style": "epic seamless journey",
+        "subject": "eye portal to cosmos to sanctuary to human mosaic",
+        "action": "continuous travel through scales and environments",
+        "environment": "eye interior, nebulae, crystal asteroids, light sanctuary, human faces",
+        "lighting": "transitions from intimate to cosmic to warm human",
+        "camera": "single-take feel, seamless scale transitions, macro to cosmic to portrait",
+        "atmosphere": "neural sparks, cosmic dust, light motes, human auras",
+        "fx": "eye-portal morph, soul orbs, golden thread connections, logo formation",
+        "technical": "8K to 4K, variable frame rates, IMAX aspect shifts"
+      },
+      "variations": [
+        "Start with: drop of water falling, ripple becoming galaxy spiral",
+        "Add: brief glimpses of the four reading levels as ascending platforms",
+        "Include: voiceover sync points for key visual moments"
+      ]
+    },
+
+    "scene_07_testimonial_glow": {
+      "title": "Aura Témoignage - Social Proof",
+      "duration": "5-10 seconds",
+      "purpose": "Testimonial video background, Story frame, UGC template",
+      "full_prompt": "Cinematic serene loop of a softly glowing human silhouette seated in meditation pose, surrounded by their personal aura that shifts through Oracle Lumira brand colors - deep cosmic blue, mystical violet, celestial indigo, with occasional pulses of divine gold at the heart center. The figure is slightly abstracted, universal, allowing any viewer to project themselves. Behind them, a slow-rotating personal mandala casts geometric light shadows. Gentle sacred geometry particles orbit the figure like protective spirits. The overall feeling is of someone who has found their truth and radiates peace. Camera: Perfectly static or imperceptible slow zoom out, designed for seamless looping. Atmosphere: Minimal, focused on the glowing figure, subtle breathing rhythm to the light pulses. Style: Meditation app aesthetic elevated to cinematic quality, inspired by Calm and Headspace visuals but more mystical. 4K, 30fps perfect loop, seamless start-end blend, vertical 9:16 and horizontal 16:9 versions.",
+      "modular_components": {
+        "style": "serene meditative",
+        "subject": "glowing human silhouette in meditation",
+        "action": "radiating shifting aura, breathing light rhythm",
+        "environment": "void with personal mandala casting shadows",
+        "lighting": "self-illuminated figure, brand color aura shifts",
+        "camera": "static or imperceptible zoom, perfect loop",
+        "atmosphere": "minimal, sacred geometry particles orbiting",
+        "fx": "aura color transitions, heart gold pulses, mandala shadow rotation",
+        "technical": "4K 30fps seamless loop, 9:16 and 16:9 versions"
+      },
+      "variations": [
+        "Add: text overlay area designed into composition",
+        "Include: second silhouette appearing, representing guide/expert",
+        "Modify: standing pose with arms slightly raised in receiving gesture"
+      ]
+    },
+
+    "scene_08_quick_hook": {
+      "title": "Accroche Rapide - Performance Ad",
+      "duration": "3-6 seconds",
+      "purpose": "TikTok/Reels hook, Bumper ad, Attention grabber",
+      "full_prompt": "Cinematic punchy extreme close-up of a mystical eye with galaxy-filled iris suddenly opening with dramatic pupil dilation. In the reflection of the eye, we see a tarot card flipping to reveal the viewer's fate. A burst of golden sacred geometry emanates outward from the eye like a shockwave of awakening. Quick flash to black with the Oracle Lumira logo materializing from stardust. The entire sequence has a slight pulse/breath rhythm. Camera: Snap zoom into eye, held, then explosive push through the reflection into logo space. Atmosphere: High contrast, dramatic, condensed version of brand magic. Style: Movie trailer impact meets luxury beauty ad, designed for thumb-stopping power. 4K, 60fps for smooth slow-mo option, punchy color grade with crushed blacks and saturated brand colors.",
+      "modular_components": {
+        "style": "punchy dramatic",
+        "subject": "mystical eye with galaxy iris",
+        "action": "sudden opening, pupil dilation, shockwave emanation",
+        "environment": "abstract dark void for contrast",
+        "lighting": "high contrast, dramatic eye light",
+        "camera": "snap zoom in, held, explosive push through to logo",
+        "atmosphere": "condensed brand magic, pulse rhythm",
+        "fx": "card reflection in eye, golden geometry shockwave, logo from stardust",
+        "technical": "4K 60fps, punchy grade, crushed blacks, saturated colors"
+      },
+      "variations": [
+        "Replace eye with: crystal ball with swirling fate inside",
+        "Add: whispered 'discover your destiny' audio sync",
+        "Modify: three rapid cuts - eye, card, mandala, logo"
+      ]
+    }
+  },
+
+  "prompt_modifiers": {
+    "mood_amplifiers": {
+      "more_mystical": "Add: ancient symbols glowing faintly, sense of hidden knowledge being unveiled",
+      "more_serene": "Add: slower movements, longer holds, meditation breathing rhythm, ASMR-quality attention to texture",
+      "more_empowering": "Add: rising energy, crescendo lighting, figure standing taller, triumphant subtle gestures",
+      "more_intimate": "Add: closer framing, softer focus, warmer color temperature, sense of private sacred moment",
+      "more_cosmic": "Add: deeper space vistas, more nebulae, galaxy rotations visible, sense of infinite scale"
+    },
+    "technical_variants": {
+      "social_vertical": "Reframe for 9:16 aspect ratio, tighter composition, text-safe zones top and bottom",
+      "tv_horizontal": "Expand for 16:9 or 21:9 cinematic, more environmental context, premium feel",
+      "loop_friendly": "Ensure first and last frames blend seamlessly, subtle cyclical motion",
+      "text_overlay_ready": "Include negative space zones for copy, lower thirds clear, high contrast areas for legibility"
+    },
+    "platform_optimization": {
+      "tiktok_reels": "Front-load visual hook in first 0.5s, dynamic motion, trend-aware pacing",
+      "youtube_preroll": "Slower build acceptable, skip-button-proof opening, clear CTA moment",
+      "instagram_story": "Vertical native, tap-friendly pacing, swipe-up CTA visual cue",
+      "website_hero": "Seamless loop, no clear start/end, subtle ambient motion, fast load optimization"
+    }
+  },
+
+  "color_grading_instructions": {
+    "primary_look": "Deep cosmic foundation with mystical violet midtones and divine gold highlights",
+    "technical_specs": {
+      "shadows": "Push toward deep blue (#0B0B1A), never pure black",
+      "midtones": "Violet-indigo shift (#6B21A8 to #312E81)",
+      "highlights": "Warm gold peaks (#FFD700) with soft rolloff",
+      "saturation": "Rich but not neon, organic mystical feel",
+      "contrast": "Medium-high for drama without harshness"
+    },
+    "skin_tones": "Preserve natural warmth, don't let blue/violet contaminate skin",
+    "light_sources": "Always have motivated light with soft falloff, volumetric when possible"
+  },
+
+  "audio_sync_notes": {
+    "recommended_music_style": "Ambient electronic with organic textures, ethereal vocals, subtle percussion",
+    "bpm_range": "60-80 BPM for serene, 80-100 for empowering, 100-120 for hooks",
+    "key_sync_moments": [
+      "Eye opening = musical swell or reveal sting",
+      "Card turning = subtle magical chime",
+      "Mandala completion = harmonic resolution",
+      "Logo appearance = signature brand sound"
+    ],
+    "suggested_artists": "Ólafur Arnalds, Nils Frahm, Bonobo ambient works, Carbon Based Lifeforms"
+  },
+
+  "generation_tips": {
+    "sora_specific": [
+      "Be extremely detailed about physics and materials",
+      "Specify 'cinematic' and 'photorealistic' for higher quality",
+      "Describe transitions explicitly if needed",
+      "Include lighting direction and quality details"
+    ],
+    "veo_specific": [
+      "Front-load the most important visual elements",
+      "Use clear action verbs for motion",
+      "Specify camera movements precisely",
+      "Include style references the model knows"
+    ],
+    "qwen_specific": [
+      "Structure prompts with clear sections",
+      "Use both English and specific technical terms",
+      "Reference known cinematic styles and directors",
+      "Be explicit about what should NOT appear"
+    ],
+    "general_best_practices": [
+      "Always include duration/pacing guidance",
+      "Specify what to avoid as much as what to include",
+      "Reference real-world materials and physics",
+      "Describe the emotional journey, not just visuals",
+      "Include 'negative prompts' for unwanted elements"
+    ]
+  },
+
+  "negative_prompts": {
+    "always_avoid": [
+      "pure black backgrounds",
+      "horror elements or dark entities",
+      "chaotic fast movements",
+      "neon oversaturation",
+      "cartoonish or childish aesthetics",
+      "religious iconography (maintain spiritual but non-denominational)",
+      "text or watermarks in generated content",
+      "recognizable brand logos or copyrighted characters",
+      "violent or disturbing imagery",
+      "low quality, blurry, pixelated"
+    ]
+  },
+
+  "quick_copy_prompts": {
+    "instagram_story_hook": "Mystical close-up of glowing tarot card slowly revealing on dark velvet surface, golden sacred geometry particles rising from the card, soft violet volumetric lighting, shallow depth of field, 9:16 vertical, 3 second seamless loop, ethereal luxury aesthetic, 4K.",
+    
+    "tiktok_scroll_stopper": "Dramatic eye with galaxy iris snapping open, cosmic shockwave emanating outward, deep blue to violet color grade, punchy contrast, 1 second, vertical 9:16, cinematic, attention-grabbing, 4K 60fps.",
+    
+    "website_hero_loop": "Serene cosmic sanctuary interior with floating mandala gently rotating, soft violet and indigo volumetric light rays, stardust particles drifting, ethereal and peaceful atmosphere, seamless 10 second loop, horizontal 16:9, 4K, ambient motion, no clear start/end point.",
+    
+    "youtube_ad_opener": "First-person glide through ornate celestial portal into cosmic meditation space, golden sacred geometry frame pulsing with light, reveal of personal sanctuary with floating platforms, smooth steadicam, 5 seconds, 16:9 cinematic, mystical wonder, 4K HDR."
+  }
+}
