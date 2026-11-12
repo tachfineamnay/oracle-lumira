@@ -13,7 +13,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { sanctuaireService, CompletedOrder, SanctuaireStats, SanctuaireUser, OrderContent } from '../services/sanctuaire';
 import axios from 'axios';
 import { getApiBaseUrl } from '../lib/apiBase';
-import { ApiError } from '../utils/api';
+import { MagicLinkRequestResult, SanctuaireAuthError } from '../services/sanctuaireAuth';
 
 const API_BASE = getApiBaseUrl();
 const AUTH_COOLDOWN_MS = 60 * 1000; // 1 minute between auth attempts by default
@@ -88,7 +88,12 @@ interface SanctuaireContextValue {
   lastAuthError: string | null;
 
   // === ACTIONS ===
-  authenticateWithEmail: (email: string, options?: { force?: boolean }) => Promise<{ token: string; user: SanctuaireUser }>;
+  /** Step 1: ask for a verification email. Never authenticates by itself. */
+  requestMagicLink: (email: string, orderId?: string) => Promise<MagicLinkRequestResult>;
+  /** Step 2: redeem the link token and open the session. */
+  verifyMagicLink: (token: string) => Promise<{ token: string; user: SanctuaireUser }>;
+  /** True once the backend confirmed the mailbox behind the session. */
+  emailVerified: boolean;
   logout: () => void;
   refresh: () => Promise<void>;
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
@@ -107,6 +112,7 @@ const SanctuaireContext = createContext<SanctuaireContextValue | undefined>(unde
 export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // === AUTHENTICATION STATE ===
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
   const [user, setUser] = useState<SanctuaireUser | null>(null);
   
   // === PROFILE STATE ===
@@ -288,6 +294,14 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     if (token) {
       console.log('[SanctuaireProvider] Token détecté, chargement des données...');
       setIsAuthenticated(true);
+      // Confirm the stored session server-side (and expose whether the mailbox
+      // behind it was verified) before trusting it for UI purposes.
+      sanctuaireService
+        .getSession()
+        .then((session) => {
+          if (session) setEmailVerified(session.emailVerified === true);
+        })
+        .catch(() => undefined);
       loadAllData();
     } else {
       console.log('[SanctuaireProvider] Pas de token, mode non-authentifié');
@@ -297,13 +311,16 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
 
   // =================== ACTIONS ===================
   
-  const authenticateWithEmail = useCallback(async (email: string, options: { force?: boolean } = {}) => {
-    const force = options.force ?? false;
+  /**
+   * Step 1 of the Sanctuaire login: send a single-use magic link.
+   * Deliberately does NOT authenticate: a payment or an email typed in a form
+   * must never open someone else's account.
+   */
+  const requestMagicLink = useCallback(async (email: string, orderId?: string) => {
     const now = Date.now();
-
-    if (!force && authCooldownUntil && authCooldownUntil > now) {
+    if (authCooldownUntil && authCooldownUntil > now) {
       const remainingSeconds = Math.ceil((authCooldownUntil - now) / 1000);
-      const message = `Trop de tentatives d'authentification. Patientez ${remainingSeconds}s avant de réessayer.`;
+      const message = `Trop de demandes de connexion. Patientez ${remainingSeconds}s avant de réessayer.`;
       setLastAuthError(message);
       setError(message);
       throw new Error(message);
@@ -312,60 +329,59 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     try {
       setIsLoading(true);
       clearAuthError();
-
-      console.log('[SanctuaireProvider] Authentification avec email:', email);
-      const result = await sanctuaireService.authenticateWithEmail(email);
-
-      setIsAuthenticated(true);
-      setUser(result.user);
-      updateAuthCooldown(null);
-      clearAuthError();
-
-      await loadAllData();
-
-      return result;
+      return await sanctuaireService.requestMagicLink(email.trim(), orderId);
     } catch (err: any) {
-      if (err instanceof ApiError) {
-        if (err.status === 429) {
-          const nextRetry = Date.now() + AUTH_COOLDOWN_MS;
-          updateAuthCooldown(nextRetry);
-          const message = "Trop de tentatives d'authentification. Merci de réessayer dans une minute.";
-          setLastAuthError(message);
-          setError(message);
-        } else if (err.status === 401) {
-          sanctuaireService.logout();
-          setIsAuthenticated(false);
-          setUser(null);
-          setOrders([]);
-          setStats(null);
-          setEntitlements({
-            capabilities: [],
-            products: [],
-            highestLevel: null,
-            levelMetadata: null,
-            orderCount: 0,
-            productOrderCount: 0,
-          });
-          updateAuthCooldown(null);
-        } else {
-          setLastAuthError(err.message);
-          setError(err.message);
-        }
-      } else {
-        const message = err?.message || "Erreur d'authentification";
-        setLastAuthError(message);
-        setError(message);
+      if (err instanceof SanctuaireAuthError && err.status === 429) {
+        updateAuthCooldown(Date.now() + AUTH_COOLDOWN_MS);
       }
+      const message = err?.message || "Impossible d'envoyer l'email de vérification";
+      setLastAuthError(message);
+      setError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [authCooldownUntil, clearAuthError, loadAllData, updateAuthCooldown]);
+  }, [authCooldownUntil, clearAuthError, updateAuthCooldown]);
+
+  /**
+   * Step 2: exchange the received token for a session.
+   * This is the only path that sets `isAuthenticated`.
+   */
+  const verifyMagicLink = useCallback(async (token: string) => {
+    try {
+      setIsLoading(true);
+      clearAuthError();
+
+      const result = await sanctuaireService.verifyMagicLink(token);
+      setIsAuthenticated(true);
+      setEmailVerified(true);
+      updateAuthCooldown(null);
+      clearAuthError();
+      await loadAllData();
+      return result;
+    } catch (err: any) {
+      if (err instanceof SanctuaireAuthError && err.status === 401) {
+        sanctuaireService.logout();
+        setIsAuthenticated(false);
+        setEmailVerified(false);
+        setUser(null);
+        setOrders([]);
+        setStats(null);
+      }
+      const message = err?.message || 'Lien de connexion invalide ou expiré';
+      setLastAuthError(message);
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clearAuthError, loadAllData, updateAuthCooldown]);
 
   const logout = useCallback(() => {
     console.log('[SanctuaireProvider] Deconnexion');
     sanctuaireService.logout();
     setIsAuthenticated(false);
+    setEmailVerified(false);
     setUser(null);
     setOrders([]);
     setStats(null);
@@ -521,7 +537,9 @@ export const SanctuaireProvider: React.FC<{ children: ReactNode }> = ({ children
     lastAuthError,
 
     // Actions
-    authenticateWithEmail,
+    requestMagicLink,
+    verifyMagicLink,
+    emailVerified,
     logout,
     refresh,
     updateProfile,

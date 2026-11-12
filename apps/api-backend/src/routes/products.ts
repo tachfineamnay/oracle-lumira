@@ -602,11 +602,14 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
       const accessGranted = orderDoc.status === 'completed';
       const sanctuaryUrl = accessGranted ? '/sanctuaire' : undefined;
 
+      // P0 sécurité : endpoint public (l'id de PaymentIntent circule dans l'URL).
+      // Aucune donnée personnelle n'est renvoyée : ni email, ni téléphone, ni nom,
+      // ni metadata du client. Les détails sont servis par
+      // GET /api/users/session/order-context à la session vérifiée propriétaire.
       const response: OrderStatusResponse = {
         order: {
           id: orderDoc.paymentIntentId,
           productId: orderDoc.productId,
-          customerEmail: orderDoc.customerEmail,
           amount: orderDoc.amount,
           currency: orderDoc.currency,
           status: orderDoc.status as any,
@@ -614,7 +617,10 @@ async function getOrderHandler(req: Request, res: Response): Promise<void> {
           createdAt: orderDoc.createdAt as any,
           updatedAt: orderDoc.updatedAt as any,
           completedAt: orderDoc.completedAt as any,
-          metadata: orderDoc.metadata || {},
+          metadata: {
+            productName: (orderDoc.metadata as any)?.productName,
+            level: (orderDoc.metadata as any)?.level,
+          },
         },
         product: {
           id: product.id,
@@ -729,8 +735,6 @@ router.patch('/orders/:orderId/customer', async (req: Request, res: Response): P
       requestId,
       order: {
         paymentIntentId: orderDoc.paymentIntentId,
-        customerEmail: orderDoc.customerEmail,
-        metadata: orderDoc.metadata,
         updatedAt: orderDoc.updatedAt,
       },
     });
@@ -878,32 +882,43 @@ async function handleProductPaymentSuccess(paymentIntent: Stripe.PaymentIntent):
         const nameParts = customerName.split(' ');
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
-        
-        // Create or update user profile
-        const user = await User.findOneAndUpdate(
-          { email: customerEmail },
-          {
+
+        // P0 sécurité : le payeur ne prouve pas la propriété de l'adresse email.
+        // Un profil EXISTANT ne doit donc jamais être réécrit avec les données
+        // saisies au checkout (sinon on écraserait le nom/téléphone d'un tiers).
+        const existingUser = await User.findOne({ email: customerEmail });
+
+        if (existingUser) {
+          console.log('👤 [Webhook] Profil existant préservé (aucune écriture depuis le checkout)', {
             email: customerEmail,
-            firstName: firstName || undefined,
-            lastName: lastName || undefined,
-            phone: customerPhone || undefined,
-            profileCompleted: false, // Will complete spiritual form in Sanctuaire
-            updatedAt: new Date()
-          },
-          { 
-            upsert: true, 
-            new: true,
-            setDefaultsOnInsert: true
-          }
-        );
-        
-        console.log('✅ Sanctuaire profile auto-created/updated:', {
-          email: customerEmail,
-          firstName,
-          lastName,
-          phone: customerPhone,
-          userId: user._id
-        });
+            userId: (existingUser as any)._id,
+          });
+        } else {
+          const created = await User.findOneAndUpdate(
+            { email: customerEmail },
+            {
+              $setOnInsert: {
+                email: customerEmail,
+                firstName: firstName || 'Client',
+                lastName: lastName || 'Lumira',
+              },
+              $set: {
+                phone: customerPhone || undefined,
+                updatedAt: new Date(),
+              },
+            },
+            {
+              upsert: true,
+              new: true,
+              setDefaultsOnInsert: true,
+            }
+          );
+
+          console.log('✅ [Webhook] Profil Sanctuaire créé (nouveau client):', {
+            email: customerEmail,
+            userId: (created as any)?._id,
+          });
+        }
       } catch (profileError) {
         console.error('⚠️ Error creating sanctuaire profile:', profileError);
         // Don't fail the payment if profile creation fails

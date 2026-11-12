@@ -8,6 +8,7 @@ const ExistingClientLoginBar: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -22,13 +23,16 @@ const ExistingClientLoginBar: React.FC = () => {
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
     try {
       setLoading(true);
-      await sanctuaireService.authenticateWithEmail(email.trim());
+      setNotice(null);
+      // Envoi du lien de vérification : la session ne s'ouvre qu'après
+      // ouverture de l'email (voir /sanctuaire/verify).
+      const result = await sanctuaireService.requestMagicLink(email.trim());
       setSuccess(true);
-      // Rediriger directement vers les lectures disponibles
-      navigate('/sanctuaire/draws');
-    } catch (err) {
+      setNotice(result.message);
+      navigate(`/sanctuaire/login?email=${encodeURIComponent(email.trim())}`);
+    } catch (err: any) {
       setSuccess(false);
-      // Fallback: rester sur place, l'UI affiche l'erreur minimale via disabled states
+      setNotice(err?.message || "Impossible d'envoyer le lien de connexion");
     } finally {
       setLoading(false);
     }
@@ -63,8 +67,11 @@ const ExistingClientLoginBar: React.FC = () => {
             </button>
             {success && (
               <span className="flex items-center gap-1 text-green-400 text-sm">
-                <CheckCircle2 className="w-4 h-4" /> OK
+                <CheckCircle2 className="w-4 h-4" /> Lien envoyé
               </span>
+            )}
+            {notice && (
+              <span className={`text-xs ${success ? 'text-emerald-300' : 'text-red-300'}`}>{notice}</span>
             )}
           </form>
           <button

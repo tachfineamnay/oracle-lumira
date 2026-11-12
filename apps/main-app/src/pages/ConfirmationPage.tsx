@@ -6,7 +6,6 @@ import { CheckCircle, Loader, AlertCircle, ArrowRight, Star } from 'lucide-react
 import ProductOrderService from '../services/productOrder';
 import PageLayout from '../components/ui/PageLayout';
 import GlassCard from '../components/ui/GlassCard';
-import { apiRequest } from '../utils/api';
 
 import type { OrderStatus } from '../types/products';
 
@@ -21,25 +20,16 @@ const ConfirmationPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
 
-  // Authentification post-paiement
+  // P0 sécurité : le paiement ne crée AUCUNE session.
+  // L'email de la commande est seulement mémorisé pour pré-remplir la demande
+  // de lien de vérification (magic link) sur /sanctuaire/login.
   useEffect(() => {
     const email = searchParams.get('email');
-    if (email) {
-      try {
-        sessionStorage.setItem('sanctuaire_email', email);
-      } catch {}
-      apiRequest<{ token: string }>('/users/auth/sanctuaire-v2', {
-        method: 'POST',
-        body: JSON.stringify({ email })
-      })
-        .then(res => {
-          if (res?.token) {
-            localStorage.setItem('sanctuaire_token', res.token);
-          }
-        })
-        .catch(err => {
-          console.error('[ConfirmationPage] Échec auth post-paiement:', err);
-        });
+    if (!email) return;
+    try {
+      sessionStorage.setItem('sanctuaire_email', email);
+    } catch {
+      /* storage unavailable */
     }
   }, [searchParams]);
 
@@ -81,22 +71,26 @@ const ConfirmationPage: React.FC = () => {
       return () => clearTimeout(timer);
     } else if (orderStatus?.accessGranted && redirectCountdown === 0) {
       setTimeout(() => {
+        const email = searchParams.get('email');
+        const query = email ? `?email=${encodeURIComponent(email)}` : '';
         try {
-          navigate('/sanctuaire', { replace: true });
+          navigate(`/sanctuaire/login${query}`, { replace: true });
         } catch {
-          window.location.href = '/sanctuaire';
+          window.location.href = `/sanctuaire/login${query}`;
         }
       }, 150);
     }
-  }, [orderStatus, redirectCountdown, navigate, orderId]);
+  }, [orderStatus, redirectCountdown, navigate, orderId, searchParams]);
 
   const handleGoToSanctuaire = () => {
     if (orderStatus?.accessGranted) {
       setTimeout(() => {
+        const email = searchParams.get('email');
+        const query = email ? `?email=${encodeURIComponent(email)}` : '';
         try {
-          navigate('/sanctuaire', { replace: true });
+          navigate(`/sanctuaire/login${query}`, { replace: true });
         } catch {
-          window.location.href = '/sanctuaire';
+          window.location.href = `/sanctuaire/login${query}`;
         }
       }, 150);
     }
@@ -275,12 +269,13 @@ const ConfirmationPage: React.FC = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <span>Accéder au Sanctuaire</span>
+                  <span>Recevoir mon lien de connexion</span>
                   <ArrowRight className="w-5 h-5" />
                 </motion.button>
                 
                 <p className="text-sm text-gray-400" aria-live="polite">
-                  Redirection automatique dans {redirectCountdown} secondes...
+                  Pour votre sécurité, un lien de vérification envoyé par email confirme que
+                  l'adresse de la commande vous appartient. Redirection dans {redirectCountdown} secondes...
                 </p>
               </div>
             ) : (

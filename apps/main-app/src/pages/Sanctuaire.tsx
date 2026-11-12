@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, Download, Play, Calendar, Home, Clock, User, FileText, Settings, CreditCard, Eye, Lock, Crown } from 'lucide-react';
 import PageLayout from '../components/ui/PageLayout';
@@ -498,14 +498,12 @@ const Sanctuaire: React.FC = () => {
     profile,
     isAuthenticated,
     isLoading,
-    authenticateWithEmail,
     authCooldownUntil,
     lastAuthError,
     clearAuthError,
   } = useSanctuaire();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const [cooldownRemainingMs, setCooldownRemainingMs] = React.useState(0);
   const [hasInitialLoad, setHasInitialLoad] = React.useState(false);
   const cooldownActive = authCooldownUntil ? authCooldownUntil > Date.now() : false;
@@ -543,20 +541,6 @@ const Sanctuaire: React.FC = () => {
       setHasInitialLoad(true);
     }
   }, [isLoading]);
-
-  const handleRetryAuth = React.useCallback(() => {
-    if (cooldownActive) {
-      return;
-    }
-    const storedEmail = typeof window !== 'undefined' ? window.sessionStorage.getItem('sanctuaire_email') : null;
-    if (!storedEmail) {
-      return;
-    }
-    clearAuthError();
-    authenticateWithEmail(storedEmail).catch((err) => {
-      console.error('Erreur lors du retry auth sanctuaire:', err);
-    });
-  }, [authenticateWithEmail, clearAuthError, cooldownActive]);
 
   // Détection first_visit pour afficher OnboardingForm
   // PASSAGE 21 - DEVOPS : Masquer onboarding quand le profil contient déjà les données essentielles
@@ -605,97 +589,48 @@ const Sanctuaire: React.FC = () => {
     }
   }, [navigate]);
 
-  // Effet 1: Auto-login via email/token depuis l'URL ou session
-  // PASSAGE 5 - P0 : Retry automatique avec backoff pour race condition webhook
-  const [retryCount, setRetryCount] = React.useState(0);
-  const MAX_RETRIES = 3; // Nombre maximum de tentatives avant redirection
-  
+  // =================== AUTHENTIFICATION : MAGIC LINK UNIQUEMENT ===================
+  // P0 sécurité : plus aucun auto-login à partir d'un email (URL ou sessionStorage).
+  // Une session ne peut être ouverte que par /sanctuaire/verify?token=... qui
+  // échange un lien à usage unique reçu par email (voir VerifySanctuaireMagicLink).
   React.useEffect(() => {
-    const email = searchParams.get('email');
-    const token = searchParams.get('token');
-    const sessionEmail = sessionStorage.getItem('sanctuaire_email');
+    if (isLoading) return;
+    if (isAuthenticated) return;
 
-    if (cooldownActive) {
+    // Ne jamais rediriger depuis les pages publiques de connexion / vérification :
+    // /sanctuaire/verify échange justement le lien qui vient d'ouvrir la session.
+    const currentPath = location.pathname.replace(/\/+$/, '');
+    if (currentPath === '/sanctuaire/login' || currentPath === '/sanctuaire/verify') {
       return;
     }
 
-    if (email && !isAuthenticated && !isLoading) {
-      sessionStorage.setItem('sanctuaire_email', email);
-      if (token?.startsWith('fv_')) {
-        sessionStorage.setItem('first_visit', 'true');
-      } else {
-        console.log('[Sanctuaire] Tentative auth initiale avec email:', email);
-        authenticateWithEmail(email).catch((err) => {
-          console.error('[Sanctuaire] Erreur auth initiale:', err);
-          setRetryCount(1); // Déclencher le retry
-        });
-      }
-    } else if (sessionEmail && !isAuthenticated && !isLoading && retryCount === 0) {
-      const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
-      if (!isFirstVisit) {
-        console.log('[Sanctuaire] Tentative auth depuis session email:', sessionEmail);
-        authenticateWithEmail(sessionEmail).catch((err) => {
-          console.error('[Sanctuaire] Erreur auth session:', err);
-          setRetryCount(1); // Déclencher le retry
-        });
-      }
-    }
-  }, [searchParams, isAuthenticated, isLoading, authenticateWithEmail, cooldownActive, retryCount]);
+    console.log('[Sanctuaire] Session absente ou expirée : redirection vers /sanctuaire/login');
+    const params = new URLSearchParams(location.search);
+    const email = params.get('email');
+    const orderId = params.get('order_id') || params.get('orderId');
+    const query = new URLSearchParams();
+    if (email) query.set('email', email);
+    if (orderId) query.set('order_id', orderId);
+    const suffix = query.toString() ? `?${query.toString()}` : '';
 
-  // Effet 2: Retry automatique avec backoff exponentiel (2s, 4s, 8s)
-  // PASSAGE 5 - P0 : Gérer race condition webhook avec retries intelligents
-  React.useEffect(() => {
-    if (retryCount > 0 && retryCount <= MAX_RETRIES && !isAuthenticated && !isLoading && !cooldownActive) {
-      const sessionEmail = sessionStorage.getItem('sanctuaire_email');
-      if (sessionEmail) {
-        const delay = Math.pow(2, retryCount) * 1000; // 2s, 4s, 8s
-        console.log(`[Sanctuaire] Retry ${retryCount}/${MAX_RETRIES} dans ${delay}ms pour:`, sessionEmail);
-        
-        const timer = setTimeout(() => {
-          console.log(`[Sanctuaire] Exécution retry ${retryCount}/${MAX_RETRIES}`);
-          authenticateWithEmail(sessionEmail).catch((err) => {
-            console.error(`[Sanctuaire] Erreur retry ${retryCount}:`, err);
-            setRetryCount(prev => prev + 1);
-          });
-        }, delay);
-        
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [retryCount, isAuthenticated, isLoading, authenticateWithEmail, cooldownActive]);
+    const timer = window.setTimeout(
+      () => navigate(`/sanctuaire/login${suffix}`, { replace: true }),
+      300
+    );
+    return () => window.clearTimeout(timer);
+  }, [isAuthenticated, isLoading, navigate, location.pathname, location.search]);
 
-  // Effet 3: Redirection vers /sanctuaire/login si TOUTES les tentatives échouent
-  // PASSAGE 5 - P0 : Rediriger seulement après MAX_RETRIES dépassé
-  React.useEffect(() => {
-    if (!isLoading && !isAuthenticated && retryCount > MAX_RETRIES) {
-      const sessionEmail = sessionStorage.getItem('sanctuaire_email');
-      const hasEmailInUrl = searchParams.get('email');
-      const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
-
-      if (!sessionEmail && !hasEmailInUrl && !isFirstVisit) {
-        console.log('[Sanctuaire] Toutes les tentatives échouées, redirection vers /sanctuaire/login');
-        const t = setTimeout(() => navigate('/sanctuaire/login'), 2000);
-        return () => clearTimeout(t);
-      }
+  const handleRetryAuth = React.useCallback(() => {
+    if (cooldownActive) {
+      return;
     }
-  }, [isAuthenticated, isLoading, navigate, searchParams, retryCount]);
-
-  // =================== GARDE DE RECONNEXION P0 ===================
-  // Détection token expiré : toast + redirection
-  React.useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      const sessionEmail = sessionStorage.getItem('sanctuaire_email');
-      const isFirstVisit = sessionStorage.getItem('first_visit') === 'true';
-      const hasEmailInUrl = searchParams.get('email');
-      
-      // Éviter le toast pendant les tentatives de retry ou first visit
-      if (sessionEmail && !isFirstVisit && !hasEmailInUrl && retryCount > MAX_RETRIES) {
-        console.log('[Sanctuaire] Session expirée détectée, redirection vers login');
-        const t = setTimeout(() => navigate('/sanctuaire/login', { replace: true }), 1500);
-        return () => clearTimeout(t);
-      }
-    }
-  }, [isLoading, isAuthenticated, navigate, searchParams, retryCount, MAX_RETRIES]);
+    const storedEmail = typeof window !== 'undefined' ? window.sessionStorage.getItem('sanctuaire_email') : null;
+    const target = storedEmail
+      ? `/sanctuaire/login?email=${encodeURIComponent(storedEmail)}`
+      : '/sanctuaire/login';
+    clearAuthError();
+    navigate(target, { replace: true });
+  }, [clearAuthError, cooldownActive, navigate]);
 
   // =================== PROTECTION CRITIQUE : ATTENTE DU CONTEXTE ===================
   // Éviter le crash "useSanctuaire doit être utilisé à l'intérieur de SanctuaireProvider"

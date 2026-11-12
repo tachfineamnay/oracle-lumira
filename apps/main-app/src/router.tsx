@@ -7,6 +7,7 @@ import ConfirmationPage from './pages/ConfirmationPage';
 import PaymentSuccessRedirect from './pages/PaymentSuccessRedirect';
 import LoginSanctuaireSimple from './pages/LoginSanctuaireSimple';
 import LoginSanctuaire from './pages/LoginSanctuaire';
+import VerifySanctuaireMagicLink from './pages/VerifySanctuaireMagicLink';
 import MentionsLegales from './pages/MentionsLegales';
 import ExpertDeskPage from './expert/ExpertDesk';
 import { SanctuaireProvider } from './contexts/SanctuaireContext';
@@ -80,6 +81,8 @@ const AppRoutesComponent: React.FC = () => (
       } />
       {/* Page de login intégrée dans la mise en page du Sanctuaire */}
       <Route path="login" element={<LoginSanctuaireSimple />} />
+      {/* Vérification du lien à usage unique reçu par email */}
+      <Route path="verify" element={<VerifySanctuaireMagicLink />} />
     </Route>
     
     <Route path="/mentions-legales" element={<MentionsLegales />} />

@@ -15,6 +15,7 @@ import { requestIdMiddleware, httpLoggerMiddleware, errorLoggerMiddleware } from
 import { stripeRoutes } from './routes/stripe';
 import { orderRoutes } from './routes/orders';
 import { userRoutes } from './routes/users';
+import { sanctuaireAuthRoutes } from './routes/sanctuaireAuth';
 import { healthRoutes } from './routes/health';
 import readyRoutes from './routes/ready';
 import expertTestRoutes from './routes/expert-test';
@@ -216,6 +217,8 @@ app.use('/api/debug', publicRoutesLimiter, envDebugRoutes);
 app.use('/api/stripe', apiLimiter, stripeRoutes);
 app.use('/api/payments', apiLimiter, paymentRoutes);
 app.use('/api/orders', apiLimiter, orderRoutes);
+// Magic link: mounted before the users router so its own (stricter) limits apply.
+app.use('/api/users', sanctuaireAuthRoutes);
 app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/expert', expertRoutesLimiter, expertRoutes); // More permissive for expert routes
 app.use('/api/uploads', apiLimiter, uploadsRoutes);

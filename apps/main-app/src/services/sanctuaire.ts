@@ -1,4 +1,12 @@
 import { apiRequest } from '../utils/api';
+import {
+  MagicLinkRequestResult,
+  SanctuaireAuthError,
+  SanctuaireSession,
+  fetchSanctuaireSession,
+  requestSanctuaireMagicLink,
+  verifySanctuaireMagicLink,
+} from './sanctuaireAuth';
 
 export interface SanctuaireUser {
   id: string;
@@ -100,39 +108,52 @@ class SanctuaireService {
   private token: string | null = null;
 
   /**
-   * Authentification sanctuaire avec email
-   * PHASE 3 - P2 : Gestion d'erreur améliorée pour distinguer 404 (route) vs 401/403 (auth)
+   * Authentification sanctuaire : envoi d'un lien de vérification.
+   *
+   * IMPORTANT (P0 sécurité) : aucun jeton de session n'est délivré à cette étape.
+   * Une session ne peut être obtenue qu'en ouvrant le lien reçu par email
+   * (voir verifyMagicLink), afin qu'un paiement ne suffise jamais à ouvrir
+   * le compte d'une autre personne.
    */
-  async authenticateWithEmail(email: string): Promise<{ token: string; user: SanctuaireUser }> {
+  async requestMagicLink(email: string, orderId?: string): Promise<MagicLinkRequestResult> {
+    return requestSanctuaireMagicLink(email, orderId);
+  }
+
+  /**
+   * Étape 2 : validation du lien reçu par email.
+   * C'est le seul chemin qui produit et stocke un jeton de session.
+   */
+  async verifyMagicLink(token: string): Promise<{ token: string; user: SanctuaireUser }> {
+    const result = await verifySanctuaireMagicLink(token);
+    this.token = result.token;
+    return {
+      token: result.token,
+      user: {
+        id: String(result.user.id),
+        email: result.user.email,
+        firstName: result.user.firstName || '',
+        lastName: result.user.lastName || '',
+        phone: result.user.phone,
+        level: result.user.level || 0,
+      },
+    };
+  }
+
+  /**
+   * Vérifie que la session locale est toujours valide côté serveur.
+   * Retourne null (et nettoie le stockage) si le jeton est absent/expiré.
+   */
+  async getSession(): Promise<SanctuaireSession | null> {
+    if (!this.getStoredToken()) {
+      return null;
+    }
     try {
-      // Use v2 which accepts paid orders and completed product orders
-      const response = await apiRequest<{ success: boolean; token: string; user: SanctuaireUser }>('/users/auth/sanctuaire-v2', {
-        method: 'POST',
-        body: JSON.stringify({ email })
-      });
-
-      if (response.success) {
-        this.token = response.token;
-        localStorage.setItem('sanctuaire_token', response.token);
-        return { token: response.token, user: response.user };
+      return await fetchSanctuaireSession();
+    } catch (error) {
+      if (error instanceof SanctuaireAuthError && (error.status === 401 || error.status === 403)) {
+        this.logout();
+        return null;
       }
-
-      throw new Error('Authentification échouée');
-    } catch (error: any) {
-      // PHASE 3 - P2 : Interception 404 = problème infrastructure, pas utilisateur
-      if (error.status === 404 || error.message?.includes('404')) {
-        throw new Error(
-          '⚠️ Erreur de connexion API: La route d\'authentification est introuvable. ' +
-          'Veuillez contacter le support technique.'
-        );
-      }
-      
-      // 401/403 = problème d'authentification légitime
-      if (error.status === 401 || error.status === 403) {
-        throw new Error(error.message || 'Utilisateur non trouvé ou accès refusé');
-      }
-      
-      // Autres erreurs
       throw error;
     }
   }

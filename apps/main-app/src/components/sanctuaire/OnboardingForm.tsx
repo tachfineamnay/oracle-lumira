@@ -23,6 +23,7 @@ import {
   Mail, Phone, User
 } from 'lucide-react';
 import { useSanctuaire } from '../../contexts/SanctuaireContext';
+import { fetchOrderContext } from '../../services/sanctuaireAuth';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -374,45 +375,30 @@ export const OnboardingForm: React.FC<OnboardingFormProps> = ({ onComplete }) =>
       try {
         // PASSAGE 14 - P0 : INVERSER PRIORITÉ - PaymentIntent metadata d'abord, puis useSanctuaire()
         
-        // 1️⃣ PRIORITÉ HAUTE : ProductOrder metadata (nom saisi pendant checkout)
+        // 1️⃣ PRIORITÉ HAUTE : contexte de commande via la session VÉRIFIÉE.
+        // /api/orders/:id est public et ne renvoie plus de données personnelles :
+        // les informations client ne sont accessibles qu'après vérification de
+        // l'email par magic link (endpoint authentifié).
         if (paymentIntentId) {
-          console.log('🔍 [OnboardingForm] Chargement depuis ProductOrder:', paymentIntentId);
-          
+          console.log('🔍 [OnboardingForm] Chargement du contexte de commande (session vérifiée):', paymentIntentId);
+
           try {
-            const response = await fetch(`${API_BASE}/orders/${paymentIntentId}`);
-            if (response.ok) {
-              const data = await response.json();
-              console.log('📦 [OnboardingForm] Réponse API reçue:', data);
-              
-              const order = data.order || data;
-              const metadata = order?.metadata || {};
-              
-              console.log('📋 [OnboardingForm] Metadata extraite:', metadata);
-              
-              const customerName = metadata.customerName || '';
-              const nameParts = customerName.split(' ');
-              
-              // ✅ Si metadata contient des données, les utiliser
-              if (metadata.customerEmail) {
-                setUserData({
-                  email: metadata.customerEmail || '',
-                  phone: metadata.customerPhone || '',
-                  firstName: nameParts[0] || '',
-                  lastName: nameParts.slice(1).join(' ') || ''
-                });
-                
-                console.log('✅ [OnboardingForm] Données chargées depuis PaymentIntent metadata:', {
-                  email: metadata.customerEmail,
-                  phone: metadata.customerPhone,
-                  name: customerName
-                });
-                
-                setIsLoadingUserData(false);
-                return; // ✅ SORTIR si données trouvées
-              }
+            const context = await fetchOrderContext(paymentIntentId);
+            if (context?.customer) {
+              setUserData({
+                email: context.customer.email || '',
+                phone: context.customer.phone || '',
+                firstName: context.customer.firstName || '',
+                lastName: context.customer.lastName || ''
+              });
+
+              console.log('✅ [OnboardingForm] Données chargées depuis le contexte authentifié');
+
+              setIsLoadingUserData(false);
+              return; // ✅ SORTIR si données trouvées
             }
           } catch (err) {
-            console.warn('⚠️ [OnboardingForm] Erreur chargement ProductOrder, fallback vers useSanctuaire():', err);
+            console.warn('⚠️ [OnboardingForm] Contexte de commande indisponible, fallback vers useSanctuaire():', err);
           }
         }
         

@@ -8,7 +8,6 @@ import GlassCard from '../components/ui/GlassCard';
 
 import { useOrderStatus } from '../hooks/useOrderStatus';
 import { getLevelNameSafely } from '../utils/orderUtils';
-import { apiRequest } from '../utils/api';
 
 const ConfirmationTemple: React.FC = () => {
   const navigate = useNavigate();
@@ -35,145 +34,58 @@ const ConfirmationTemple: React.FC = () => {
   // Migration: UserLevel initialization now handled by SanctuaireProvider
   const derivedLevelName = orderData ? getLevelNameSafely(orderData.level) : 'Simple';
 
-  // =================== AUTHENTIFICATION POST-PAIEMENT ===================
-  // PASSAGE 7 - P0 : RÉ-AUTHENTIFICATION QUAND ACCÈS ACCORDÉ
-  // Obtenir un token valide dès l'arrivée sur la page de confirmation
-  const [tokenReady, setTokenReady] = useState(false);
-  const [authAttempted, setAuthAttempted] = useState(false);
-  
+  // =================== POST-PAIEMENT : AUCUNE SESSION AUTOMATIQUE ===================
+  // P0 sécurité : un paiement réussi (ou un client_secret) ne prouve pas la
+  // propriété de la boîte email du client. Aucun jeton n'est créé ici.
+  // Le client doit recevoir un lien de vérification puis l'ouvrir :
+  //   /sanctuaire/login  ->  email  ->  /sanctuaire/verify?token=...
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
+
   useEffect(() => {
-    const attemptAuth = async () => {
-      try {
-        const email = searchParams.get('email');
-        if (!email) {
-          console.warn('[Auth] Pas d\'email dans l\'URL, impossible de s\'authentifier');
-          setTokenReady(true); // Continuer sans token si pas d'email
-          setAuthAttempted(true);
-          return;
-        }
-
-        console.log('[Auth] Tentative d\'authentification avec email:', email);
-        const response = await apiRequest<{ token: string }>('/users/auth/sanctuaire-v2', {
-          method: 'POST',
-          body: JSON.stringify({ email })
-        });
-        
-        if (response && response.token) {
-          const { token } = response;
-          localStorage.setItem('sanctuaire_token', token);
-          console.log('[Auth] ✅ Token reçu et sauvegardé avec succès');
-          setTokenReady(true);
-        } else {
-          console.error('[Auth] ❌ Réponse API sans token:', response);
-          setTokenReady(false); // PASSAGE 7 : NE PAS continuer sans token
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[Auth] ❌ Échec de l\'authentification post-paiement:', errorMessage);
-        // PASSAGE 7 - P0 : Si erreur 403/401, c'est probablement un race condition
-        // On va réessayer quand accessGranted devient true
-        setTokenReady(false);
-      } finally {
-        setAuthAttempted(true);
-      }
-    };
-
-    if (orderId && !authAttempted) {
-      attemptAuth();
+    const email = searchParams.get('email');
+    if (!email) return;
+    // Pré-remplissage uniquement (aucune authentification, aucun jeton).
+    try {
+      sessionStorage.setItem('sanctuaire_email', email);
+    } catch {
+      /* storage unavailable */
     }
-  }, [searchParams, orderId, authAttempted]);
-  
-  // PASSAGE 7 - P0 : RÉ-AUTHENTIFICATION quand accès accordé mais pas de token
-  useEffect(() => {
-    const retryAuth = async () => {
-      const email = searchParams.get('email');
-      if (!email) {
-        console.warn('[Auth-Retry] Pas d\'email pour réessayer l\'auth');
-        setTokenReady(true); // Continuer quand même
-        return;
-      }
-      
-      try {
-        console.log('[Auth-Retry] 🔄 Ré-authentification après accès accordé...');
-        const response = await apiRequest<{ token: string }>('/users/auth/sanctuaire-v2', {
-          method: 'POST',
-          body: JSON.stringify({ email })
-        });
-        
-        if (response && response.token) {
-          const { token } = response;
-          localStorage.setItem('sanctuaire_token', token);
-          sessionStorage.setItem('sanctuaire_email', email);
-          console.log('[Auth-Retry] ✅ Token obtenu avec succès après retry !');
-          setTokenReady(true);
-        } else {
-          console.error('[Auth-Retry] ❌ Toujours pas de token après retry');
-          setTokenReady(true); // Continuer quand même pour éviter blocage
-        }
-      } catch (error) {
-        console.error('[Auth-Retry] ❌ Erreur lors du retry:', error);
-        setTokenReady(true); // Continuer quand même
-      }
-    };
-    
-    // Si accès accordé mais pas de token, réessayer l'auth
-    if (accessGranted && !tokenReady && authAttempted) {
-      console.log('[Auth-Retry] Accès accordé détecté mais pas de token, retry...');
-      retryAuth();
-    }
-  }, [accessGranted, tokenReady, authAttempted, searchParams]);
-  // =================== FIN AUTHENTIFICATION ===================
+    setVerificationEmail(email);
+  }, [searchParams]);
 
-  // Gestion de la redirection automatique quand l'accès est accordé ET le token est prêt
+  // Gestion de la redirection automatique quand l'accès est accordé :
+  // on envoie le client vers la demande de lien, PAS vers le Sanctuaire.
   useEffect(() => {
-    if (accessGranted && orderData && tokenReady) {
+    if (accessGranted && orderData) {
       if (redirectStartedRef.current) return;
       redirectStartedRef.current = true;
-      console.log('[ConfirmationTemple] Accès accordé et token prêt ! Redirection immédiate...');
-      
-      // Stocker le PaymentIntentId pour l'upload côté Sanctuaire
       try {
         if (orderData.paymentIntentId) {
           localStorage.setItem('oraclelumira_last_payment_intent_id', orderData.paymentIntentId);
         }
-        // Stocker l'email pour les retries automatiques dans Sanctuaire.tsx
-        const email = searchParams.get('email');
-        if (email) {
-          sessionStorage.setItem('sanctuaire_email', email);
-          console.log('[ConfirmationTemple] Email stocké pour retries:', email);
-        }
-        
-        // ✅ CORRECTIF : Marquer first_visit pour nouveau client (formulaire d'onboarding)
-        // Cela garantit que le formulaire s'affichera dans le Sanctuaire
+        // ✅ Nouveau client : formulaire d'onboarding à l'arrivée dans le Sanctuaire
         sessionStorage.setItem('first_visit', 'true');
-        console.log('[ConfirmationTemple] ✅ Flag first_visit activé - Formulaire d\'onboarding sera affiché');
       } catch (err) {
-        console.error('[ConfirmationTemple] Erreur stockage PI/email:', err);
+        console.error('[ConfirmationTemple] Erreur stockage PI:', err);
       }
 
-      // Redirection immédiate sans countdown
       stopPolling();
-      
-      // Vérifier que le token est bien présent avant redirection
-      const storedToken = localStorage.getItem('sanctuaire_token');
-      if (!storedToken) {
-        console.error('[Auth] ⚠️ CRITIQUE: Token manquant avant redirection !');
-      }
-      
-      // Redirection SIMPLE vers /sanctuaire (sans paramètres inutiles)
-      console.log('[ConfirmationTemple] Redirection vers /sanctuaire...');
-      
-      // Délai asynchrone pour éviter le crash contextuel React
+
+      const email = searchParams.get('email');
+      const query = new URLSearchParams();
+      if (email) query.set('email', email);
+      if (orderId) query.set('order_id', orderId);
+      const suffix = query.toString() ? `?${query.toString()}` : '';
+
       setTimeout(() => {
         try {
-          navigate('/sanctuaire', { replace: true });
+          navigate(`/sanctuaire/login${suffix}`, { replace: true });
         } catch {
-          // Fallback dur en cas d'échec client-side
-          window.location.href = '/sanctuaire';
+          window.location.href = `/sanctuaire/login${suffix}`;
         }
-      }, 150); // 150ms suffisent pour stabiliser le contexte React
+      }, 400);
     }
-  }, [accessGranted, orderData, tokenReady, navigate, stopPolling, searchParams]);
+  }, [accessGranted, orderData, navigate, stopPolling, searchParams, orderId]);
 
   // Gérer les erreurs
   useEffect(() => {
@@ -306,6 +218,19 @@ const ConfirmationTemple: React.FC = () => {
               <p className="text-sm text-gray-400">Commande #{orderIdShort}</p>
               <p className="text-white font-semibold">{productName}</p>
               <p className="text-mystical-gold">{(orderAmount / 100).toFixed(2)} €</p>
+            </div>
+
+            {/* Explication sécurité (paiement != session) */}
+            <div className="text-left bg-white/5 border border-white/10 rounded-xl p-3 space-y-1">
+              <p className="text-xs text-white/70">
+                <strong>Dernière étape :</strong> un lien de connexion sécurisé doit être ouvert
+                depuis votre boîte email pour ouvrir votre Sanctuaire.
+              </p>
+              {verificationEmail && (
+                <p className="text-xs text-white/50">
+                  Adresse de la commande : {verificationEmail}
+                </p>
+              )}
             </div>
 
             {/* Action Buttons */}

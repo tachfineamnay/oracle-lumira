@@ -968,15 +968,15 @@ router.get('/:id', async (req: any, res: any) => {
             level: levelInfo.num,
             amount: productOrder.amount,
             currency: productOrder.currency,
-            userEmail: productOrder.customerEmail,
             productId: productOrder.productId,
             createdAt: productOrder.createdAt,
             updatedAt: productOrder.updatedAt,
-            // Provide metadata expected by OnboardingForm fallback
+            // P0 sécurité : pas de données personnelles dans un endpoint public.
+            // Les détails client sont servis par GET /api/users/session/order-context
+            // (session vérifiée par magic link) pour le propriétaire de l'email.
             metadata: {
-              customerEmail: (productOrder as any)?.metadata?.customerEmail || productOrder.customerEmail || '',
-              customerPhone: (productOrder as any)?.metadata?.customerPhone || '',
-              customerName: (productOrder as any)?.metadata?.customerName || '',
+              productName: (productOrder as any)?.metadata?.productName,
+              level: (productOrder as any)?.metadata?.level,
             },
             // Frontend compatibility fields
             accessGranted,
@@ -1011,7 +1011,32 @@ router.get('/:id', async (req: any, res: any) => {
     }
     
     console.log('[GET-ORDER] SUCCESS - Order trouvée:', order._id);
-    res.json(order);
+    // P0 sécurité : endpoint public sans authentification. On ne renvoie jamais
+    // l'email/téléphone/formData/fichiers du client, ni l'objet userId peuplé :
+    // le propriétaire récupère ces données via /api/users/session/order-context.
+    const sanitizePublicOrder = (doc: any) => {
+      const raw = typeof doc?.toObject === 'function' ? doc.toObject() : { ...doc };
+      delete raw.userId;
+      delete raw.userEmail;
+      delete raw.userName;
+      delete raw.formData;
+      delete raw.files;
+      delete raw.generatedContent;
+      delete raw.clientInputs;
+      delete raw.paymentIntentId;
+      delete raw.stripeSessionId;
+      if (raw.metadata && typeof raw.metadata === 'object') {
+        const safeMetadata: Record<string, any> = {};
+        for (const [key, value] of Object.entries(raw.metadata)) {
+          if (/email|phone|name|address/i.test(key)) continue;
+          safeMetadata[key] = value;
+        }
+        raw.metadata = safeMetadata;
+      }
+      return raw;
+    };
+
+    res.json(sanitizePublicOrder(order));
   } catch (error) {
     console.error('[GET-ORDER] ERREUR CRITIQUE:', error);
     res.status(500).json({ error: 'Failed to fetch order' });
@@ -1019,16 +1044,28 @@ router.get('/:id', async (req: any, res: any) => {
 });
 
 // Get order by order number
+// P0 sécurité : endpoint public. Le numéro de commande n'est pas un secret
+// d'authentification (il est imprimé sur les documents) : la réponse est limitée
+// à l'état de la commande, sans identité du client.
 router.get('/number/:orderNumber', async (req: any, res: any) => {
   try {
-    const order = await Order.findOne({ orderNumber: req.params.orderNumber })
-      .populate('userId', 'firstName lastName email phone');
+    const order = await Order.findOne({ orderNumber: req.params.orderNumber });
     
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
     
-    res.json(order);
+    res.json({
+      orderNumber: order.orderNumber,
+      status: order.status,
+      level: order.level,
+      levelName: (order as any).levelName,
+      amount: order.amount,
+      currency: order.currency,
+      paidAt: order.paidAt,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+    });
   } catch (error) {
     console.error('Get order by number error:', error);
     res.status(500).json({ error: 'Failed to fetch order' });

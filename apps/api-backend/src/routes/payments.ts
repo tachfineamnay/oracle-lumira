@@ -206,7 +206,7 @@ router.get('/order/:orderId', async (req, res) => {
           specialties: (order.expertId as any).specialties || [],
           rating: (order.expertId as any).rating || 0
         } : undefined,
-        customerEmail: order.userEmail,
+        // P0 sécurité : aucune donnée personnelle dans un endpoint public.
         createdAt: order.createdAt,
         paidAt: order.paidAt,
       }

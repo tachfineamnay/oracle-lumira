@@ -29,7 +29,8 @@ export interface OrderStatus {
   order: {
     id: string;
     productId: string;
-    customerEmail?: string;
+    /** Champ retiré côté serveur (P0) — conservé optionnel pour rétro-compat. */
+    customerEmail?: never;
     amount: number;
     currency: string;
     status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
